@@ -176,6 +176,31 @@ const ApiService = {
     return { status: 'success', message: 'Trip deleted' };
   },
 
+  async triggerRestoreDatabase() {
+    const url = this.getApiUrl();
+    if (url && window.navigator.onLine) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'restoreDatabase',
+            sheetId: this.getSheetId()
+          })
+        });
+        if (res.ok) {
+          const result = await res.json();
+          await this.fetchAll();
+          return result;
+        }
+      } catch (err) {
+        console.warn('Cloud restore note:', err);
+      }
+    }
+    DataManager.restoreDefault();
+    return { status: 'success', message: 'Local default data restored' };
+  },
+
   async triggerCloudBackup() {
     const url = this.getApiUrl();
     if (!url || !window.navigator.onLine) {

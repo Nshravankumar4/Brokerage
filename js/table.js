@@ -318,7 +318,7 @@ const TableModule = {
     const nextSlNo = list.length > 0 ? (Math.max(...list.map(t => parseInt(t.slNo, 10) || 0)) + 1) : 1;
     const today = new Date().toISOString().split('T')[0];
 
-    document.getElementById('modalTitle').innerText = '➕ Add New Trip Record';
+    document.getElementById('modalTitle').innerText = '➕ Add New Shipment';
     document.getElementById('m_editRow').value = nextRowNum;
     document.getElementById('m_isAdd').value = 'true';
 
@@ -421,7 +421,19 @@ const TableModule = {
 
     if (typeof AppModule !== 'undefined') {
       AppModule.refresh();
-      AppModule.showToast(isAdd ? '✅ New trip submitted successfully!' : '✅ Trip changes saved successfully!');
+      AppModule.showToast(isAdd ? '➕ New shipment submitted!' : '💾 Changes saved!');
+    }
+
+    // Authoritative Cloud Sync to Google Sheets
+    if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
+      ApiService.saveTrip(tripData).then(async (res) => {
+        console.log('✅ Cloud mutation synced to Google Sheets:', res);
+        if (typeof AppModule !== 'undefined') {
+          await AppModule.syncNow(true);
+        }
+      }).catch(err => {
+        console.warn('Cloud sync note for saveTrip:', err);
+      });
     }
   },
 
@@ -436,6 +448,18 @@ const TableModule = {
       if (typeof AppModule !== 'undefined') {
         AppModule.refresh();
         AppModule.showToast('🗑️ Trip deleted successfully.');
+      }
+
+      // Authoritative Cloud Sync to Google Sheets
+      if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
+        ApiService.deleteTrip(rowNum).then(async (res) => {
+          console.log('✅ Cloud delete synced to Google Sheets:', res);
+          if (typeof AppModule !== 'undefined') {
+            await AppModule.syncNow(true);
+          }
+        }).catch(err => {
+          console.warn('Cloud sync note for deleteTrip:', err);
+        });
       }
     }
   },

@@ -21,23 +21,57 @@ const AppModule = {
     this.bindEvents();
     this.initRealtimeSync();
     this.refresh();
+
+    // CLOUD-FIRST ARCHITECTURE: Immediately fetch live data from Google Sheets endpoint
+    if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
+      ApiService.fetchAll().then(res => {
+        if (res && res.source === 'cloud') {
+          this.refresh();
+          this.updateCloudSyncBadge(true);
+          console.log('✅ Live Google Sheets cloud ledger synchronized on startup.');
+        }
+      }).catch(e => console.warn('Cloud startup fetch note:', e));
+    }
   },
 
   // ================= MOBILE & DESKTOP SLIDE-IN SIDEBAR =================
-  toggleSidebar() {
+  openSidebar() {
     const drawer = document.getElementById('appDrawer');
     const backdrop = document.getElementById('drawerBackdrop');
-    if (!drawer) return;
-    const isOpen = drawer.classList.contains('open');
-    drawer.classList.toggle('open', !isOpen);
-    if (backdrop) backdrop.classList.toggle('open', !isOpen);
+    if (drawer) {
+      drawer.classList.add('open');
+      drawer.style.transform = 'translateX(0)';
+    }
+    if (backdrop) {
+      backdrop.classList.add('open');
+      backdrop.style.display = 'block';
+    }
+    document.body.classList.add('sidebar-open');
   },
 
   closeSidebar() {
     const drawer = document.getElementById('appDrawer');
     const backdrop = document.getElementById('drawerBackdrop');
-    if (drawer) drawer.classList.remove('open');
-    if (backdrop) backdrop.classList.remove('open');
+    if (drawer) {
+      drawer.classList.remove('open');
+      drawer.style.transform = '';
+    }
+    if (backdrop) {
+      backdrop.classList.remove('open');
+      backdrop.style.display = '';
+    }
+    document.body.classList.remove('sidebar-open');
+  },
+
+  toggleSidebar(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const drawer = document.getElementById('appDrawer');
+    if (!drawer) return;
+    if (drawer.classList.contains('open')) {
+      this.closeSidebar();
+    } else {
+      this.openSidebar();
+    }
   },
 
   // ================= REAL-TIME MULTI-DEVICE AUTO-SYNC (MATCHING SR_T) =================
@@ -103,14 +137,14 @@ const AppModule = {
     }
   },
 
-  async syncNow() {
-    this.showToast("🔄 Syncing latest cloud database...");
+  async syncNow(silent = false) {
+    if (!silent) this.showToast("🔄 Syncing latest cloud database...");
     this.updateCloudSyncBadge(false);
     if (typeof ApiService !== 'undefined') {
       const res = await ApiService.fetchAll();
       this.refresh();
       this.updateCloudSyncBadge(true);
-      this.showToast("✅ Synced with latest database!");
+      if (!silent) this.showToast("✅ Synced with latest Google Sheets ledger!");
     }
   },
 
@@ -135,15 +169,6 @@ const AppModule = {
   },
 
   bindEvents() {
-    // 0. Sidebar Toggle Button
-    const btnOpenSidebar = document.getElementById('btnOpenSidebar');
-    if (btnOpenSidebar) {
-      btnOpenSidebar.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleSidebar();
-      });
-    }
-
     // 1. Text Search Filter
     const searchInput = document.getElementById('tableSearch');
     if (searchInput) {
@@ -287,13 +312,17 @@ const AppModule = {
     }
   },
 
-  restoreDefaultData() {
+  async restoreDefaultData() {
     if (typeof AuthModule !== 'undefined' && !AuthModule.isAdmin()) {
       alert('Access Restricted: Only Administrator can restore original database records!');
       return;
     }
     if (confirm('Are you sure you want to restore the original 19 Excel records from BROKER DETAILS ADVANCE BALC DETAILS.xlsx? All unsaved manual edits will be reset.')) {
-      DataManager.reset();
+      if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
+        await ApiService.triggerRestoreDatabase();
+      } else {
+        DataManager.reset();
+      }
       this.refresh();
       this.showToast('📋 Restored original Excel records successfully!');
     }
@@ -447,6 +476,9 @@ window.DashboardModule = DashboardModule;
 window.DataManager = DataManager;
 window.ApiService = ApiService;
 window.CalculationEngine = CalculationEngine;
+window.toggleSidebar = (e) => AppModule.toggleSidebar(e);
+window.openSidebar = () => AppModule.openSidebar();
+window.closeSidebar = () => AppModule.closeSidebar();
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
