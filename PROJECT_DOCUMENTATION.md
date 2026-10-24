@@ -11,7 +11,7 @@ The **Brokerage & Trip Ledger** is an enterprise-grade fleet logistics and freig
 - **Enterprise Footer on All Pages**: Pinned footer across the login screen, executive dashboard, trip edit cards, and 1:1 Excel spreadsheet view:
   `Brokerage Ledger • Enterprise Freight & Fleet Management`
   `© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by Shravan Kumar • All Rights Reserved`
-- **Slide-in Navigation Drawer**: Collapsible menu with User profile card, clean navigation links (`Dashboard`, `Trip Edit / Trip Management`, `View Excel Type`, `Export Excel (.xlsx)`, `Settings & API`), live status indicator (`Online • 19 Verified Trips`), and Logout.
+- **Slide-in Navigation Drawer**: Collapsible menu with User profile card, clean single-line navigation links (`Dashboard`, `Trip Operations`, `Spreadsheet View`, `Sync Cloud Database`, `Export Excel (.xlsx)`, `Settings & API`), live status indicator (`Online • 19 Verified Trips`), and prominent red Logout button.
 - **Authoritative Google Apps Script Backend (`backend/Code.gs`)**: Full Google Apps Script engine providing concurrency locks (`LockService`), dynamic calculations, Google Drive timestamped backups (`Brokerage_Backups`), and versioned JSON REST API endpoints.
 - **Dynamic Mathematical Calculation Engine**: Automatically calculates intermediate balances (`BALC`, Column W) and final balances (`FINAL BALC`, Column Y) based on ToPay conditions (`F/TO-PAY`, `A/TO-PAY`, Standard).
 - **Executive Operational Alerts Panel**: Scans for shipments pending Proof of Delivery (`POD RECD`) dates, displaying 10 pending alerts in a multi-column responsive grid with zero overlapping.

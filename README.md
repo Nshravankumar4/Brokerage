@@ -125,15 +125,17 @@ Reconciled directly against `BROKER DETAILS ADVANCE BALC DETAILS.xlsx` (Sheet: `
 
 ### 1. Slide-In Sidebar / Navigation Drawer
 Accessed via the **☰ Menu** button in the header. Sleek navy dark theme matching `SR_T`:
-* **Header:** 🚛 Shinex Transport & Brokerage Ledger
-* **User Badge:** Active avatar, user name, role badge, and change password shortcut.
-* **Navigation Links:**
+* **Header:** 🚛 Brokerage Ledger • Transport & Accounts
+* **User Badge:** Compact avatar, active user name, role badge (`ADMIN` / `USER`).
+* **Navigation Links (Single-Line, No Wrapping):**
   * `📊 Dashboard`
-  * `✏️ Trip Edit / Trip Management`
-  * `📑 View Excel Type`
+  * `✏️ Trip Operations`
+  * `📑 Spreadsheet View`
+  * `🔄 Sync Cloud Database`
   * `📥 Export Excel (.xlsx)`
   * `⚙️ Settings & API`
-* **Footer:** Live status indicator (`Online • 19 Verified Trips`), sync button (`🔄 Sync`), and `🚪 Logout / Switch User`.
+* **Footer:** Live status indicator (`Online • 19 Verified Trips`), sync button (`🔄 Sync`), and red logout button (`🚪 Logout / Switch User`).
+* **Zero Scrollbar Guarantee:** Custom subtle scrollbar styling and compact vertical structure guarantees no scrolling on standard screens.
 
 ### 2. Executive Dashboard (Linear Top-to-Bottom Layout)
 * **Top (UP):** 4 Primary KPI metric cards across the top (`Total Shipments: 19`, `Total Freight: ₹25,69,250`, `Advances Paid: ₹11,90,184`, `Final Outstanding Balance: ₹11,66,700`).
@@ -144,13 +146,14 @@ Accessed via the **☰ Menu** button in the header. Sleek navy dark theme matchi
 * **Bottom (LAST DOWN):** **📅 MONTHLY FINANCIAL BREAKDOWN (CLICK ANY MONTH TO FILTER)** spanning full 100% width.
   * Monthly cards for August, September, October 2026 showing trip counts, freight, advances, and balances.
 
-### 3. Trip Edit View (`✏️ Trip Edit`)
+### 3. Trip Operations View (`✏️ Trip Operations`)
 * High-density enterprise dispatch cards.
 * Route visualizer: `MEDCHAL ── 🚛 ──> COOCHBEHAR`.
 * Topay badges, financial boxes, and delivery confirmation status.
 * Full-height scrolling layout filling 100% of the screen height with zero dead bottom whitespace.
+* Single prominent action button: `➕ Add Shipment` with sleek icon accent.
 
-### 4. Excel View (`📑 View Excel Type`)
+### 4. Spreadsheet View (`📑 Spreadsheet View`)
 * 1:1 clean replica of Excel columns A to AA:
   `SL NO`, `TRSP NAME`, `DATE`, `LR NO`, `TRUCK NO`, `FROM`, `TO`, `ACCOUNT NO`, `IFSC CODE`, `PAYMENT MADE`, `FRIGHT`, `DATE`, `Topay`, `T/M`, `ADVANCE`, `DATE 2`, `ADVANCE2`, `DATE3`, `ADVANCE3`, `Topay(COD)`, `P/M`, `DATE`, `BALC`, `P/M`, `FINAL BALC`, `POD RECD`, `NOTE`.
 * Pinned header row (`sticky top: 0`).

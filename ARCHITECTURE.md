@@ -34,21 +34,22 @@ Applied consistently across all screens: the Login Portal (`#authWrapper`), Exec
 A slide-in drawer following the established `SR_T` navigation pattern opens when clicking `☰ Menu`:
 
 ### 2.1 Drawer Header & User Profile
-- Brand Title: `Transport Brokerage Ledger`
-- Subtitle: `Fleet Logistics & Financial Accounts Management`
-- User Profile Card: User avatar, authenticated username (`Shravan (Admin)` / `Rudra (Employee)`), and role badge (`ADMIN` / `USER`).
+- Brand Title: `Brokerage Ledger`
+- Subtitle: `Transport & Accounts`
+- User Profile Card: Compact user avatar, authenticated username (`Shravan (Admin)` / `Rudra (Employee)`), and role badge (`ADMIN` / `USER`).
 
-### 2.2 Navigation Menu Items (Strict Clean Order)
+### 2.2 Navigation Menu Items (Strict Clean Single-Line Order)
 1. `📊 Dashboard` — Executive KPIs, full-width POD alerts, and monthly breakdown.
-2. `✏️ Trip Edit / Trip Management` — Interactive cards view for rapid dispatch updates.
-3. `📑 View Excel Type` — 1:1 replica of the 27-column spreadsheet (A to AA) with Excel Zoom controls (`80% Fit`, `90%`, `100%`, `115%`).
-4. `📥 Export Excel (.xlsx)` — Generates genuine `.xlsx` with preserved headers and cell fills.
-5. `⚙️ Settings & API` — Opens system diagnostics, maintenance actions, cloud API configuration, and password change.
+2. `✏️ Trip Operations` — Interactive cards view for rapid dispatch updates.
+3. `📑 Spreadsheet View` — 1:1 replica of the 27-column spreadsheet (A to AA) with Excel Zoom controls (`80% Fit`, `90%`, `100%`, `115%`).
+4. `🔄 Sync Cloud Database` — Triggers instant two-way sync with Google Sheets backend.
+5. `📥 Export Excel (.xlsx)` — Generates genuine `.xlsx` with preserved headers and cell fills.
+6. `⚙️ Settings & API` — Opens system diagnostics, cloud API configuration, and password change.
 
 ### 2.3 System Status & Drawer Footer
-- **Live Status:** `Online • 19 Verified Trips` with `🔄 Sync` button.
-- **Logout / Switch User:** Clears session and returns to the full-screen authentication portal.
-- **Maintenance Actions:** Maintenance tools (Reset all filters, Restore original data, Password change, Cloud API URL) are housed cleanly in the Settings modal (`⚙️ Settings & API`).
+- **Live Status:** `Online • 19 Verified Trips` in a clean dark pill with dedicated `🔄 Sync` button.
+- **Prominent Red Logout Button:** `🚪 Logout / Switch User` styled with solid `#dc2626` background, clearing session and returning to the full-screen authentication portal.
+- **Zero Scrollbar Guarantee:** Custom thin scrollbar with compact vertical hierarchy ensures everything fits on a single laptop/desktop screen without scrolling.
 
 ---
 
