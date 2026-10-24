@@ -27,6 +27,7 @@ const INITIAL_TRIPS = [
 
 const DataManager = {
   storageKey: 'broker_ledger_trips_v5',
+  versionKey: 'broker_ledger_version_v5',
 
   getAll() {
     try {
@@ -43,7 +44,21 @@ const DataManager = {
   saveAll(list) {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(list));
+      // Broadcast to other open tabs
+      if (window.brokerSyncChannel) {
+        window.brokerSyncChannel.postMessage({ type: 'trips_updated', timestamp: Date.now() });
+      }
     } catch (e) {}
+  },
+
+  getVersion() {
+    return localStorage.getItem(this.versionKey) || '1';
+  },
+
+  setVersion(v) {
+    if (v) {
+      localStorage.setItem(this.versionKey, String(v));
+    }
   },
 
   getTrip(rowNum) {
@@ -75,6 +90,9 @@ const DataManager = {
 
   reset() {
     this.saveAll(INITIAL_TRIPS);
+    this.setVersion('1');
     return JSON.parse(JSON.stringify(INITIAL_TRIPS));
   }
 };
+
+window.DataManager = DataManager;

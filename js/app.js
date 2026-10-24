@@ -1,6 +1,7 @@
 /**
- * app.js - Main Application Controller
- * Connects Auth, Search, Date Filters, Dynamic Monthly Filters, Dashboard & Excel View
+ * app.js - Main Application Controller & Real-Time Sync Engine
+ * Transport Brokerage Ledger Pvt Ltd
+ * Connects Auth, Search, Date Filters, Dynamic Monthly Filters, Dashboard, Spreadsheet & Cloud Sync
  */
 
 const AppModule = {
@@ -10,16 +11,139 @@ const AppModule = {
   searchQuery: '',
   dateFrom: '',
   dateTo: '',
+  isSyncing: false,
+  _pollerInterval: null,
 
   init() {
     if (typeof AuthModule !== 'undefined') {
       AuthModule.updateHeaderUI();
     }
     this.bindEvents();
+    this.initRealtimeSync();
     this.refresh();
   },
 
+  // ================= MOBILE & DESKTOP SLIDE-IN SIDEBAR =================
+  toggleSidebar() {
+    const drawer = document.getElementById('appDrawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    if (!drawer) return;
+    const isOpen = drawer.classList.contains('open');
+    drawer.classList.toggle('open', !isOpen);
+    if (backdrop) backdrop.classList.toggle('open', !isOpen);
+  },
+
+  closeSidebar() {
+    const drawer = document.getElementById('appDrawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    if (drawer) drawer.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('open');
+  },
+
+  // ================= REAL-TIME MULTI-DEVICE AUTO-SYNC (MATCHING SR_T) =================
+  initRealtimeSync() {
+    // 1. BroadcastChannel across all open tabs/windows
+    if ('BroadcastChannel' in window) {
+      window.brokerSyncChannel = new BroadcastChannel('broker_ledger_sync');
+      window.brokerSyncChannel.onmessage = async (event) => {
+        const type = event.data?.type || 'Data updated';
+        console.log("⚡ Real-time broadcast event received:", type);
+        this.refresh();
+      };
+    }
+
+    // 2. Storage event listener fallback (for multi-tab / incognito)
+    window.addEventListener('storage', (e) => {
+      if (e.key && (e.key.startsWith('broker_') || e.key === 'broker_ledger_version_v5')) {
+        this.refresh();
+      }
+    });
+
+    // 3. Tab focus auto-sync (when user switches back to this tab)
+    window.addEventListener('focus', () => {
+      this.checkCloudVersionAndSync();
+    });
+
+    // 4. Background lightweight DATA_VERSION poller every 3.5 seconds
+    if (this._pollerInterval) clearInterval(this._pollerInterval);
+    this._pollerInterval = setInterval(() => {
+      if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
+        this.checkCloudVersionAndSync();
+      }
+    }, 3500);
+  },
+
+  async checkCloudVersionAndSync() {
+    if (this.isSyncing) return;
+    if (typeof ApiService === 'undefined' || !ApiService.isCloudConnected()) return;
+
+    try {
+      const serverVersion = await ApiService.getDataVersion();
+      const localVersion = DataManager.getVersion();
+
+      if (serverVersion && serverVersion !== localVersion) {
+        console.log(`[Sync] Cloud mutation detected (Local v${localVersion} !== Cloud v${serverVersion}). Syncing full dataset...`);
+        this.isSyncing = true;
+        this.updateCloudSyncBadge(false);
+
+        const res = await ApiService.fetchAll();
+        this.isSyncing = false;
+
+        if (res && res.trips) {
+          this.refresh();
+          this.updateCloudSyncBadge(true);
+          this.showToast(`⚡ Live sync: Updated to cloud version ${serverVersion}`);
+        }
+      } else if (serverVersion) {
+        this.updateCloudSyncBadge(true);
+      }
+    } catch (e) {
+      this.isSyncing = false;
+      console.warn("[Sync] Background poll note:", e);
+    }
+  },
+
+  async syncNow() {
+    this.showToast("🔄 Syncing latest cloud database...");
+    this.updateCloudSyncBadge(false);
+    if (typeof ApiService !== 'undefined') {
+      const res = await ApiService.fetchAll();
+      this.refresh();
+      this.updateCloudSyncBadge(true);
+      this.showToast("✅ Synced with latest database!");
+    }
+  },
+
+  updateCloudSyncBadge(isLive) {
+    const headerPill = document.getElementById('headerCloudSyncBadge');
+    const drawerStatus = document.getElementById('drawerStatusText');
+    const count = DataManager.getAll().length;
+
+    if (headerPill) {
+      if (isLive) {
+        headerPill.innerHTML = `🟢 Cloud Synced (v${DataManager.getVersion()})`;
+        headerPill.style.color = '#10b981';
+      } else {
+        headerPill.innerHTML = `🔄 Syncing...`;
+        headerPill.style.color = '#38bdf8';
+      }
+    }
+
+    if (drawerStatus) {
+      drawerStatus.innerText = `Online • ${count} Active Trips`;
+    }
+  },
+
   bindEvents() {
+    // 0. Sidebar Toggle Button
+    const btnOpenSidebar = document.getElementById('btnOpenSidebar');
+    if (btnOpenSidebar) {
+      btnOpenSidebar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleSidebar();
+      });
+    }
+
     // 1. Text Search Filter
     const searchInput = document.getElementById('tableSearch');
     if (searchInput) {
@@ -76,26 +200,12 @@ const AppModule = {
       editForm.addEventListener('submit', (e) => TableModule.handleSaveModal(e));
     }
 
-    // 6. Login Form Submit
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-      loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const u = document.getElementById('loginUsername').value;
-        const p = document.getElementById('loginPassword').value;
-        const res = AuthModule.login(u, p);
-        if (!res.success) {
-          alert(res.message);
-        } else {
-          this.showToast(`Logged in as ${res.user.displayName}`);
-        }
-      });
-    }
-
-    // 7. Escape key
+    // 6. Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         TableModule.closeModal();
+        this.closeSidebar();
+        this.closeSettingsModal();
       }
     });
   },
@@ -148,19 +258,25 @@ const AppModule = {
     if (modal) {
       if (typeof AuthModule !== 'undefined') AuthModule.updateHeaderUI();
       const apiUrlInput = document.getElementById('settingApiUrlInput');
+      const sheetIdInput = document.getElementById('settingSheetIdInput');
       if (apiUrlInput && typeof ApiService !== 'undefined') {
         apiUrlInput.value = ApiService.config.apiUrl || '';
+      }
+      if (sheetIdInput && typeof ApiService !== 'undefined') {
+        sheetIdInput.value = ApiService.getSheetId() || '';
       }
       modal.style.display = 'flex';
     }
   },
 
-  saveApiUrl() {
+  saveSettings() {
     const apiUrlInput = document.getElementById('settingApiUrlInput');
-    if (apiUrlInput && typeof ApiService !== 'undefined') {
-      const url = apiUrlInput.value.trim();
-      ApiService.setApiUrl(url);
-      this.showToast(url ? '☁️ Google Sheets API URL saved!' : 'Switched to offline local storage');
+    const sheetIdInput = document.getElementById('settingSheetIdInput');
+    if (typeof ApiService !== 'undefined') {
+      if (apiUrlInput) ApiService.setApiUrl(apiUrlInput.value.trim());
+      if (sheetIdInput) ApiService.setSheetId(sheetIdInput.value.trim());
+      this.showToast('☁️ Google Sheets API settings saved!');
+      this.checkCloudVersionAndSync();
     }
   },
 
@@ -304,6 +420,7 @@ const AppModule = {
   refresh() {
     this.renderDashboardOnly();
     this.applyFilterAndRender();
+    this.updateCloudSyncBadge(true);
   },
 
   showToast(message) {
@@ -321,6 +438,15 @@ const AppModule = {
     }, 3200);
   }
 };
+
+// Expose modules globally on window to ensure all inline onclick handlers execute reliably
+window.AppModule = AppModule;
+window.AuthModule = AuthModule;
+window.TableModule = TableModule;
+window.DashboardModule = DashboardModule;
+window.DataManager = DataManager;
+window.ApiService = ApiService;
+window.CalculationEngine = CalculationEngine;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {

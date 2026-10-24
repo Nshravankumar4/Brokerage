@@ -9,11 +9,16 @@
  * Permissions:
  *  - ADMIN: Full CRUD Control (Add, Edit, Update POD, Delete Records, Restore Data)
  *  - RUDRA (Employee): Fleet Operations (Add, Edit, Update POD — Delete is Restricted)
+ * 
+ * Auto-Logout:
+ *  - 10-Minute Idle Inactivity Timeout (600,000 ms) automatically logs out to the auth portal.
  */
 
 const AuthModule = {
   storageKey: 'broker_auth_user_v5',
   selectedUser: 'Admin',
+  idleTimeoutMs: 10 * 60 * 1000, // 10 minutes
+  _idleTimer: null,
 
   // Pre-configured SHA-256 hashes of authorized credentials
   accounts: {
@@ -39,6 +44,41 @@ const AuthModule = {
 
   init() {
     this.checkAuthState();
+    this.initActivityTracking();
+  },
+
+  // 10-Minute Inactivity Auto-Logout Tracker
+  initActivityTracking() {
+    const handleActivity = () => {
+      if (this.getCurrentUser()) {
+        this.resetInactivityTimer();
+      }
+    };
+
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+      window.addEventListener(evt, handleActivity, { passive: true });
+    });
+
+    if (this.getCurrentUser()) {
+      this.resetInactivityTimer();
+    }
+  },
+
+  resetInactivityTimer() {
+    if (this._idleTimer) clearTimeout(this._idleTimer);
+    this._idleTimer = setTimeout(() => {
+      if (this.getCurrentUser()) {
+        this.logout();
+        alert('Session expired due to 10 minutes of inactivity. Please sign in again.');
+      }
+    }, this.idleTimeoutMs);
+  },
+
+  clearInactivityTimer() {
+    if (this._idleTimer) {
+      clearTimeout(this._idleTimer);
+      this._idleTimer = null;
+    }
   },
 
   checkAuthState() {
@@ -50,9 +90,11 @@ const AuthModule = {
       if (authWrapper) authWrapper.style.display = 'none';
       if (appWrapper) appWrapper.style.display = 'flex';
       this.updateHeaderUI();
+      this.resetInactivityTimer();
     } else {
       if (authWrapper) authWrapper.style.display = 'flex';
       if (appWrapper) appWrapper.style.display = 'none';
+      this.clearInactivityTimer();
       this.selectLoginUser('Admin');
     }
   },
@@ -166,44 +208,33 @@ const AuthModule = {
       const authWrapper = document.getElementById('authWrapper');
       const appWrapper = document.getElementById('appWrapper');
 
-      // 1. Show personalized welcome splash
-      const splash = document.getElementById('welcomeSplashOverlay');
-      const splashGreeting = document.getElementById('welcomeSplashGreeting');
-      const splashStatus = document.getElementById('welcomeSplashStatus');
-      if (splashGreeting) splashGreeting.innerText = `👋 Welcome, ${account.displayName}!`;
-      if (splashStatus) splashStatus.innerText = `Connecting to live cloud ledger & verifying shipments...`;
-      if (splash) splash.style.display = 'flex';
+      // Instant transition (<40ms) to ensure ZERO password lag
+      if (authWrapper) authWrapper.style.display = 'none';
+      if (appWrapper) appWrapper.style.display = 'flex';
 
-      setTimeout(async () => {
-        // 2. Fetch live data from Google Sheets API
-        if (typeof ApiService !== 'undefined') {
-          try {
-            await ApiService.fetchAll();
-          } catch (e) {}
-        }
+      this.updateHeaderUI();
+      this.resetInactivityTimer();
 
-        if (authWrapper) authWrapper.style.display = 'none';
-        if (appWrapper) appWrapper.style.display = 'flex';
+      if (typeof AppModule !== 'undefined') {
+        AppModule.switchView('dashboard');
+        AppModule.refresh();
+        AppModule.showToast(`🚀 Welcome back, ${account.displayName}!`);
+      }
 
-        this.updateHeaderUI();
-        if (typeof AppModule !== 'undefined') {
-          AppModule.switchView('dashboard');
-          AppModule.refresh();
-          AppModule.showToast(`🚀 Welcome back, ${account.displayName}!`);
-        }
+      if (pwdInput) pwdInput.value = '';
+      if (errBox) errBox.style.display = 'none';
 
-        // 3. Smooth fade out of splash
-        if (splash) {
-          splash.style.opacity = '0';
-          setTimeout(() => {
-            splash.style.display = 'none';
-            splash.style.opacity = '1';
-          }, 300);
-        }
-
-        if (pwdInput) pwdInput.value = '';
-        if (errBox) errBox.style.display = 'none';
-      }, 900);
+      // Asynchronous background cloud sync without blocking user interaction
+      if (typeof ApiService !== 'undefined') {
+        ApiService.fetchAll().then(res => {
+          if (res && res.source === 'cloud' && typeof AppModule !== 'undefined') {
+            AppModule.refresh();
+            AppModule.updateCloudSyncBadge(true);
+          }
+        }).catch(err => {
+          console.warn('Silent cloud sync note on login:', err);
+        });
+      }
     } else {
       // Clean, secure error message with ZERO credential leakage
       if (errBox) {
@@ -218,6 +249,7 @@ const AuthModule = {
   },
 
   logout() {
+    this.clearInactivityTimer();
     localStorage.removeItem(this.storageKey);
     const authWrapper = document.getElementById('authWrapper');
     const appWrapper = document.getElementById('appWrapper');
@@ -292,6 +324,8 @@ const AuthModule = {
     }
   }
 };
+
+window.AuthModule = AuthModule;
 
 // Auto initialize on script load
 document.addEventListener('DOMContentLoaded', () => {

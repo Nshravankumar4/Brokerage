@@ -42,6 +42,11 @@ The application features an enterprise login screen with quick role switching, p
 | 👑 | **ADMIN** | `Shravan (Admin)` | **Full Control:** Add shipments, edit details, update POD, delete records (`🗑️`), restore default data, change passwords, export Excel | `Shravan@2505` |
 | 👤 | **RUDRA** | `Rudra (Employee)` | **Fleet Operations:** Add shipments, edit details, update POD. **Delete is restricted (`🔒 Admin Delete`)** | `RudraSarika@2505` |
 
+### Security Features:
+* **Strict Authentication:** Only the credentials above are accepted. Zero default password hints (`123` or test credentials removed).
+* **Instant Login:** Authentication is instantaneous (<40ms) using SHA-256 local verification; cloud syncing executes asynchronously in background without blocking the UI.
+* **10-Minute Inactivity Auto-Logout:** Automated idle timer automatically logs out after 10 minutes of user inactivity (`mousemove`, `keydown`, `touchstart`, `scroll`) and prompts to sign in again.
+
 ### Mandatory Global Footer Branding Across All Pages
 Both the authentication screen and all main views (Dashboard, Trip Edit, View Excel Type) display the clean enterprise footer:
 * `Brokerage Ledger • Enterprise Freight & Fleet Management`
@@ -55,9 +60,17 @@ The cloud backend is implemented in `E:\TR\P1\backend\Code.gs` for Google Sheets
 
 ### Backend Capabilities:
 1. **Google Sheets Database (`final` Sheet, Columns A to AA):** 27-column structure mapping 1:1 with `BROKER DETAILS ADVANCE BALC DETAILS.xlsx`.
-2. **Concurrency Locking (`LockService.getScriptLock()`):** 15-second atomic lock prevention against race conditions during simultaneous edits.
-3. **Automated Dynamic Calculation Engine:** Automatic computation of intermediate balance (`BALC` - Col W) and net balance (`FINAL BALC` - Col Y).
-4. **Point-in-Time Automated Backups (`DriveApp`):** Automated creation of timestamped copies in Google Drive folder `Brokerage_Backups`.
+2. **Multi-Tier Sheet Discovery (Prevents "Spreadsheet not found"):**
+   * Accepts explicit `sheetId` parameter from URL (`?sheetId=...`) or POST body.
+   * Checks container-bound active spreadsheet (`SpreadsheetApp.getActiveSpreadsheet()`).
+   * Checks configured `SPREADSHEET_ID` variable at top of `Code.gs`.
+   * Checks saved persistent Script Properties.
+   * Auto-discovers existing workbook in Google Drive by filename (`BROKER DETAILS ADVANCE BALC DETAILS` or `Transport Brokerage Ledger`).
+   * Auto-creates a new Google Spreadsheet in Drive if none exists so the script never crashes.
+3. **Real-Time Version Tracking (`getVersion` / `DATA_VERSION`):** State-machine tracking every mutation for 3.5s background polling without heavy reads.
+4. **Concurrency Locking (`LockService.getScriptLock()`):** 15-second atomic lock prevention against race conditions during simultaneous edits.
+5. **Automated Dynamic Calculation Engine:** Automatic computation of intermediate balance (`BALC` - Col W) and net balance (`FINAL BALC` - Col Y).
+6. **Point-in-Time Automated Backups (`DriveApp`):** Automated creation of timestamped copies in Google Drive folder `Brokerage_Backups`.
 5. **Endpoints:**
    * `GET ?action=getAll`: Returns all trips, totals, and pending POD count.
    * `GET ?action=getVersion`: Returns active data revision tag for instant browser sync.

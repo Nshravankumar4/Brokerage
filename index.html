@@ -116,6 +116,10 @@
         <span class="drawer-item-icon">📑</span>
         <span>View Excel Type</span>
       </button>
+      <button class="drawer-nav-item" onclick="AppModule.syncNow(); AppModule.closeSidebar();">
+        <span class="drawer-item-icon">🔄</span>
+        <span>Sync Database Now</span>
+      </button>
       <button class="drawer-nav-item" onclick="TableModule.exportToExcel(); AppModule.closeSidebar();">
         <span class="drawer-item-icon">📥</span>
         <span>Export Excel (.xlsx)</span>
@@ -180,6 +184,9 @@
 
       <!-- User Profile & RBAC Controls -->
       <div class="nav-user-panel">
+        <button id="headerCloudSyncBadge" class="header-sync-pill" onclick="AppModule.syncNow()" title="Click to trigger live cloud synchronization">
+          🟢 Cloud Synced
+        </button>
         <div class="user-info-text">
           <span>👤</span>
           <span id="currentUserDisplay">Shravan (Admin)</span>
@@ -646,12 +653,27 @@
           <div style="font-weight: 700; font-size: 0.84rem; color: #334155; margin-bottom: 0.4rem;">
             ☁️ Google Sheets API Sync (<code style="color: #1e40af; font-size: 0.82rem;">backend/Code.gs</code>)
           </div>
-          <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 0.5rem; line-height: 1.4;">
-            Paste your Google Apps Script Web App URL below to enable real-time 2-way sync with Google Sheets (final sheet). Leave blank to run offline on local storage.
+          <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 0.75rem; line-height: 1.4;">
+            Configure your Google Apps Script Web App URL and Google Sheet ID below to enable live 2-way cloud sync without "Spreadsheet not found" errors.
           </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <input type="url" id="settingApiUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" style="flex: 1; font-size: 0.82rem;">
-            <button type="button" class="btn btn-secondary" onclick="AppModule.saveApiUrl()" style="white-space: nowrap; font-size: 0.82rem;">Save URL</button>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Google Apps Script Web App URL:</label>
+              <input type="url" id="settingApiUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" style="width: 100%; font-size: 0.82rem;">
+            </div>
+
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Google Spreadsheet ID or URL (Optional):</label>
+              <input type="text" id="settingSheetIdInput" class="form-control" placeholder="e.g. 1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg or full URL" style="width: 100%; font-size: 0.82rem;">
+              <span style="font-size: 0.7rem; color: #64748b; margin-top: 2px; display: block;">Found in your sheet address: docs.google.com/spreadsheets/d/<strong>YOUR_ID</strong>/edit</span>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem;">
+              <button type="button" class="btn btn-primary" onclick="AppModule.saveSettings()" style="font-size: 0.82rem; padding: 0.5rem 1rem;">
+                💾 Save Settings &amp; Sync
+              </button>
+            </div>
           </div>
         </div>
 

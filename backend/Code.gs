@@ -15,7 +15,15 @@
 
 var SHEET_NAME = 'final';
 var BACKUP_FOLDER_NAME = 'Brokerage_Backups';
-var SPREADSHEET_ID = ''; // Set your Google Spreadsheet ID here when deployed
+
+/**
+ * OPTIONAL: Set your Google Spreadsheet ID here if running as a standalone Apps Script.
+ * How to get your ID:
+ * In your Google Sheet, look at the URL:
+ * https://docs.google.com/spreadsheets/d/1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg/edit
+ * The ID is the string between '/d/' and '/edit': 1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg
+ */
+var SPREADSHEET_ID = '';
 
 var HEADERS = [
   'SL NO', 'TRSP NAME', 'DATE', 'LR NO', 'TRUCK NO', 'FROM', 'TO',
@@ -67,7 +75,7 @@ function getSpreadsheet(optId) {
     }
   } catch (e) {}
 
-  // 3. Configured SPREADSHEET_ID variable
+  // 3. Configured SPREADSHEET_ID variable at top of Code.gs
   if (typeof SPREADSHEET_ID !== 'undefined' && SPREADSHEET_ID && SPREADSHEET_ID.trim()) {
     try {
       var hardcodedSs = SpreadsheetApp.openById(SPREADSHEET_ID.trim());
@@ -131,16 +139,24 @@ function getOrCreateSheet(optId) {
   return sheet;
 }
 
+// Helper to run manually in Apps Script Editor to set up sheet immediately
+function setupInitialSheet() {
+  var sheet = getOrCreateSheet();
+  Logger.log("Sheet verified & ready at: " + sheet.getParent().getUrl());
+  return sheet.getParent().getUrl();
+}
+
 // ================= API DISPATCHERS =================
 
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'getAll';
   var callback = (e && e.parameter && e.parameter.callback) ? e.parameter.callback : null;
+  var sheetId = (e && e.parameter && e.parameter.sheetId) ? e.parameter.sheetId : null;
 
   var result = {};
   try {
     if (action === 'getAll') {
-      result = handleGetAll();
+      result = handleGetAll(sheetId);
     } else if (action === 'getVersion') {
       result = { status: 'success', version: getVersion() };
     } else {
@@ -174,15 +190,16 @@ function doPost(e) {
     }
 
     var action = data.action || 'saveTrip';
+    var sheetId = data.sheetId || (e && e.parameter && e.parameter.sheetId) || null;
 
     if (action === 'saveTrip') {
-      result = handleSaveTrip(data.trip || data);
+      result = handleSaveTrip(data.trip || data, sheetId);
     } else if (action === 'deleteTrip') {
-      result = handleDeleteTrip(data.rowNum || data.slNo);
+      result = handleDeleteTrip(data.rowNum || data.slNo, sheetId);
     } else if (action === 'restoreDatabase') {
-      result = handleRestoreDatabase();
+      result = handleRestoreDatabase(sheetId);
     } else if (action === 'backupDatabase') {
-      result = handleBackupDatabase();
+      result = handleBackupDatabase(sheetId);
     } else {
       result = { status: 'error', message: 'Unknown action: ' + action };
     }
@@ -198,8 +215,8 @@ function doPost(e) {
 
 // ================= HANDLERS =================
 
-function handleGetAll() {
-  var sheet = getOrCreateSheet();
+function handleGetAll(optId) {
+  var sheet = getOrCreateSheet(optId);
   var values = sheet.getDataRange().getValues();
 
   var trips = [];
@@ -289,8 +306,8 @@ function handleGetAll() {
   };
 }
 
-function handleSaveTrip(t) {
-  var sheet = getOrCreateSheet();
+function handleSaveTrip(t, optId) {
+  var sheet = getOrCreateSheet(optId);
   var rowNum = parseInt(t.row, 10);
 
   var fright = Number(t.fright) || 0;
@@ -354,8 +371,8 @@ function handleSaveTrip(t) {
   return { status: 'success', rowNum: rowNum, trip: t };
 }
 
-function handleDeleteTrip(rowNum) {
-  var sheet = getOrCreateSheet();
+function handleDeleteTrip(rowNum, optId) {
+  var sheet = getOrCreateSheet(optId);
   var r = parseInt(rowNum, 10);
   if (r >= 2 && r <= sheet.getLastRow()) {
     sheet.deleteRow(r);
@@ -365,19 +382,19 @@ function handleDeleteTrip(rowNum) {
   return { status: 'error', message: 'Invalid row number: ' + rowNum };
 }
 
-function handleRestoreDatabase() {
-  var ss = getSpreadsheet();
+function handleRestoreDatabase(optId) {
+  var ss = getSpreadsheet(optId);
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (sheet) {
     ss.deleteSheet(sheet);
   }
-  getOrCreateSheet();
+  getOrCreateSheet(optId);
   incrementVersion();
   return { status: 'success', message: 'Database restored to original verified records.' };
 }
 
-function handleBackupDatabase() {
-  var ss = getSpreadsheet();
+function handleBackupDatabase(optId) {
+  var ss = getSpreadsheet(optId);
   var folderIterator = DriveApp.getFoldersByName(BACKUP_FOLDER_NAME);
   var folder = folderIterator.hasNext() ? folderIterator.next() : DriveApp.createFolder(BACKUP_FOLDER_NAME);
 
