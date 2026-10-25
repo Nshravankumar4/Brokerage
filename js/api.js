@@ -4,14 +4,14 @@
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * Interfaces with Google Apps Script backend (backend/Code.gs)
- * Live Production Endpoint: https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec
+ * Live Production Endpoint: https://script.google.com/macros/s/AKfycbzjzIDLeIpl63TC5RPrSPmusBktgCqILD6EemOKVwHUQj41gqYtYdJwQoufJYgHvZSoBQ/exec
  */
 
 const ApiService = {
   config: {
-    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec',
+    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbzjzIDLeIpl63TC5RPrSPmusBktgCqILD6EemOKVwHUQj41gqYtYdJwQoufJYgHvZSoBQ/exec',
     defaultSheetId: '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
-    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec',
+    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbzjzIDLeIpl63TC5RPrSPmusBktgCqILD6EemOKVwHUQj41gqYtYdJwQoufJYgHvZSoBQ/exec',
     sheetId: localStorage.getItem('broker_sheet_id') || '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
     timeoutMs: 12000
   },
@@ -19,7 +19,7 @@ const ApiService = {
   getApiUrl() {
     const stored = localStorage.getItem('broker_api_url');
     // Auto-migrate legacy deployment endpoints to active Version 3 endpoint
-    if (!stored || stored.includes('AKfycbwVgbDsDazKLlwR2Bh') || stored.includes('AKfycbxhwvJi8UDsJd2yFo')) {
+    if (!stored || stored.includes('AKfycbwVgbDsDazKLlwR2Bh') || stored.includes('AKfycbxhwvJi8UDsJd2yFo') || stored.includes('AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow')) {
       return this.config.defaultApiUrl;
     }
     return this.config.apiUrl || this.config.defaultApiUrl;

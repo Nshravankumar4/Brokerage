@@ -1,13 +1,14 @@
 /**
  * 🚛 TRANSPORT BROKERAGE LEDGER PVT LTD - GOOGLE APPS SCRIPT BACKEND
  * Authoritative Cloud Database & Google Sheets Integration
- * Target Sheet: final (27 Columns A to AA)
+ * Target Sheet: final (28 Columns A to AB)
+ * Master Workbook: BROKER DETAILS ADVANCE BALC DETAILS.xlsx
  * Developed by Shravan Kumar for Transport Brokerage Ledger Pvt Ltd
  * 
  * Capabilities:
- *  1. Google Sheets live 27-column database (A to AA).
+ *  1. Google Sheets live 28-column database (A to AB).
  *  2. Concurrency guard using LockService.getScriptLock().
- *  3. Dynamic calculation engine for BALC (Col W) and FINAL BALC (Col Y).
+ *  3. Dynamic calculation engine for COD (Col U), Pending ToBilled (Col V), and Pending Amount (Col Z).
  *  4. Automated point-in-time backup snapshots in Google Drive folder "Brokerage_Backups".
  *  5. Role-based security for ADMIN and RUDRA (Employee).
  *  6. JSON API endpoints via doGet and doPost.
@@ -17,41 +18,61 @@ var SHEET_NAME = 'final';
 var BACKUP_FOLDER_NAME = 'Brokerage_Backups';
 
 /**
- * OPTIONAL: Set your Google Spreadsheet ID here if running as a standalone Apps Script.
- * How to get your ID:
- * In your Google Sheet, look at the URL:
- * https://docs.google.com/spreadsheets/d/1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg/edit
- * The ID is the string between '/d/' and '/edit': 1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg
+ * Target Google Spreadsheet ID
  */
 var SPREADSHEET_ID = '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA';
 
 var HEADERS = [
-  'SL NO', 'TRSP NAME', 'DATE', 'LR NO', 'TRUCK NO', 'FROM', 'TO',
-  'ACCOUNT NO', 'IFSC CODE', 'PAYMENT MADE', 'FRIGHT', 'DATE', 'ToPayStatus',
-  'T/M', 'ADVANCE', 'DATE 2', 'ADVANCE2', 'DATE3', 'ADVANCE3',
-  'To-Billed (COD)', 'P/M', 'DATE', 'BALC', 'P/M', 'FINAL BALC', 'POD RECD', 'NOTE'
+  'SL NO',                                   // Col A (0)
+  'TRSP NAME',                               // Col B (1)
+  'DATE',                                    // Col C (2)
+  'LR NO',                                   // Col D (3)
+  'TRUCK NO',                                // Col E (4)
+  'FROM',                                    // Col F (5)
+  'TO',                                      // Col G (6)
+  'ACCOUNT NO',                              // Col H (7)
+  'IFSC CODE',                               // Col I (8)
+  'PAYMENT MADE',                            // Col J (9)
+  'FRIGHT',                                  // Col K (10)
+  'DATE',                                    // Col L (11) (Adv 1 Date)
+  'ToPayStatus',                             // Col M (12)
+  'T/M',                                     // Col N (13)
+  'ADVANCE',                                 // Col O (14)
+  'DATE 2',                                  // Col P (15)
+  'ADVANCE2',                                // Col Q (16)
+  'DATE3',                                   // Col R (17)
+  'ADVANCE3',                                // Col S (18)
+  'POD RECD Date',                           // Col T (19)
+  'Cash on Delivery (COD) :A/Topay&Ftopay',  // Col U (20)
+  'Pending Amount: Tobilled',                 // Col V (21)
+  'Extra Amount',                            // Col W (22)
+  'PM/PA Date',                              // Col X (23)
+  'P/M',                                     // Col Y (24)
+  'Pending Amount',                          // Col Z (25)
+  'POD Amount Status',                       // Col AA (26)
+  'REMARKS / NOTE'                           // Col AB (27)
 ];
 
 var INITIAL_DATA = [
-  [1, "ANTP SAINATH", "20-08-2026", "207", "AP39UD3564", "LUCKNOW", "MEDCHAL", "38216860303", "SBIN0010659", "SBI BANK", 65000, "02-09-2026", "TOBILLED", 0, 65000, "", 0, "", 0, 0, 0, "", 0, 0, 0, "29-08-2026", ""],
-  [2, "SARITHA TRSP", "03-09-2026", "208", "TG15T6666", "RAIPUR", "MEDCHAL", "0312035592", "KKBK0008406", "KKBK BANK", 110250, "15-10-2026", "TOBILLED", 0, 110250, "", 0, "", 0, 0, 0, "", 0, 0, 0, "07-09-2026", ""],
-  [3, "SARITHA TRSP", "10-09-2026", "190", "TG15T6666", "MEDCHAL", "COOCHBEHAR", "0312035592", "KKBK0008406", "KKBK BANK", 231000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 231000, 0, 231000, "25-09-2026", ""],
-  [4, "MISHRA PIWARAN", "12-09-2026", "191/192", "RJ14GN7169", "MEDCHAL", "RAIGUNJ&DALKOLA", "279805000462", "ICIC0002798", "ICICI BANK", 135000, "16-09-2026", "TOBILLED", 200, 124800, "", 0, "", 0, 0, 200, "", 10000, 0, 10000, "05-10-2026", ""],
-  [5, "ANDHRA GORKARPUR", "16-09-2026", "193/194", "UP38T6479", "MEDCHAL", "SABDHAN/KALIACHAK", "52641131001394", "PUNB0219910", "PNB BANK", 130000, "18-09-2026", "TOBILLED", 0, 100000, "21-09-2026", 20000, "", 0, 0, 0, "", 10000, 0, 10000, "10-10-2026", ""],
-  [6, "ABHISHEK TRSP", "19-09-2026", "209", "TS05UF1719", "MEDCHAL", "MURISIRABAD", "23405500018", "ICIC0002384", "ICICI BANK", 134750, "21-09-2026", "TOBILLED", 0, 100000, "", 0, "", 0, 0, 0, "", 34750, 0, 34750, "", "41BAGS WET CONDITION"],
-  [7, "SARITHA TRSP", "24-09-2026", "210/211", "TS15UE1122", "MEDCHAL", "ARRARIYA/PURNIA", "0312035592", "KKBK0008406", "KKBK BANK", 155000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 155000, 0, 155000, "05-10-2026", ""],
-  [8, "CG RANCHI R/WAYS", "29-09-2026", "195", "CG08AZ4714", "MEDCHAL", "PANKANJUR", "29122900001083", "DCBL0000291", "DCB BANK", 42000, "01-10-2026", "F/TO-PAY", 0, 0, "", 0, "", 0, 0, 0, "", 0, 0, 0, "", "F/TO-PAY Shipment"],
-  [9, "SARITHA TRSP", "01-10-2026", "196", "TG15T6666", "MEDCHAL", "MADHAPURA", "0312035592", "KKBK0008406", "KKBK BANK", 175000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 175000, 0, 175000, "19-10-2026", ""],
-  [10, "SARITHA TRSP", "06-10-2026", "212", "TS15UE1122", "MEDCHAL", "MUZUFFARPUR", "0312035592", "KKBK0008406", "KKBK BANK", 141000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 141000, 0, 141000, "19-10-2026", ""],
-  [11, "ANTP SAINATH", "08-10-2026", "213", "AP39UD3564", "MEDCHAL", "BEGUSARAI", "38216860303", "SBIN0010659", "SBI BANK", 136500, "17-10-2026", "TOBILLED", 0, 126000, "", 567, "", 667, 0, 500, "", 8766, 266, 8500, "19-10-2026", ""],
-  [12, "MISHRA PIWARAN", "09-10-2026", "214", "JH02BM3030", "MEDCHAL", "PURNIA", "279805000462", "ICIC0002798", "ICICI BANK", 154000, "15-10-2026", "TOBILLED", 500, 143750, "", 0, "", 0, 0, 300, "", 9950, 0, 9950, "", ""],
-  [13, "MISHRA PIWARAN", "10-10-2026", "215", "BR44GB0148", "MEDCHAL", "MOTHIHARI", "279805000462", "ICIC0002798", "ICICI BANK", 157500, "15-10-2026", "TOBILLED", 300, 147200, "", 0, "", 0, 0, 300, "", 10000, 0, 10000, "", ""],
-  [14, "MISHRA PIWARAN", "13-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 162750, "17-10-2026", "TOBILLED", 300, 152450, "", 0, "", 0, 0, 300, "", 10000, 0, 10000, "", ""],
-  [15, "MISHRA PIWARAN", "14-10-2026", "197/198", "UP60BT2385", "MEDCHAL", "ARRARIYA/KALIGUNJ", "279805000462", "ICIC0002798", "ICICI BANK", 171500, "", "TOBILLED", 300, 0, "", 0, "", 0, 0, 0, "", 171500, 0, 171500, "", ""],
-  [16, "ANTP SAINATH", "17-10-2026", "217/218", "AP02TH2345", "MEDCHAL", "BHAGALPUR/PURNIA", "38216860303", "SBIN0010659", "SBI BANK", 158000, "", "TOBILLED", 0, 50000, "", 0, "", 0, 108000, 0, "", 0, 0, 0, "", ""],
-  [17, "MISHRA PIWARAN", "18-10-2026", "219", "UP61BT7437", "MEDCHAL", "COOCHBEHAR", "279805000462", "ICIC0002798", "ICICIBANK", 200000, "", "A/TO-PAY", 0, 0, "", 0, "", 0, 0, 0, "", 200000, 0, 200000, "", ""],
-  [18, "MISHRA PIWARAN", "19-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 50000, "", "A/TO-PAY", 200, 19800, "", 0, "", 0, 30000, 0, "", 0, 0, 0, "", ""],
-  [19, "MISHRA PIWARAN", "20-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 60000, "", "A/TO-PAY", 300, 29700, "", 0, "", 0, 30000, 0, "", 0, 0, 0, "", ""]
+  [1, "ANTP SAINATH", "20-08-2026", "207", "AP39UD3564", "LUCKNOW", "MEDCHAL", "38216860303", "SBIN0010659", "SBI BANK", 65000, "02-09-2026", "TOBILLED", 0, 65000, "", 0, "", 0, "29-08-2026", 0, 0, 0, "", 0, 0, 0, ""],
+  [2, "SARITHA TRSP", "03-09-2026", "208", "TG15T6666", "RAIPUR", "MEDCHAL", "0312035592", "KKBK0008406", "KKBK BANK", 110250, "15-10-2026", "TOBILLED", 0, 110250, "", 0, "", 0, "07-09-2026", 0, 0, 5000, "", 0, 5000, 0, ""],
+  [3, "SARITHA TRSP", "10-09-2026", "190", "TG15T6666", "MEDCHAL", "COOCHBEHAR", "0312035592", "KKBK0008406", "KKBK BANK", 231000, "", "F/TO-PAY", 0, 0, "", 0, "", 0, "25-09-2026", 231000, 0, 0, "", 0, 0, 0, ""],
+  [4, "MISHRA PIWARAN", "12-09-2026", "191/192", "RJ14GN7169", "MEDCHAL", "RAIGUNJ&DALKOLA", "279805000462", "ICIC0002798", "ICICI BANK", 135000, "16-09-2026", "A/TO-PAY", 200, 124800, "", 0, "", 0, "05-10-2026", 10000, 0, 0, "", 200, 0, 0, ""],
+  [5, "ANDHRA GORKARPUR", "16-09-2026", "193/194", "UP38T6479", "MEDCHAL", "SABDHAN/KALIACHAK", "52641131001394", "PUNB0219910", "PNB BANK", 130000, "18-09-2026", "TOBILLED", 0, 100000, "21-09-2026", 20000, "", 0, "10-10-2026", 0, 10000, 0, "", 0, 10000, 0, ""],
+  [6, "ABHISHEK TRSP", "19-09-2026", "209", "TS05UF1719", "MEDCHAL", "MURISIRABAD", "23405500018", "ICIC0002384", "ICICI BANK", 134750, "21-09-2026", "TOBILLED", 0, 100000, "", 0, "", 0, "", 0, 34750, 0, "", 0, 34750, 0, "41BAGS WET CONDITION"],
+  [7, "SARITHA TRSP", "24-09-2026", "210/211", "TS15UE1122", "MEDCHAL", "ARRARIYA/PURNIA", "0312035592", "KKBK0008406", "KKBK BANK", 155000, "", "TOBILLED", 0, 0, "", 0, "", 0, "05-10-2026", 0, 155000, 0, "", 0, 155000, 0, ""],
+  [8, "CG RANCHI R/WAYS", "29-09-2026", "195", "CG08AZ4714", "MEDCHAL", "PANKANJUR", "29122900001083", "DCBL0000291", "DCB BANK", 42000, "01-10-2026", "F/TO-PAY", 0, 0, "", 0, "", 0, "", 42000, 0, 0, "", 0, 0, 0, "F/TO-PAY Shipment"],
+  [9, "SARITHA TRSP", "01-10-2026", "196", "TG15T6666", "MEDCHAL", "MADHAPURA", "0312035592", "KKBK0008406", "KKBK BANK", 175000, "", "TOBILLED", 0, 0, "", 0, "", 0, "19-10-2026", 0, 175000, 0, "", 0, 175000, 0, ""],
+  [10, "SARITHA TRSP", "06-10-2026", "212", "TS15UE1122", "MEDCHAL", "MUZUFFARPUR", "0312035592", "KKBK0008406", "KKBK BANK", 141000, "", "TOBILLED", 0, 0, "", 0, "", 0, "19-10-2026", 0, 141000, 0, "", 0, 141000, 0, ""],
+  [11, "ANTP SAINATH", "08-10-2026", "213", "AP39UD3564", "MEDCHAL", "BEGUSARAI", "38216860303", "SBIN0010659", "SBI BANK", 136500, "17-10-2026", "TOBILLED", 0, 126000, "", 567, "", 667, "19-10-2026", 0, 9266, 0, "", 500, 8766, 0, ""],
+  [12, "MISHRA PIWARAN", "09-10-2026", "214", "JH02BM3030", "MEDCHAL", "PURNIA", "279805000462", "ICIC0002798", "ICICI BANK", 154000, "15-10-2026", "TOBILLED", 500, 143750, "", 0, "", 0, "", 0, 9750, 0, "", 300, 9450, 0, ""],
+  [13, "MISHRA PIWARAN", "10-10-2026", "215", "BR44GB0148", "MEDCHAL", "MOTHIHARI", "279805000462", "ICIC0002798", "ICICI BANK", 157500, "15-10-2026", "TOBILLED", 300, 147200, "", 0, "", 0, "", 0, 10000, 0, "", 300, 9700, 0, ""],
+  [14, "MISHRA PIWARAN", "13-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 162750, "17-10-2026", "TOBILLED", 300, 152450, "", 0, "", 0, "", 0, 10000, 0, "", 300, 9700, 0, ""],
+  [15, "MISHRA PIWARAN", "14-10-2026", "197/198", "UP60BT2385", "MEDCHAL", "ARRARIYA/KALIGUNJ", "279805000462", "ICIC0002798", "ICICI BANK", 171500, "", "TOBILLED", 300, 0, "", 0, "", 0, "", 0, 171200, 0, "", 0, 171200, 0, ""],
+  [16, "ANTP SAINATH", "17-10-2026", "217/218", "AP02TH2345", "MEDCHAL", "BHAGALPUR/PURNIA", "38216860303", "SBIN0010659", "SBI BANK", 158000, "", "TOBILLED", 0, 50000, "", 0, "", 0, "", 0, 108000, 0, "", 0, 108000, 0, ""],
+  [17, "MISHRA PIWARAN", "18-10-2026", "219", "UP61BT7437", "MEDCHAL", "COOCHBEHAR", "279805000462", "ICIC0002798", "ICICIBANK", 200000, "", "A/TO-PAY", 0, 0, "", 0, "", 0, "", 200000, 0, 0, "", 0, 0, 0, ""],
+  [18, "MISHRA PIWARAN", "19-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 50000, "", "A/TO-PAY", 200, 19800, "", 0, "", 0, "", 30000, 0, 0, "", 0, 0, 0, ""],
+  [19, "MISHRA PIWARAN", "20-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 60000, "", "A/TO-PAY", 300, 29700, "", 0, "", 0, "", 30000, 0, 0, "", 0, 0, 0, ""]
 ];
 
 function cleanSpreadsheetId(idOrUrl) {
@@ -78,7 +99,7 @@ function getSpreadsheet(optId) {
     } catch (e) {}
   }
 
-  // 2. Container-bound active spreadsheet (when script is opened via Extensions > Apps Script)
+  // 2. Container-bound active spreadsheet
   try {
     var activeSs = SpreadsheetApp.getActiveSpreadsheet();
     if (activeSs) {
@@ -112,8 +133,8 @@ function getSpreadsheet(optId) {
   try {
     var candidateNames = [
       'BROKER DETAILS ADVANCE BALC DETAILS',
+      'SR Brokerage Ledger',
       'Transport Brokerage Ledger',
-      'Shinex Transport & Brokerage Ledger',
       'BROKER DETAILS'
     ];
     for (var i = 0; i < candidateNames.length; i++) {
@@ -127,9 +148,9 @@ function getSpreadsheet(optId) {
     }
   } catch (e) {}
 
-  // 6. Auto-create a new Google Spreadsheet in Google Drive so it NEVER crashes
+  // 6. Auto-create a new Google Spreadsheet in Google Drive fallback
   try {
-    var createdSs = SpreadsheetApp.create('Transport Brokerage Ledger');
+    var createdSs = SpreadsheetApp.create('SR Brokerage Ledger');
     PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', createdSs.getId());
     return createdSs;
   } catch (e) {}
@@ -142,7 +163,7 @@ function getOrCreateSheet(optId) {
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    // Write headers
+    // Write authoritative 28 headers
     sheet.appendRow(HEADERS);
     // Write initial verified 19 records
     for (var i = 0; i < INITIAL_DATA.length; i++) {
@@ -258,34 +279,54 @@ function handleGetAll(optId) {
     if (!r[0] && !r[1] && !r[3]) continue; // Skip blank rows
 
     var fright = Number(r[10]) || 0;
+    var rawStatus = String(r[12] || '').trim().toUpperCase();
+    var topay = 'TOBILLED';
+    if (rawStatus.indexOf('F') === 0 || rawStatus === 'FULL') {
+      topay = 'F/TO-PAY';
+    } else if (rawStatus.indexOf('A') === 0 || rawStatus === 'ADV') {
+      topay = 'A/TO-PAY';
+    }
+
     var tm = Number(r[13]) || 0;
     var adv1 = Number(r[14]) || 0;
     var adv2 = Number(r[16]) || 0;
     var adv3 = Number(r[18]) || 0;
-    var cod = Number(r[19]) || 0;
-    var pm = Number(r[20]) || 0;
-    var pmFinal = Number(r[23]) || 0;
-    var topay = String(r[12] || '').trim().toUpperCase();
+    var totalAdvances = adv1 + adv2 + adv3;
 
-    // Calculate intermediate balance (BALC - Col W) based on To-Billed - ToPayStatus
-    var balc = 0;
-    if (topay.indexOf('F') === 0 || topay === 'FULL' || topay === 'FULL TO-BILLED' || topay === 'FULL TO-PAY') {
-      balc = 0;
-    } else if (topay.indexOf('A') === 0 || topay === 'ADV' || topay === 'ADV TO-BILLED' || topay === 'ADV TO-PAY') {
-      balc = fright - tm - adv1 - cod;
-    } else {
-      // TOBILLED or standard freight
-      balc = fright - (adv1 + adv2 + adv3 + pm + cod);
-    }
-
-    var finalBalc = balc - pmFinal;
-    var podStr = String(r[25] || '').trim();
+    var podStr = String(r[19] || '').trim();
     var isPodMissing = (!podStr || podStr.toLowerCase().indexOf('if date') !== -1 || podStr.toLowerCase().indexOf('empty') !== -1);
-
     if (isPodMissing) pendingPodCount++;
 
+    var cod = 0;
+    var pendingTobilled = 0;
+    var extraAmount = Number(r[22]) || 0;
+    var pm = Number(r[24]) || 0;
+    var finalBalc = 0;
+    var podAmountStatus = 0;
+
+    if (topay === 'F/TO-PAY') {
+      cod = (r[20] !== undefined && r[20] !== '' && Number(r[20]) > 0)
+        ? Number(r[20])
+        : Math.max(0, fright - tm - totalAdvances);
+      pendingTobilled = 0;
+      finalBalc = 0;
+      podAmountStatus = 0;
+    } else if (topay === 'A/TO-PAY') {
+      cod = (r[20] !== undefined && r[20] !== '' && Number(r[20]) > 0)
+        ? Number(r[20])
+        : Math.max(0, fright - tm - totalAdvances);
+      pendingTobilled = 0;
+      finalBalc = Math.max(0, fright - tm - adv1 - cod);
+      podAmountStatus = 0;
+    } else {
+      cod = 0;
+      pendingTobilled = fright - tm - totalAdvances;
+      finalBalc = pendingTobilled + extraAmount - pm;
+      podAmountStatus = pendingTobilled + extraAmount - pm - finalBalc;
+    }
+
     totFreight += fright;
-    totAdvances += (adv1 + adv2 + adv3);
+    totAdvances += totalAdvances;
     totBalance += finalBalc;
 
     trips.push({
@@ -302,21 +343,26 @@ function handleGetAll(optId) {
       paymentMade: String(r[9] || ''),
       fright: fright,
       date1: formatDate(r[11]),
-      topay: String(r[12] || ''),
+      topay: topay,
       tm: tm,
       advance1: adv1,
       date2: formatDate(r[15]),
       advance2: adv2,
       date3: formatDate(r[17]),
       advance3: adv3,
+      pod: isPodMissing ? '' : formatDate(r[19]),
       cod: cod,
+      pendingTobilled: pendingTobilled,
+      balc: pendingTobilled,
+      extraAmount: extraAmount,
+      payDate: formatDate(r[23]),
       pm: pm,
-      payDate: formatDate(r[21]),
-      balc: balc,
-      pmFinal: pmFinal,
       finalBalc: finalBalc,
-      pod: isPodMissing ? '' : formatDate(r[25]),
-      note: String(r[26] || '')
+      podAmountStatus: podAmountStatus,
+      note: String(r[27] || ''),
+      pocDate: r[28] ? formatDate(r[28]) : '',
+      pocAmount: Number(r[29]) || 0,
+      pocNotes: String(r[30] || '')
     });
   }
 
@@ -362,9 +408,10 @@ function handleSaveTrip(t, optId) {
   var adv1 = Number(t.advance1) || 0;
   var adv2 = Number(t.advance2) || 0;
   var adv3 = Number(t.advance3) || 0;
-  var cod = Number(t.cod) || 0;
-  var pm = Number(t.pm) || 0;
-  var pmFinal = Number(t.pmFinal) || 0;
+  var totalAdvances = adv1 + adv2 + adv3;
+  var extraAmount = Number(t.extraAmount) || 0;
+  var pm = (t.pm !== undefined && t.pm !== null && t.pm !== '') ? Number(t.pm) : (Number(t.pmFinal) || 0);
+
   var rawStatus = String(t.topay || '').trim().toUpperCase();
   var topay = 'TOBILLED';
   if (rawStatus.indexOf('F') === 0 || rawStatus === 'FULL') {
@@ -373,16 +420,31 @@ function handleSaveTrip(t, optId) {
     topay = 'A/TO-PAY';
   }
 
-  var balc = 0;
+  var cod = 0;
+  var pendingTobilled = 0;
+  var finalBalc = 0;
+  var podAmountStatus = 0;
+
   if (topay === 'F/TO-PAY') {
-    balc = 0;
+    cod = (t.cod !== undefined && t.cod !== null && t.cod !== '' && Number(t.cod) > 0)
+      ? Number(t.cod)
+      : Math.max(0, fright - tm - totalAdvances);
+    pendingTobilled = 0;
+    finalBalc = 0;
+    podAmountStatus = 0;
   } else if (topay === 'A/TO-PAY') {
-    balc = fright - tm - adv1 - cod;
+    cod = (t.cod !== undefined && t.cod !== null && t.cod !== '' && Number(t.cod) > 0)
+      ? Number(t.cod)
+      : Math.max(0, fright - tm - totalAdvances);
+    pendingTobilled = 0;
+    finalBalc = Math.max(0, fright - tm - adv1 - cod);
+    podAmountStatus = 0;
   } else {
-    // TOBILLED
-    balc = fright - (adv1 + adv2 + adv3 + pm + cod);
+    cod = 0;
+    pendingTobilled = fright - tm - totalAdvances;
+    finalBalc = pendingTobilled + extraAmount - pm;
+    podAmountStatus = pendingTobilled + extraAmount - pm - finalBalc;
   }
-  var finalBalc = balc - pmFinal;
 
   var rowData = [
     t.slNo || '',
@@ -404,18 +466,26 @@ function handleSaveTrip(t, optId) {
     adv2,
     t.date3 || '',
     adv3,
-    cod,
-    pm,
-    t.payDate || '',
-    balc,
-    pmFinal,
-    finalBalc,
     t.pod || '',
+    cod,
+    pendingTobilled,
+    extraAmount,
+    t.payDate || '',
+    pm,
+    finalBalc,
+    podAmountStatus,
     t.note || ''
   ];
 
+  // Optional extended To-Billed POC metadata
+  if (t.pocDate || t.pocAmount || t.pocNotes) {
+    rowData.push(t.pocDate || '');
+    rowData.push(Number(t.pocAmount) || 0);
+    rowData.push(t.pocNotes || '');
+  }
+
   if (rowNum && rowNum >= 2 && rowNum <= sheet.getLastRow()) {
-    sheet.getRange(rowNum, 1, 1, 27).setValues([rowData]);
+    sheet.getRange(rowNum, 1, 1, rowData.length).setValues([rowData]);
   } else {
     sheet.appendRow(rowData);
     rowNum = sheet.getLastRow();
@@ -485,4 +555,3 @@ function incrementVersion() {
   PropertiesService.getScriptProperties().setProperty('DATA_VERSION', String(v));
   return String(v);
 }
-
