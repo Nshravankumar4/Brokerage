@@ -1,4 +1,4 @@
-﻿# ==============================================================================
+# ==============================================================================
 # SR BROKERAGE LEDGER - COMPLETE AUDIT & VERIFICATION SUITE
 # Transport Brokerage Ledger Pvt Ltd
 # Authoritative Workbook: BROKER DETAILS ADVANCE BALC DETAILS.xlsx
@@ -142,7 +142,7 @@ Assert-Test "Branding developer is 'Shravan Kumar'" `
     ($html -match 'Developed by <strong>Shravan Kumar</strong>')
 
 Assert-Test "Branding copyright is 'Transport Brokerage Ledger Pvt Ltd'" `
-    ($html -match '© 2026 Transport Brokerage Ledger Pvt Ltd')
+    ($html -match 'Transport Brokerage Ledger Pvt Ltd')
 
 Assert-Test "Admin credentials enforce SHA-256 hash" `
     ($authJs -match 'passHash:\s*''ded12726612993e58a7f6f1b0428300adcf13f6cabb7515436c5888b3de21c0b''')

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SR Brokerage Ledger � Fleet Logistics &amp; Financial Accounts Management</title>
-  <link rel="stylesheet" href="css/styles.css?v=8.4">
+  <title>SR Brokerage Ledger — Fleet Logistics &amp; Financial Accounts Management</title>
+  <link rel="stylesheet" href="css/styles.css?v=8.3">
   <script src="libs/exceljs.min.js"></script>
   <script src="libs/FileSaver.min.js"></script>
 </head>
@@ -13,8 +13,8 @@
   <!-- Full-Screen Personalized Welcome & Live Fetch Splash Overlay -->
   <div id="welcomeSplashOverlay" class="welcome-splash-overlay" style="display: none;">
     <div class="welcome-splash-card">
-      <div class="welcome-splash-icon">??</div>
-      <h2 id="welcomeSplashGreeting" class="welcome-splash-title">?? Welcome to SR Brokerage Ledger!</h2>
+      <div class="welcome-splash-icon">🚛</div>
+      <h2 id="welcomeSplashGreeting" class="welcome-splash-title">👋 Welcome to SR Brokerage Ledger!</h2>
       <p class="welcome-splash-sub">Transport Brokerage Ledger Pvt Ltd</p>
       <div class="welcome-spinner-ring"></div>
       <div id="welcomeSplashStatus" class="welcome-splash-status">Connecting to live cloud ledger &amp; verifying financial totals...</div>
@@ -25,7 +25,7 @@
   <div id="authWrapper" class="auth-wrapper" style="display: none;">
     <div class="auth-card">
       <div class="auth-header">
-        <h1>?? SR Brokerage Ledger</h1>
+        <h1>🚛 SR Brokerage Ledger</h1>
         <p style="font-size: 0.82rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.9; margin-top: -0.35rem; color: #1e3a8a;">Fleet Logistics &amp; Financial Accounts Management</p>
         <p>Sign in with your secure account</p>
       </div>
@@ -38,14 +38,14 @@
           <label class="user-switch-label">Select User Account</label>
           <div class="user-switch-group">
             <button type="button" id="userBtnAdmin" class="user-switch-card active" onclick="AuthModule.selectLoginUser('Admin')">
-              <div class="user-switch-badge">??</div>
+              <div class="user-switch-badge">👑</div>
               <div class="user-switch-info">
                 <span class="user-switch-name">ADMIN</span>
                 <span class="user-switch-role">Administrator</span>
               </div>
             </button>
             <button type="button" id="userBtnRudra" class="user-switch-card" onclick="AuthModule.selectLoginUser('Rudra')">
-              <div class="user-switch-badge">??</div>
+              <div class="user-switch-badge">👤</div>
               <div class="user-switch-info">
                 <span class="user-switch-name">RUDRA</span>
                 <span class="user-switch-role">User / Employee</span>
@@ -56,26 +56,26 @@
         </div>
 
         <div class="form-group" style="margin-bottom: 1.25rem;">
-          <label for="loginPassword" style="font-weight: 600; margin-bottom: 0.4rem; display: block; font-size: 0.88rem; color: #334155;">?? Password</label>
+          <label for="loginPassword" style="font-weight: 600; margin-bottom: 0.4rem; display: block; font-size: 0.88rem; color: #334155;">🔑 Password</label>
           <div style="position: relative;">
             <input type="password" id="loginPassword" class="form-control" placeholder="Enter password for Admin" required autocomplete="current-password" autofocus style="padding-right: 2.5rem; font-size: 1rem; width: 100%;">
-            <button type="button" id="togglePasswordBtn" onclick="AuthModule.togglePasswordVisibility()" style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0; line-height: 1;" title="Show/Hide Password">???</button>
+            <button type="button" id="togglePasswordBtn" onclick="AuthModule.togglePasswordVisibility()" style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0; line-height: 1;" title="Show/Hide Password">👁️</button>
           </div>
         </div>
 
-        <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-weight: 600; font-size: 1rem; border-radius: 8px; justify-content: center;">?? Secure Login</button>
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-weight: 600; font-size: 1rem; border-radius: 8px; justify-content: center;">🚀 Secure Login</button>
       </form>
 
       <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid rgba(0,0,0,0.08); text-align: center; font-size: 0.74rem; color: #64748b; line-height: 1.7;">
         Developed by <strong style="color: #1e40af; font-size: 0.8rem;">Shravan Kumar</strong><br>
-        Enterprise Freight &amp; Fleet Management � 2026
+        Enterprise Freight &amp; Fleet Management • 2026
       </div>
     </div>
 
     <!-- Login page footer bar -->
     <div class="auth-footer-bar">
-      <span><strong>SR Brokerage Ledger � Enterprise Freight &amp; Fleet Management</strong></span>
-      <span>� 2026 Transport Brokerage Ledger Pvt Ltd � Developed by <strong>Shravan Kumar</strong> � All Rights Reserved</span>
+      <span><strong>SR Brokerage Ledger • Enterprise Freight &amp; Fleet Management</strong></span>
+      <span>© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by <strong>Shravan Kumar</strong> • All Rights Reserved</span>
     </div>
   </div>
 
@@ -83,18 +83,18 @@
   <aside id="appDrawer" class="app-sidebar-drawer">
     <div class="drawer-header">
       <div class="drawer-brand">
-        <div class="brand-icon">??</div>
+        <div class="brand-icon">🚛</div>
         <div class="brand-text">
           <h3>SR Brokerage Ledger</h3>
           <span>Fleet Logistics &amp; Financial Accounts Management</span>
         </div>
       </div>
-      <button class="drawer-close-btn" onclick="AppModule.closeSidebar()" aria-label="Close menu">?</button>
+      <button class="drawer-close-btn" onclick="AppModule.closeSidebar()" aria-label="Close menu">✕</button>
     </div>
 
     <!-- User Profile Card -->
     <div class="drawer-user-card">
-      <div class="user-avatar">??</div>
+      <div class="user-avatar">👤</div>
       <div class="user-details">
         <div id="drawerUserName" class="user-name">Shravan (Admin)</div>
         <div class="user-role-badge"><span id="drawerUserRole">ADMIN</span></div>
@@ -105,27 +105,27 @@
     <nav class="drawer-menu">
       <div class="drawer-menu-label">NAVIGATION</div>
       <button class="drawer-nav-item active" id="drawerNavDashboard" onclick="AppModule.switchView('dashboard'); AppModule.closeSidebar();">
-        <span class="drawer-item-icon">??</span>
+        <span class="drawer-item-icon">📊</span>
         <span>Dashboard</span>
       </button>
       <button class="drawer-nav-item" id="drawerNavTripEdit" onclick="AppModule.switchView('tripEdit'); AppModule.closeSidebar();">
-        <span class="drawer-item-icon">??</span>
+        <span class="drawer-item-icon">✏️</span>
         <span>Trip Operations</span>
       </button>
       <button class="drawer-nav-item" id="drawerNavViewExcel" onclick="AppModule.switchView('viewExcel'); AppModule.closeSidebar();">
-        <span class="drawer-item-icon">??</span>
+        <span class="drawer-item-icon">📑</span>
         <span>Spreadsheet View</span>
       </button>
       <button class="drawer-nav-item" onclick="AppModule.syncNow(); AppModule.closeSidebar();">
-        <span class="drawer-item-icon">??</span>
+        <span class="drawer-item-icon">🔄</span>
         <span>Sync Cloud Database</span>
       </button>
       <button class="drawer-nav-item" onclick="TableModule.exportToExcel(); AppModule.closeSidebar();">
-        <span class="drawer-item-icon">??</span>
+        <span class="drawer-item-icon">📥</span>
         <span>Export Excel (.xlsx)</span>
       </button>
       <button class="drawer-nav-item admin-only" id="drawerNavSettings" onclick="AppModule.openSettingsModal(); AppModule.closeSidebar();">
-        <span class="drawer-item-icon">??</span>
+        <span class="drawer-item-icon">⚙️</span>
         <span>Settings &amp; API</span>
       </button>
     </nav>
@@ -135,18 +135,18 @@
       <div class="drawer-status-bar">
         <div class="drawer-system-status">
           <span class="status-dot online"></span>
-          <span id="drawerStatusText">Online � 19 Verified Trips</span>
+          <span id="drawerStatusText">Online • 19 Verified Trips</span>
         </div>
         <button id="manualSyncBtn" class="drawer-sync-btn" onclick="AppModule.syncNow()" title="Sync database from Google Sheets now">
-          <span>??</span> Sync
+          <span>🔄</span> Sync
         </button>
       </div>
       <button id="logoutBtn" class="sidebar-logout-btn" onclick="AuthModule.logout(); AppModule.closeSidebar();">
-        <span>??</span> Logout / Switch User
+        <span>🚪</span> Logout / Switch User
       </button>
       <div style="font-size: 0.67rem; color: #64748b; text-align: center; margin-top: 4px; line-height: 1.4;">
-        <div style="font-weight: 600; color: #94a3b8; margin-bottom: 2px;">SR Brokerage Ledger � Enterprise Freight &amp; Fleet Management</div>
-        � 2026 Transport Brokerage Ledger Pvt Ltd � Developed by <strong>Shravan Kumar</strong> � All Rights Reserved
+        <div style="font-weight: 600; color: #94a3b8; margin-bottom: 2px;">SR Brokerage Ledger • Enterprise Freight &amp; Fleet Management</div>
+        © 2026 Transport Brokerage Ledger Pvt Ltd • Developed by <strong>Shravan Kumar</strong> • All Rights Reserved
       </div>
     </div>
   </aside>
@@ -160,9 +160,9 @@
     <header class="app-navbar">
       <div class="brand-section">
         <button id="btnOpenSidebar" class="btn-menu-drawer" onclick="AppModule.toggleSidebar(event)" title="Open Navigation &amp; Settings Menu">
-          ? Menu
+          ☰ Menu
         </button>
-        <div class="brand-icon">??</div>
+        <div class="brand-icon">🚛</div>
         <div class="brand-text">
           <h1>SR Brokerage Ledger</h1>
           <span>Fleet Logistics &amp; Financial Accounts Management</span>
@@ -172,27 +172,27 @@
       <!-- Navigation Tabs: Dashboard, Trip Edit, View Excel Type (Matching Image 1 Pill Design) -->
       <nav class="nav-tabs-group">
         <button id="btnNavDashboard" class="nav-tab-btn active" onclick="AppModule.switchView('dashboard')">
-          ?? Dashboard
+          📊 Dashboard
         </button>
         <button id="btnNavTripEdit" class="nav-tab-btn" onclick="AppModule.switchView('tripEdit')">
-          ?? Trip Operations
+          ✏️ Trip Operations
         </button>
         <button id="btnNavViewExcel" class="nav-tab-btn" onclick="AppModule.switchView('viewExcel')">
-          ?? Spreadsheet View
+          📑 Spreadsheet View
         </button>
       </nav>
 
       <!-- User Profile & RBAC Controls -->
       <div class="nav-user-panel">
         <button id="headerCloudSyncBadge" class="header-sync-pill" onclick="AppModule.syncNow()" title="Click to trigger live cloud synchronization">
-          ?? Cloud Synced
+          🟢 Cloud Synced
         </button>
         <div class="user-info-text">
-          <span>??</span>
+          <span>👤</span>
           <span id="currentUserDisplay">Shravan (Admin)</span>
           <span id="currentUserRoleBadge" class="user-role-badge">ADMIN</span>
         </div>
-        <button class="btn-nav-logout" onclick="AuthModule.logout()">?? Logout</button>
+        <button class="btn-nav-logout" onclick="AuthModule.logout()">🚪 Logout</button>
       </div>
     </header>
 
@@ -203,7 +203,7 @@
         <div class="toolbar-left-group">
           <!-- Global Search -->
           <div class="search-input-wrapper">
-            <span class="search-icon">??</span>
+            <span class="search-icon">🔍</span>
             <input type="text" id="tableSearch" class="search-input" placeholder="Search LR, Truck, Transporter, Route...">
           </div>
 
@@ -229,7 +229,7 @@
             <button id="chipAToPay" class="chip-btn" onclick="AppModule.setFilter('A/TO-PAY', this)">A/TO-PAY</button>
             <button id="chipFToPay" class="chip-btn" onclick="AppModule.setFilter('F/TO-PAY', this)">F/TO-PAY</button>
             <button id="chipToBilled" class="chip-btn" onclick="AppModule.setFilter('TOBILLED', this)">TOBILLED</button>
-            <button id="chipMissingPod" class="chip-btn chip-danger" onclick="AppModule.setFilter('missingPod', this)">?? POD Missing</button>
+            <button id="chipMissingPod" class="chip-btn chip-danger" onclick="AppModule.setFilter('missingPod', this)">⚠️ POD Missing</button>
             <button class="btn btn-secondary btn-sm" onclick="AppModule.clearAllFilters()" title="Reset all filters">Clear</button>
           </div>
         </div>
@@ -249,7 +249,7 @@
           </div>
           <!-- Genuine Excel .xlsx Export with Preserved Cell Colors -->
           <button class="btn btn-secondary btn-sm" onclick="TableModule.exportToExcel()" title="Download genuine Excel .xlsx with preserved colors &amp; formatting">
-            ?? Download Excel (.xlsx)
+            📊 Download Excel (.xlsx)
           </button>
           <!-- Single Primary Add Trip / Shipment Button -->
           <button class="btn-add-prominent" onclick="TableModule.openAddModal()" title="Add a new shipment record">
@@ -258,7 +258,7 @@
         </div>
       </div>
 
-      <!-- VIEW 1: ?? DASHBOARD (Linear Vertical Hierarchy: Top KPI -> Middle POD Alerts -> Bottom Monthly Breakdown) -->
+      <!-- VIEW 1: 📊 DASHBOARD (Linear Vertical Hierarchy: Top KPI -> Middle POD Alerts -> Bottom Monthly Breakdown) -->
       <main id="viewDashboard" class="view-container active">
         <div class="dashboard-wrapper">
           <!-- 1. TOP: 4 Primary KPI Metric Cards Across Top (Responsive Grid) -->
@@ -266,7 +266,7 @@
             <div class="metric-card">
               <div class="metric-card-header">
                 <span class="metric-card-label">Total Shipments</span>
-                <span class="metric-card-icon">??</span>
+                <span class="metric-card-icon">🚛</span>
               </div>
               <div id="dashTotalTrips" class="metric-card-val">19</div>
               <div class="metric-card-sub">Active fleet trip records</div>
@@ -275,36 +275,36 @@
             <div class="metric-card">
               <div class="metric-card-header">
                 <span class="metric-card-label">Total Freight</span>
-                <span class="metric-card-icon">??</span>
+                <span class="metric-card-icon">💵</span>
               </div>
-              <div id="dashTotalFreight" class="metric-card-val text-primary" style="color: var(--primary);">?25,69,250</div>
+              <div id="dashTotalFreight" class="metric-card-val text-primary" style="color: var(--primary);">₹25,69,250</div>
               <div class="metric-card-sub">Gross freight agreed (Col K)</div>
             </div>
 
             <div class="metric-card">
               <div class="metric-card-header">
                 <span class="metric-card-label">Advances Paid</span>
-                <span class="metric-card-icon">??</span>
+                <span class="metric-card-icon">💳</span>
               </div>
-              <div id="dashTotalAdvances" class="metric-card-val text-purple" style="color: #7e22ce;">?11,90,184</div>
+              <div id="dashTotalAdvances" class="metric-card-val text-purple" style="color: #7e22ce;">₹11,90,184</div>
               <div class="metric-card-sub">Total advances (Adv 1+2+3)</div>
             </div>
 
             <div class="metric-card">
               <div class="metric-card-header">
                 <span class="metric-card-label">Final Outstanding Balance</span>
-                <span class="metric-card-icon">??</span>
+                <span class="metric-card-icon">⚖️</span>
               </div>
-              <div id="dashNetBalance" class="metric-card-val text-danger" style="color: var(--danger);">?11,66,700</div>
+              <div id="dashNetBalance" class="metric-card-val text-danger" style="color: var(--danger);">₹11,66,700</div>
               <div class="metric-card-sub">Net balance payable (Col Y)</div>
             </div>
           </div>
 
-          <!-- 2. MIDDLE: ?? POD Status & Missing Alerts (FULL WIDTH 100% LEFT TO RIGHT) -->
+          <!-- 2. MIDDLE: ⚠️ POD Status & Missing Alerts (FULL WIDTH 100% LEFT TO RIGHT) -->
           <div class="operational-alerts-panel" style="width: 100%;">
             <div class="alerts-panel-header">
               <div class="alerts-panel-title">
-                <span>??</span>
+                <span>⚠️</span>
                 <span id="alertPanelHeading">POD Status &amp; Missing Alerts</span>
               </div>
               <span id="alertPanelBadge" class="alerts-badge-counter">10 Pending</span>
@@ -317,15 +317,15 @@
             <!-- Alert Footer Action -->
             <div class="alert-panel-footer">
               <button class="btn-filter-missing-pod" onclick="AppModule.filterMissingPod(); AppModule.switchView('tripEdit');">
-                ?? Filter Only Missing POD Trips
+                🔍 Filter Only Missing POD Trips
               </button>
             </div>
           </div>
 
-          <!-- 3. BOTTOM: ?? MONTHLY FINANCIAL BREAKDOWN (FULL WIDTH 100%) -->
+          <!-- 3. BOTTOM: 📅 MONTHLY FINANCIAL BREAKDOWN (FULL WIDTH 100%) -->
           <div class="financial-overview-panel" style="width: 100%;">
             <div class="panel-subheading">
-              <span>?? MONTHLY FINANCIAL BREAKDOWN (CLICK ANY MONTH TO FILTER)</span>
+              <span>📅 MONTHLY FINANCIAL BREAKDOWN (CLICK ANY MONTH TO FILTER)</span>
             </div>
             <!-- Dynamic Month Cards Container -->
             <div id="monthlyBreakdownContainer" class="monthly-cards-grid"></div>
@@ -333,13 +333,33 @@
         </div>
       </main>
 
-      <!-- VIEW 2: ?? TRIP EDIT (Enterprise Cards View) -->
+      <!-- VIEW 2: ✏️ TRIP EDIT (Enterprise Cards View) -->
       <main id="viewTripEdit" class="view-container">
         <div id="tripEditContainer" class="trip-edit-scroll"></div>
       </main>
 
-      <!-- VIEW 3: ?? VIEW EXCEL TYPE (1:1 Clean Excel Replica A-AA) -->
+      <!-- VIEW 3: 📑 VIEW EXCEL TYPE (1:1 Clean Excel Replica A-AA) -->
       <main id="viewExcel" class="view-container">
+        <!-- 3-Sheet Sub-Navigation Bar for Excel View -->
+        <div class="excel-sheets-tab-bar">
+          <div class="excel-sheets-tab-group">
+            <button type="button" class="excel-sheet-tab-btn active" id="sheetTab_all" onclick="TableModule.switchExcelSheet('all', this)">
+              📑 Master Ledger (All)
+            </button>
+            <button type="button" class="excel-sheet-tab-btn" id="sheetTab_tobilled" onclick="TableModule.switchExcelSheet('TOBILLED', this)">
+              📄 Sheet 1: TOBILLED
+            </button>
+            <button type="button" class="excel-sheet-tab-btn" id="sheetTab_atopay" onclick="TableModule.switchExcelSheet('A/TO-PAY', this)">
+              💳 Sheet 2: A/TO-PAY
+            </button>
+            <button type="button" class="excel-sheet-tab-btn" id="sheetTab_ftopay" onclick="TableModule.switchExcelSheet('F/TO-PAY', this)">
+              🚚 Sheet 3: F/TO-PAY
+            </button>
+          </div>
+          <div class="excel-sheet-info-pill" id="excelSheetInfoPill">
+            <span>Showing all 28-column master records</span>
+          </div>
+        </div>
         <div class="excel-table-scroll">
           <table class="excel-grid">
             <thead>
@@ -443,8 +463,8 @@
 
     <!-- Pinned Global Footer Bar across all tabs/pages (MANDATORY BRANDING: NO 'SHINEX LEDGER') -->
     <footer class="app-footer">
-      <span><strong>SR Brokerage Ledger � Enterprise Freight &amp; Fleet Management</strong></span>
-      <span>� 2026 Transport Brokerage Ledger Pvt Ltd � Developed by <strong>Shravan Kumar</strong> � All Rights Reserved</span>
+      <span><strong>SR Brokerage Ledger • Enterprise Freight &amp; Fleet Management</strong></span>
+      <span>© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by <strong>Shravan Kumar</strong> • All Rights Reserved</span>
     </footer>
   </div>
 
@@ -454,7 +474,7 @@
       <!-- Modal Header -->
       <div class="shipment-modal-header">
         <div class="shipment-modal-header-text">
-          <h3 id="modalTitle">?? Edit Trip Details</h3>
+          <h3 id="modalTitle">✏️ Edit Trip Details</h3>
           <span class="shipment-modal-subtitle">Transport Management System</span>
         </div>
         <button class="shipment-modal-close-btn" onclick="TableModule.closeModal()" title="Close">&times;</button>
@@ -463,9 +483,9 @@
       <!-- Quick Historical Lookup / Autofill Bar -->
       <div class="autofill-search-container" id="modalAutofillBox">
         <div class="autofill-search-wrapper">
-          <span class="autofill-search-icon">?</span>
-          <input type="text" id="m_autofillSearch" class="autofill-search-input" placeholder="?? Quick Autofill: Type Transporter or Truck No to fetch Bank &amp; Route details..." autocomplete="off" oninput="TableModule.handleAutofillSearch(this.value)">
-          <button type="button" class="btn-clear-autofill" onclick="TableModule.clearAutofillSearch()" title="Clear search">?</button>
+          <span class="autofill-search-icon">🔍</span>
+          <input type="text" id="m_autofillSearch" class="autofill-search-input" placeholder="🔍 Quick Autofill: Type Transporter or Truck No to fetch Bank &amp; Route details..." autocomplete="off" oninput="TableModule.handleAutofillSearch(this.value)">
+          <button type="button" class="btn-clear-autofill" onclick="TableModule.clearAutofillSearch()" title="Clear search">✕</button>
         </div>
         <div id="autofillDropdown" class="autofill-results-dropdown" style="display: none;"></div>
       </div>
@@ -486,7 +506,7 @@
           <!-- Section 1: Shipment Information -->
           <div class="shipment-modal-section">
             <div class="shipment-modal-section-header">
-              <span>?? Shipment Information</span>
+              <span>📦 Shipment Information</span>
             </div>
             <div class="shipment-modal-grid">
               <div class="shipment-modal-field">
@@ -526,66 +546,93 @@
           <!-- Section 2: Payment Details -->
           <div class="shipment-modal-section">
             <div class="shipment-modal-section-header">
-              <span>?? Payment Details</span>
+              <span>💰 Payment Details</span>
+              <span id="m_status_badge" class="col-badge" style="background:#e0f2fe; color:#0369a1;">TOBILLED Mode</span>
             </div>
 
-            <!-- ToPayStatus Pill Selector -->
+            <!-- ToPayStatus Pill / Mode Selector -->
             <div class="shipment-modal-topay-group">
               <label>To-Billed - ToPayStatus <span class="shipment-modal-required">*</span></label>
-              <select id="m_topay" class="form-control" onchange="TableModule.liveCalcModal()" required>
+              <div class="topay-mode-pills">
+                <button type="button" class="topay-pill-btn active" id="pill_tobilled" onclick="TableModule.selectToPayStatus('TOBILLED')">
+                  📋 TOBILLED
+                </button>
+                <button type="button" class="topay-pill-btn" id="pill_atopay" onclick="TableModule.selectToPayStatus('A/TO-PAY')">
+                  💳 A/TO-PAY (Adv To-Pay)
+                </button>
+                <button type="button" class="topay-pill-btn" id="pill_ftopay" onclick="TableModule.selectToPayStatus('F/TO-PAY')">
+                  🚚 F/TO-PAY (Full To-Pay)
+                </button>
+              </div>
+              <select id="m_topay" class="form-control" onchange="TableModule.syncToPayFromSelect()" style="display:none;" required>
                 <option value="A/TO-PAY">A/TO-PAY</option>
                 <option value="F/TO-PAY">F/TO-PAY</option>
                 <option value="TOBILLED">TOBILLED</option>
               </select>
             </div>
 
+            <!-- Dynamic Field Group: Common to All Modes -->
             <div class="shipment-modal-grid">
-              <div class="shipment-modal-field">
-                <label for="m_fright">Freight Amount (K) ?</label>
-                <input type="number" id="m_fright" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
+              <div class="shipment-modal-field" id="field_fright">
+                <label for="m_fright">Freight Amount (K) ₹ <span class="shipment-modal-required">*</span></label>
+                <input type="number" id="m_fright" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0" required>
               </div>
-              <div class="shipment-modal-field">
-                <label for="m_tm">T/M Mamul (N) ?</label>
+
+              <!-- T/M Mamul: Shown for TOBILLED and A/TO-PAY -->
+              <div class="shipment-modal-field" id="field_tm">
+                <label for="m_tm">T/M Mamul / Tapal (N) ₹</label>
                 <input type="number" id="m_tm" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
               </div>
-              <div class="shipment-modal-field">
-                <label for="m_advance1">Advance 1 (O) ?</label>
+
+              <!-- Advance 1 & Date: Shown for TOBILLED and A/TO-PAY -->
+              <div class="shipment-modal-field" id="field_advance1">
+                <label for="m_advance1">Advance 1 (O) ₹</label>
                 <input type="number" id="m_advance1" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
               </div>
-              <div class="shipment-modal-field">
+              <div class="shipment-modal-field" id="field_date1">
                 <label for="m_date1">Advance 1 Date (L)</label>
                 <input type="date" id="m_date1" class="form-control">
               </div>
-              <div class="shipment-modal-field">
-                <label for="m_advance2">Advance 2 (Q) ?</label>
+
+              <!-- Advance 2 & Date: Shown for TOBILLED -->
+              <div class="shipment-modal-field" id="field_advance2">
+                <label for="m_advance2">Advance 2 (Q) ₹</label>
                 <input type="number" id="m_advance2" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
               </div>
-              <div class="shipment-modal-field">
+              <div class="shipment-modal-field" id="field_date2">
                 <label for="m_date2">Advance 2 Date (P)</label>
                 <input type="date" id="m_date2" class="form-control">
               </div>
-              <div class="shipment-modal-field">
-                <label for="m_advance3">Advance 3 (S) ?</label>
+
+              <!-- Advance 3 & Date: Shown for TOBILLED -->
+              <div class="shipment-modal-field" id="field_advance3">
+                <label for="m_advance3">Advance 3 (S) ₹</label>
                 <input type="number" id="m_advance3" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
               </div>
-              <div class="shipment-modal-field">
+              <div class="shipment-modal-field" id="field_date3">
                 <label for="m_date3">Advance 3 Date (R)</label>
                 <input type="date" id="m_date3" class="form-control">
               </div>
-              <div class="shipment-modal-field">
-                <label for="m_cod">COD (U) ?</label>
-                <input type="number" id="m_cod" class="form-control" placeholder="Auto-calculated for A/F-Topay" oninput="TableModule.liveCalcModal()">
+
+              <!-- Cash on Delivery (COD): Shown & Auto-calculated for A/TO-PAY and F/TO-PAY -->
+              <div class="shipment-modal-field" id="field_cod" style="display: none;">
+                <label for="m_cod" style="color: #0284c7; font-weight: 800;">COD @ Unloading (U) ₹ (Auto-calculated)</label>
+                <input type="number" id="m_cod" class="form-control" style="background: #f0f9ff; border: 1.5px solid #38bdf8; font-weight: 800; color: #0369a1;" placeholder="0" oninput="this.dataset.autoFilled='false'; TableModule.liveCalcModal()">
               </div>
-              <div class="shipment-modal-field">
-                <label for="m_extraAmount">Extra Amount / Halting (W) ?</label>
+
+              <!-- Extra Amount / Halting: Shown for TOBILLED -->
+              <div class="shipment-modal-field" id="field_extraAmount">
+                <label for="m_extraAmount" style="color: #0284c7; font-weight: 700;">➕ Extra Amount / Halting (W) ₹</label>
                 <input type="number" id="m_extraAmount" class="form-control" placeholder="e.g. 5000" oninput="TableModule.liveCalcModal()">
               </div>
-              <div class="shipment-modal-field">
+
+              <!-- Settlement Date & Payment Mamul: Shown for TOBILLED -->
+              <div class="shipment-modal-field" id="field_payDate">
                 <label for="m_payDate">PM/PA Date (X)</label>
                 <input type="date" id="m_payDate" class="form-control">
               </div>
-              <div class="shipment-modal-field">
-                <label for="m_pm">Payment Mamul / P/M (Y) ?</label>
+              <div class="shipment-modal-field" id="field_pm">
+                <label for="m_pm" style="color: #b91c1c; font-weight: 700;">➖ Payment Mamul / P/M (Y) ₹</label>
                 <input type="number" id="m_pm" class="form-control" placeholder="e.g. 200 or 300" oninput="TableModule.liveCalcModal()">
               </div>
             </div>
@@ -594,7 +641,7 @@
           <!-- Section 3: Bank Details -->
           <div class="shipment-modal-section">
             <div class="shipment-modal-section-header">
-              <span>?? Bank Details</span>
+              <span>🏦 Bank Details</span>
             </div>
             <div class="shipment-modal-grid">
               <div class="shipment-modal-field">
@@ -623,21 +670,21 @@
           <!-- Section 4: Live Payment Summary -->
           <div class="shipment-modal-section shipment-modal-summary">
             <div class="shipment-modal-section-header shipment-modal-summary-header">
-              <span>?? Live Payment Summary</span>
+              <span>📊 Live Payment Summary</span>
             </div>
             <div id="mRuleText" class="shipment-modal-rule-text">Rule Applied: Standard Calculation</div>
             <div class="shipment-modal-summary-grid">
               <div id="mCodBox" class="shipment-modal-summary-card shipment-modal-summary-cod" style="display: none;">
                 <span class="shipment-modal-summary-label">COD (Col U)</span>
-                <span id="mCalcCod" class="shipment-modal-summary-value shipment-modal-val-cod">?0</span>
+                <span id="mCalcCod" class="shipment-modal-summary-value shipment-modal-val-cod">₹0</span>
               </div>
               <div class="shipment-modal-summary-card shipment-modal-summary-pending">
                 <span class="shipment-modal-summary-label">PENDING TOBILLED (V)</span>
-                <span id="mCalcBalc" class="shipment-modal-summary-value shipment-modal-val-pending">?0</span>
+                <span id="mCalcBalc" class="shipment-modal-summary-value shipment-modal-val-pending">₹0</span>
               </div>
               <div class="shipment-modal-summary-card shipment-modal-summary-final">
                 <span class="shipment-modal-summary-label">PENDING AMOUNT (Z)</span>
-                <span id="mCalcFinalBalc" class="shipment-modal-summary-value shipment-modal-val-final">?0</span>
+                <span id="mCalcFinalBalc" class="shipment-modal-summary-value shipment-modal-val-final">₹0</span>
               </div>
             </div>
             <p class="shipment-modal-summary-note">Amounts update automatically when payment fields change</p>
@@ -646,7 +693,7 @@
           <!-- Footer Actions -->
           <div class="shipment-modal-footer">
             <button type="button" class="btn btn-secondary" onclick="TableModule.closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="m_submitBtn">?? Save Changes</button>
+            <button type="submit" class="btn btn-primary" id="m_submitBtn">💾 Save Changes</button>
           </div>
         </form>
       </div>
@@ -657,7 +704,7 @@
   <div id="settingsModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 580px;">
       <div class="modal-header">
-        <h3>?? System Settings &amp; Ledger Status</h3>
+        <h3>⚙️ System Settings &amp; Ledger Status</h3>
         <button class="btn-modal-close" onclick="AppModule.closeSettingsModal()">&times;</button>
       </div>
 
@@ -665,12 +712,12 @@
         <!-- System Info Card -->
         <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 1rem 1.2rem;">
           <div style="font-weight: 800; color: #1e3a8a; font-size: 0.95rem; margin-bottom: 0.35rem;">
-            SR Brokerage Ledger v8.4
+            SR Brokerage Ledger v8.3
           </div>
           <div style="font-size: 0.8rem; color: #64748b; line-height: 1.6;">
             Authoritative Workbook: <strong>BROKER DETAILS ADVANCE BALC DETAILS.xlsx</strong><br>
             Active Sheet: <strong>final</strong> (27 Columns A to AA)<br>
-            Database Status: <span class="status-dot online" style="display: inline-block; vertical-align: middle;"></span> <strong style="color: #15803d;">Online � 19 Verified Trips Active</strong><br>
+            Database Status: <span class="status-dot online" style="display: inline-block; vertical-align: middle;"></span> <strong style="color: #15803d;">Online • 19 Verified Trips Active</strong><br>
             Current Session: <strong id="settingsSessionUser" style="color: #0f172a;">Shravan (Admin)</strong>
           </div>
         </div>
@@ -678,7 +725,7 @@
         <!-- Cloud Synchronization Section (backend/Code.gs) -->
         <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem;">
           <div style="font-weight: 700; font-size: 0.84rem; color: #334155; margin-bottom: 0.4rem;">
-            ?? Google Sheets API Sync (<code style="color: #1e40af; font-size: 0.82rem;">backend/Code.gs</code>)
+            ☁️ Google Sheets API Sync (<code style="color: #1e40af; font-size: 0.82rem;">backend/Code.gs</code>)
           </div>
           <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 0.75rem; line-height: 1.4;">
             Configure your Google Apps Script Web App URL and Google Sheet ID below to enable live 2-way cloud sync without "Spreadsheet not found" errors.
@@ -698,7 +745,7 @@
 
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem;">
               <button type="button" class="btn btn-primary" onclick="AppModule.saveSettings()" style="font-size: 0.82rem; padding: 0.5rem 1rem;">
-                ?? Save Settings &amp; Sync
+                💾 Save Settings &amp; Sync
               </button>
             </div>
           </div>
@@ -707,7 +754,7 @@
         <!-- Change Password Section -->
         <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem;">
           <div style="font-weight: 700; font-size: 0.84rem; color: #334155; margin-bottom: 0.5rem;">
-            ?? Change Password for Current Account
+            🔑 Change Password for Current Account
           </div>
           <div style="display: flex; gap: 0.5rem;">
             <input type="password" id="newPasswordInput" class="form-control" placeholder="Enter new password" style="flex: 1;">
@@ -723,12 +770,12 @@
   </div>
 
   <!-- Modular Scripts -->
-  <script src="js/api.js?v=8.4"></script>
-  <script src="js/auth.js?v=8.4"></script>
-  <script src="js/data.js?v=8.4"></script>
-  <script src="js/calculations.js?v=8.4"></script>
-  <script src="js/dashboard.js?v=8.4"></script>
-  <script src="js/table.js?v=8.4"></script>
-  <script src="js/app.js?v=8.4"></script>
+  <script src="js/api.js?v=8.3"></script>
+  <script src="js/auth.js?v=8.3"></script>
+  <script src="js/data.js?v=8.3"></script>
+  <script src="js/calculations.js?v=8.3"></script>
+  <script src="js/dashboard.js?v=8.3"></script>
+  <script src="js/table.js?v=8.3"></script>
+  <script src="js/app.js?v=8.3"></script>
 </body>
 </html>

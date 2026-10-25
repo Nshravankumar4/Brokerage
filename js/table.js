@@ -7,6 +7,132 @@
  */
 
 const TableModule = {
+  // ================= 3-SHEET VIEW CONTROLLER =================
+  currentExcelSheet: 'all', // 'all', 'TOBILLED', 'A/TO-PAY', 'F/TO-PAY'
+
+  switchExcelSheet(sheetType, element) {
+    this.currentExcelSheet = sheetType;
+    document.querySelectorAll('.excel-sheet-tab-btn').forEach(btn => btn.classList.remove('active'));
+    if (element) {
+      element.classList.add('active');
+    }
+
+    const pill = document.getElementById('excelSheetInfoPill');
+    if (pill) {
+      if (sheetType === 'TOBILLED') {
+        pill.innerHTML = '<span>📄 Sheet 1: Showing TOBILLED trips (Freight - TM - Advances + Extra - PM)</span>';
+      } else if (sheetType === 'A/TO-PAY') {
+        pill.innerHTML = '<span>💳 Sheet 2: Showing A/TO-PAY trips (COD = Freight - TM - Advance 1)</span>';
+      } else if (sheetType === 'F/TO-PAY') {
+        pill.innerHTML = '<span>🚛 Sheet 3: Showing F/TO-PAY trips (COD = Full Freight)</span>';
+      } else {
+        pill.innerHTML = '<span>📑 Master Ledger: Showing all 28-column master records</span>';
+      }
+    }
+
+    this.renderExcelView();
+  },
+
+  // ================= DYNAMIC FORM MODE CONTROLLER =================
+  selectToPayStatus(status) {
+    const topaySelect = document.getElementById('m_topay');
+    if (topaySelect) {
+      topaySelect.value = status;
+    }
+    const codInput = document.getElementById('m_cod');
+    if (codInput) {
+      codInput.dataset.autoFilled = 'true';
+    }
+    this.updateFormFieldsVisibility(status);
+    this.liveCalcModal();
+  },
+
+  syncToPayFromSelect() {
+    const topaySelect = document.getElementById('m_topay');
+    const val = topaySelect ? topaySelect.value : 'TOBILLED';
+    this.updateFormFieldsVisibility(val);
+    this.liveCalcModal();
+  },
+
+  updateFormFieldsVisibility(status) {
+    const s = String(status || 'TOBILLED').trim().toUpperCase();
+
+    // Update active pill button
+    const pillToBilled = document.getElementById('pill_tobilled');
+    const pillAToPay = document.getElementById('pill_atopay');
+    const pillFToPay = document.getElementById('pill_ftopay');
+    const badge = document.getElementById('m_status_badge');
+
+    if (pillToBilled) pillToBilled.classList.toggle('active', s === 'TOBILLED');
+    if (pillAToPay) pillAToPay.classList.toggle('active', s === 'A/TO-PAY');
+    if (pillFToPay) pillFToPay.classList.toggle('active', s === 'F/TO-PAY');
+
+    if (badge) {
+      if (s === 'F/TO-PAY') {
+        badge.innerText = '🚛 F/TO-PAY Mode (Full To-Pay)';
+        badge.style.background = '#fef9c3';
+        badge.style.color = '#854d0e';
+      } else if (s === 'A/TO-PAY') {
+        badge.innerText = '💳 A/TO-PAY Mode (Adv To-Pay)';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#15803d';
+      } else {
+        badge.innerText = '📄 TOBILLED Mode';
+        badge.style.background = '#eff6ff';
+        badge.style.color = '#1d4ed8';
+      }
+    }
+
+    // Dynamic field visibility elements
+    const setDisplay = (id, show) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? '' : 'none';
+    };
+
+    if (s === 'F/TO-PAY') {
+      // Full To-Pay: Only Freight & COD apply. Advances, T/M, Extra, P/M are hidden.
+      setDisplay('field_fright', true);
+      setDisplay('field_tm', false);
+      setDisplay('field_advance1', false);
+      setDisplay('field_date1', false);
+      setDisplay('field_advance2', false);
+      setDisplay('field_date2', false);
+      setDisplay('field_advance3', false);
+      setDisplay('field_date3', false);
+      setDisplay('field_cod', true);
+      setDisplay('field_extraAmount', false);
+      setDisplay('field_payDate', false);
+      setDisplay('field_pm', false);
+    } else if (s === 'A/TO-PAY') {
+      // Advance To-Pay: Freight, T/M, Advance 1 & Date, COD. Later advances, Extra, P/M are hidden.
+      setDisplay('field_fright', true);
+      setDisplay('field_tm', true);
+      setDisplay('field_advance1', true);
+      setDisplay('field_date1', true);
+      setDisplay('field_advance2', false);
+      setDisplay('field_date2', false);
+      setDisplay('field_advance3', false);
+      setDisplay('field_date3', false);
+      setDisplay('field_cod', true);
+      setDisplay('field_extraAmount', false);
+      setDisplay('field_payDate', false);
+      setDisplay('field_pm', false);
+    } else {
+      // TOBILLED: Freight, T/M, All Advances 1/2/3, Extra Amount, PM/PA Date, P/M Mamul. COD is hidden.
+      setDisplay('field_fright', true);
+      setDisplay('field_tm', true);
+      setDisplay('field_advance1', true);
+      setDisplay('field_date1', true);
+      setDisplay('field_advance2', true);
+      setDisplay('field_date2', true);
+      setDisplay('field_advance3', true);
+      setDisplay('field_date3', true);
+      setDisplay('field_cod', false);
+      setDisplay('field_extraAmount', true);
+      setDisplay('field_payDate', true);
+      setDisplay('field_pm', true);
+    }
+  },
   activeTrips: [],
   currentZoom: 100,
 
@@ -51,7 +177,25 @@ const TableModule = {
     let totCOD = 0, totPendingTobilled = 0, totExtra = 0, totPM = 0, totFB = 0;
     const canDel = (typeof AuthModule !== 'undefined') ? AuthModule.canDelete() : true;
 
-    this.activeTrips.forEach((t) => {
+    let displayedTrips = this.activeTrips;
+    if (this.currentExcelSheet === 'TOBILLED') {
+      displayedTrips = displayedTrips.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'TOBILLED' || s === 'TO-BILLED' || s === 'TO-PAY' || s === 'TO BILLED' || s === '';
+      });
+    } else if (this.currentExcelSheet === 'A/TO-PAY') {
+      displayedTrips = displayedTrips.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'A/TO-PAY' || s === 'A/TO-BILLED' || s.startsWith('A');
+      });
+    } else if (this.currentExcelSheet === 'F/TO-PAY') {
+      displayedTrips = displayedTrips.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'F/TO-PAY' || s === 'F/TO-BILLED' || s.startsWith('F');
+      });
+    }
+
+    displayedTrips.forEach((t) => {
       const calc = CalculationEngine.calculate(t);
 
       totF += calc.fright;
@@ -80,7 +224,7 @@ const TableModule = {
       tr.innerHTML = `
         <td class="col-center" style="font-weight:700; color:#475569;">${t.slNo || ''}</td>
         <td style="font-weight:600; color:#0f172a;">${escapeHtml(t.trspName || '')}</td>
-        <td class="col-center">${t.date || ''}</td>
+        <td class="col-center">${t.date || '—'}</td>
         <td class="col-center" style="font-weight:700; color:#1e40af;">${escapeHtml(t.lrNo || '')}</td>
         <td class="col-center" style="font-family:monospace; font-weight:700; letter-spacing:0.3px;">${escapeHtml(t.truckNo || '')}</td>
         <td>${escapeHtml(t.from || '')}</td>
@@ -146,7 +290,25 @@ const TableModule = {
     const cardsGrid = document.createElement('div');
     cardsGrid.className = 'trip-cards-grid';
 
-    this.activeTrips.forEach((t) => {
+    let displayedTrips = this.activeTrips;
+    if (this.currentExcelSheet === 'TOBILLED') {
+      displayedTrips = displayedTrips.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'TOBILLED' || s === 'TO-BILLED' || s === 'TO-PAY' || s === 'TO BILLED' || s === '';
+      });
+    } else if (this.currentExcelSheet === 'A/TO-PAY') {
+      displayedTrips = displayedTrips.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'A/TO-PAY' || s === 'A/TO-BILLED' || s.startsWith('A');
+      });
+    } else if (this.currentExcelSheet === 'F/TO-PAY') {
+      displayedTrips = displayedTrips.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'F/TO-PAY' || s === 'F/TO-BILLED' || s.startsWith('F');
+      });
+    }
+
+    displayedTrips.forEach((t) => {
       const calc = CalculationEngine.calculate(t);
       const card = document.createElement('div');
       card.className = `trip-card ${calc.isPodMissing ? 'card-pod-missing' : ''}`;
@@ -357,7 +519,7 @@ const TableModule = {
           <span style="font-size: 0.72rem; color: #16a34a; font-weight: 700;">Trip #${p.slNo || ''}</span>
         </div>
         <div class="autofill-item-sub">
-          📍 Route: <strong>${escapeHtml(p.from)} ➔ ${escapeHtml(p.to || 'Any')}</strong> | 🏦 Bank: ${escapeHtml(p.paymentMade)} (A/C: ${escapeHtml(p.accountNo || '—')} | IFSC: ${escapeHtml(p.ifsc || '—')})
+📍 Route: <strong>${escapeHtml(p.from)} ➔ ${escapeHtml(p.to || 'Any')}</strong> | 🏦 Bank: ${escapeHtml(p.paymentMade)} (A/C: ${escapeHtml(p.accountNo || '—')} | IFSC: ${escapeHtml(p.ifsc || '—')})
         </div>
       </div>
     `).join('');
@@ -482,6 +644,7 @@ const TableModule = {
       currentStatus = 'TOBILLED';
     }
     document.getElementById('m_topay').value = currentStatus;
+    this.updateFormFieldsVisibility(currentStatus);
 
     document.getElementById('m_tm').value = (trip.tm !== undefined && trip.tm !== null && trip.tm !== '') ? trip.tm : 0;
     document.getElementById('m_advance1').value = (trip.advance1 !== undefined && trip.advance1 !== null && trip.advance1 !== '') ? trip.advance1 : 0;
@@ -491,7 +654,11 @@ const TableModule = {
     document.getElementById('m_advance3').value = (trip.advance3 !== undefined && trip.advance3 !== null && trip.advance3 !== '') ? trip.advance3 : 0;
     document.getElementById('m_date3').value = this.toInputDate(trip.date3);
     document.getElementById('m_pod').value = this.toInputDate(trip.pod);
-    document.getElementById('m_cod').value = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '') ? trip.cod : 0;
+    const codEl = document.getElementById('m_cod');
+    if (codEl) {
+      codEl.value = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '') ? trip.cod : 0;
+      codEl.dataset.autoFilled = (trip.cod === undefined || trip.cod === null || Number(trip.cod) === 0) ? 'true' : 'false';
+    }
     document.getElementById('m_extraAmount').value = (trip.extraAmount !== undefined && trip.extraAmount !== null && trip.extraAmount !== '') ? trip.extraAmount : 0;
     document.getElementById('m_payDate').value = this.toInputDate(trip.payDate);
     document.getElementById('m_pm').value = (trip.pm !== undefined && trip.pm !== null && trip.pm !== '') ? trip.pm : (trip.pmFinal || 0);
@@ -553,6 +720,7 @@ const TableModule = {
     document.getElementById('m_paymentMade').value = 'SBI BANK';
     document.getElementById('m_fright').value = 0;
     document.getElementById('m_topay').value = 'TOBILLED';
+    this.updateFormFieldsVisibility('TOBILLED');
     document.getElementById('m_tm').value = 0;
     document.getElementById('m_advance1').value = 0;
     document.getElementById('m_date1').value = '';
@@ -561,7 +729,11 @@ const TableModule = {
     document.getElementById('m_advance3').value = 0;
     document.getElementById('m_date3').value = '';
     document.getElementById('m_pod').value = '';
-    document.getElementById('m_cod').value = 0;
+    const codIn = document.getElementById('m_cod');
+    if (codIn) {
+      codIn.value = 0;
+      codIn.dataset.autoFilled = 'true';
+    }
     document.getElementById('m_extraAmount').value = 0;
     document.getElementById('m_payDate').value = '';
     document.getElementById('m_pm').value = 0;
@@ -624,7 +796,7 @@ const TableModule = {
       lrInput.style.borderColor = '#22c55e';
       lrInput.style.backgroundColor = '';
       if (errSpan) {
-        errSpan.innerText = '✓ Unique LR';
+        errSpan.innerText = '✅ Unique LR';
         errSpan.style.color = '#15803d';
         errSpan.style.display = 'inline';
       }
@@ -826,10 +998,6 @@ const TableModule = {
       workbook.creator = "Transport Brokerage Ledger Pvt Ltd";
       workbook.created = new Date();
 
-      const ws = workbook.addWorksheet('Broker Ledger', {
-        views: [{ showGridLines: true }]
-      });
-
       const colDefs = [
         { header: 'SL NO', key: 'slNo', width: 9 },
         { header: 'TRSP NAME', key: 'trspName', width: 22 },
@@ -861,12 +1029,6 @@ const TableModule = {
         { header: 'REMARKS / NOTE', key: 'note', width: 26 }
       ];
 
-      ws.columns = colDefs;
-
-      // Style Header Row (Row 1)
-      const headerRow = ws.getRow(1);
-      headerRow.height = 28;
-
       const navyFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
       const greenFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16A34A' } };
       const purpleFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF7E22CE' } };
@@ -880,180 +1042,192 @@ const TableModule = {
         right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
       };
 
-      headerRow.eachCell((cell, colNumber) => {
-        cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
-        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-        cell.border = thinBorder;
+      const populateSheet = (sheetName, filterFn) => {
+        const ws = workbook.addWorksheet(sheetName, { views: [{ showGridLines: true }] });
+        ws.columns = colDefs;
 
-        // Custom Header colors matching Excel
-        if (colNumber === 13) {
-          cell.fill = greenFill; // Col M ToPayStatus
-        } else if (colNumber === 15) {
-          cell.fill = purpleFill; // Col O ADVANCE
-        } else if (colNumber === 20) {
-          cell.fill = redHeaderFill; // Col T POD RECD Date
-        } else if (colNumber === 22) {
-          cell.fill = yellowHeaderFill; // Col V Pending Amount: Tobilled
-        } else if (colNumber === 26) {
-          cell.fill = redHeaderFill; // Col Z Pending Amount
-        } else {
-          cell.fill = navyFill;
-        }
-      });
+        const headerRow = ws.getRow(1);
+        headerRow.height = 28;
 
-      // Data Rows
-      let sumF = 0, sumTM = 0, sumA1 = 0, sumA2 = 0, sumA3 = 0;
-      let sumCOD = 0, sumPendingTobilled = 0, sumExtra = 0, sumPM = 0, sumFB = 0;
+        headerRow.eachCell((cell, colNumber) => {
+          cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+          cell.border = thinBorder;
 
-      this.activeTrips.forEach((t) => {
-        const calc = CalculationEngine.calculate(t);
-        sumF += calc.fright;
-        sumTM += calc.tm;
-        sumA1 += calc.adv1;
-        sumA2 += calc.adv2;
-        sumA3 += calc.adv3;
-        sumCOD += calc.cod;
-        sumPendingTobilled += calc.pendingTobilled;
-        sumExtra += calc.extraAmount;
-        sumPM += calc.pm;
-        sumFB += calc.finalBalc;
-
-        const row = ws.addRow({
-          slNo: t.slNo || '',
-          trspName: t.trspName || '',
-          date: t.date || '',
-          lrNo: t.lrNo || '',
-          truckNo: t.truckNo || '',
-          from: t.from || '',
-          to: t.to || '',
-          accountNo: t.accountNo || '',
-          ifsc: t.ifsc || '',
-          paymentMade: t.paymentMade || '',
-          fright: calc.fright || 0,
-          date1: t.date1 || '',
-          topay: t.topay || '',
-          tm: calc.tm || 0,
-          adv1: calc.adv1 || 0,
-          date2: t.date2 || '',
-          adv2: calc.adv2 || 0,
-          date3: t.date3 || '',
-          adv3: calc.adv3 || 0,
-          pod: calc.isPodMissing ? 'MISSING' : (t.pod || ''),
-          cod: calc.cod || 0,
-          pendingTobilled: calc.pendingTobilled || 0,
-          extraAmount: calc.extraAmount || 0,
-          payDate: t.payDate || '',
-          pm: calc.pm || 0,
-          finalBalc: calc.finalBalc || 0,
-          podAmountStatus: calc.podAmountStatus || 0,
-          note: t.note || ''
+          if (colNumber === 13) cell.fill = greenFill;
+          else if (colNumber === 15) cell.fill = purpleFill;
+          else if (colNumber === 20) cell.fill = redHeaderFill;
+          else if (colNumber === 22) cell.fill = yellowHeaderFill;
+          else if (colNumber === 26) cell.fill = redHeaderFill;
+          else cell.fill = navyFill;
         });
 
-        row.height = 20;
+        const allTrips = (typeof DataManager !== 'undefined') ? DataManager.getAll() : this.activeTrips;
+        const trips = filterFn ? allTrips.filter(filterFn) : allTrips;
 
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          cell.border = thinBorder;
-          cell.font = { name: 'Calibri', size: 10 };
-          cell.alignment = { vertical: 'middle' };
+        let sumF = 0, sumTM = 0, sumA1 = 0, sumA2 = 0, sumA3 = 0;
+        let sumCOD = 0, sumPendingTobilled = 0, sumExtra = 0, sumPM = 0, sumFB = 0;
 
-          // Text / Numbers Alignment
-          if ([1, 3, 4, 5, 8, 9, 12, 13, 16, 18, 20, 24].includes(colNumber)) {
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          } else if ([11, 14, 15, 17, 19, 21, 22, 23, 25, 26, 27].includes(colNumber)) {
-            cell.alignment = { horizontal: 'right', vertical: 'middle' };
-            cell.numFmt = '#,##0';
-          }
+        trips.forEach((t) => {
+          const calc = CalculationEngine.calculate(t);
+          sumF += calc.fright;
+          sumTM += calc.tm;
+          sumA1 += calc.adv1;
+          sumA2 += calc.adv2;
+          sumA3 += calc.adv3;
+          sumCOD += calc.cod;
+          sumPendingTobilled += calc.pendingTobilled;
+          sumExtra += calc.extraAmount;
+          sumPM += calc.pm;
+          sumFB += calc.finalBalc;
 
-          // Col M ToPayStatus styling
-          if (colNumber === 13 && t.topay) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
-            cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF15803D' } };
-          }
+          const row = ws.addRow({
+            slNo: t.slNo || '',
+            trspName: t.trspName || '',
+            date: t.date || '',
+            lrNo: t.lrNo || '',
+            truckNo: t.truckNo || '',
+            from: t.from || '',
+            to: t.to || '',
+            accountNo: t.accountNo || '',
+            ifsc: t.ifsc || '',
+            paymentMade: t.paymentMade || '',
+            fright: calc.fright || 0,
+            date1: t.date1 || '',
+            topay: t.topay || '',
+            tm: calc.tm || 0,
+            adv1: calc.adv1 || 0,
+            date2: t.date2 || '',
+            adv2: calc.adv2 || 0,
+            date3: t.date3 || '',
+            adv3: calc.adv3 || 0,
+            pod: calc.isPodMissing ? 'MISSING' : (t.pod || ''),
+            cod: calc.cod || 0,
+            pendingTobilled: calc.pendingTobilled || 0,
+            extraAmount: calc.extraAmount || 0,
+            payDate: t.payDate || '',
+            pm: calc.pm || 0,
+            finalBalc: calc.finalBalc || 0,
+            podAmountStatus: calc.podAmountStatus || 0,
+            note: t.note || ''
+          });
 
-          // Col O Advance styling
-          if (colNumber === 15 && calc.adv1 > 0) {
-            cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF7E22CE' } };
-          }
+          row.height = 20;
 
-          // Col T POD RECD Date highlighting
-          if (colNumber === 20) {
-            if (calc.isPodMissing) {
-              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
-              cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFDC2626' } };
-            } else {
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            cell.border = thinBorder;
+            cell.font = { name: 'Calibri', size: 10 };
+            cell.alignment = { vertical: 'middle' };
+
+            if ([1, 3, 4, 5, 8, 9, 12, 13, 16, 18, 20, 24].includes(colNumber)) {
+              cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            } else if ([11, 14, 15, 17, 19, 21, 22, 23, 25, 26, 27].includes(colNumber)) {
+              cell.alignment = { horizontal: 'right', vertical: 'middle' };
+              cell.numFmt = '#,##0';
+            }
+
+            if (colNumber === 13 && t.topay) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
               cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF15803D' } };
             }
-          }
+            if (colNumber === 15 && calc.adv1 > 0) {
+              cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF7E22CE' } };
+            }
+            if (colNumber === 20) {
+              if (calc.isPodMissing) {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+                cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFDC2626' } };
+              } else {
+                cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF15803D' } };
+              }
+            }
+            if (colNumber === 22) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF9C3' } };
+              cell.font = { name: 'Calibri', size: 10, bold: true };
+            }
+            if (colNumber === 26) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+              cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: calc.finalBalc > 0 ? 'FFB91C1C' : 'FF15803D' } };
+            }
+          });
+        });
 
-          // Col V Pending Amount: Tobilled styling
-          if (colNumber === 22) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF9C3' } };
-            cell.font = { name: 'Calibri', size: 10, bold: true };
-          }
+        // Totals Row
+        const totRow = ws.addRow({
+          slNo: '',
+          trspName: 'SUM TOTALS:',
+          date: '',
+          lrNo: '',
+          truckNo: '',
+          from: '',
+          to: '',
+          accountNo: '',
+          ifsc: '',
+          paymentMade: '',
+          fright: sumF,
+          date1: '',
+          topay: '',
+          tm: sumTM,
+          adv1: sumA1,
+          date2: '',
+          adv2: sumA2,
+          date3: '',
+          adv3: sumA3,
+          pod: '',
+          cod: sumCOD,
+          pendingTobilled: sumPendingTobilled,
+          extraAmount: sumExtra,
+          payDate: '',
+          pm: sumPM,
+          finalBalc: sumFB,
+          podAmountStatus: 0,
+          note: ''
+        });
 
-          // Col Z Pending Amount styling
-          if (colNumber === 26) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
-            cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: calc.finalBalc > 0 ? 'FFB91C1C' : 'FF15803D' } };
+        totRow.height = 24;
+        const yellowTotalFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF08A' } };
+        const doubleBottomBorder = {
+          top: { style: 'medium', color: { argb: 'FFCA8A04' } },
+          bottom: { style: 'double', color: { argb: 'FFCA8A04' } },
+          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+          right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+        };
+
+        totRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          cell.fill = yellowTotalFill;
+          cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF000000' } };
+          cell.border = doubleBottomBorder;
+          cell.alignment = { vertical: 'middle' };
+
+          if ([11, 14, 15, 17, 19, 21, 22, 23, 25, 26, 27].includes(colNumber)) {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            cell.numFmt = '#,##0';
+          } else if (colNumber === 2) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
           }
         });
-      });
-
-      // Bottom SUM TOTALS Row
-      const totRow = ws.addRow({
-        slNo: '',
-        trspName: 'SUM TOTALS:',
-        date: '',
-        lrNo: '',
-        truckNo: '',
-        from: '',
-        to: '',
-        accountNo: '',
-        ifsc: '',
-        paymentMade: '',
-        fright: sumF,
-        date1: '',
-        topay: '',
-        tm: sumTM,
-        adv1: sumA1,
-        date2: '',
-        adv2: sumA2,
-        date3: '',
-        adv3: sumA3,
-        pod: '',
-        cod: sumCOD,
-        pendingTobilled: sumPendingTobilled,
-        extraAmount: sumExtra,
-        payDate: '',
-        pm: sumPM,
-        finalBalc: sumFB,
-        podAmountStatus: 0,
-        note: ''
-      });
-
-      totRow.height = 24;
-
-      const yellowTotalFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF08A' } };
-      const doubleBottomBorder = {
-        top: { style: 'medium', color: { argb: 'FFCA8A04' } },
-        bottom: { style: 'double', color: { argb: 'FFCA8A04' } },
-        left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-        right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
       };
 
-      totRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        cell.fill = yellowTotalFill;
-        cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF000000' } };
-        cell.border = doubleBottomBorder;
-        cell.alignment = { vertical: 'middle' };
-
-        if ([11, 14, 15, 17, 19, 21, 22, 23, 25, 26, 27].includes(colNumber)) {
-          cell.alignment = { horizontal: 'right', vertical: 'middle' };
-          cell.numFmt = '#,##0';
-        } else if (colNumber === 2) {
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-        }
+      // 1. Sheet 1: TOBILLED
+      populateSheet('TOBILLED', (t) => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'TOBILLED' || s === 'TO-BILLED' || s === 'TO-PAY' || s === 'TO BILLED' || s === '';
       });
+
+      // 2. Sheet 2: A_TOPAY
+      populateSheet('A_TOPAY', (t) => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'A/TO-PAY' || s === 'A/TO-BILLED' || s.startsWith('A');
+      });
+
+      // 3. Sheet 3: F_TOPAY
+      populateSheet('F_TOPAY', (t) => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'F/TO-PAY' || s === 'F/TO-BILLED' || s.startsWith('F');
+      });
+
+      // 4. Sheet 4: Master Ledger (All)
+      populateSheet('Master Ledger', null);
 
       // Export file using FileSaver
       const buf = await workbook.xlsx.writeBuffer();
@@ -1062,14 +1236,13 @@ const TableModule = {
       saveAs(blob, `SR_Brokerage_Ledger_${nowStr}.xlsx`);
 
       if (typeof AppModule !== 'undefined') {
-        AppModule.showToast('📊 Genuine Excel (.xlsx) downloaded with 28 columns, cell colors & formatting!');
+        AppModule.showToast('📊 Genuine 3-Sheet Excel (.xlsx) downloaded with TOBILLED, A_TOPAY & F_TOPAY sheets!');
       }
     } catch (err) {
       console.error('exportToExcel error:', err);
       alert('Error exporting Excel: ' + err.message);
     }
   },
-
   exportToCSV() {
     const list = DataManager.getAll();
     if (!list || list.length === 0) {
@@ -1091,7 +1264,7 @@ const TableModule = {
       return [
         `"${t.slNo || ''}"`,
         `"${(t.trspName || '').replace(/"/g, '""')}"`,
-        `"${t.date || ''}"`,
+        `"${t.date || '—'}"`,
         `"${t.lrNo || ''}"`,
         `"${t.truckNo || ''}"`,
         `"${(t.from || '').replace(/"/g, '""')}"`,
@@ -1130,7 +1303,7 @@ const TableModule = {
     document.body.removeChild(link);
 
     if (typeof AppModule !== 'undefined') {
-      AppModule.showToast('📥 Ledger exported to CSV/Excel successfully!');
+      AppModule.showToast('📊 Ledger exported to CSV/Excel successfully!');
     }
   }
 };
