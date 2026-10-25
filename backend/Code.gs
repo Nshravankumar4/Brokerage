@@ -163,17 +163,19 @@ function calculateLedgerAmounts(input) {
   var adv1 = amount(input.advance1);
   var adv2 = amount(input.advance2);
   var adv3 = amount(input.advance3);
-  var extra = amount(input.extraAmount);
+  var extraAmount = amount(input.extraAmount);
   var pm = amount(input.pm);
 
   var status = normalizeToPayStatus(input.status);
   var totalAdvances = adv1 + adv2 + adv3;
 
   var cod = 0;
-  var pendingToBilled = 0;
+  var pendingTobilled = 0;
   var intermediateBalance = 0;
   var finalPending = 0;
+  var finalBalc = 0;
 
+  // Formula requirement: pendingTobilled = fright - tm - totalAdvances
   if (status === 'F/TO-PAY') {
     // Full freight is collected at destination unless COD is provided.
     cod = input.codProvided
@@ -181,8 +183,9 @@ function calculateLedgerAmounts(input) {
       : freight;
 
     intermediateBalance = 0;
-    pendingToBilled = 0;
+    pendingTobilled = 0;
     finalPending = 0;
+    finalBalc = 0;
 
   } else if (status === 'A/TO-PAY') {
     // Formula: COD = Freight - T/M - all advances.
@@ -193,31 +196,35 @@ function calculateLedgerAmounts(input) {
     // Formula specified for A/TO-PAY intermediate balance.
     intermediateBalance = freight - tm - adv1 - cod;
 
-    pendingToBilled = 0;
+    pendingTobilled = 0;
 
     // Include later advances, extra charges and P/M in final balance.
     finalPending = Math.max(
       0,
-      intermediateBalance - adv2 - adv3 + extra - pm
+      intermediateBalance - adv2 - adv3 + extraAmount - pm
     );
+    finalBalc = pendingTobilled + extraAmount - pm;
 
   } else {
     // TOBILLED: Freight - T/M - all advances.
     cod = 0;
-    pendingToBilled = freight - tm - totalAdvances;
-    intermediateBalance = pendingToBilled;
-    finalPending = pendingToBilled + extra - pm;
+    pendingTobilled = freight - tm - totalAdvances;
+    intermediateBalance = pendingTobilled;
+    finalPending = pendingTobilled + extraAmount - pm;
+    // Formula requirement: finalBalc = pendingTobilled + extraAmount - pm
+    finalBalc = pendingTobilled + extraAmount - pm;
   }
 
   return {
     status: status,
     totalAdvances: totalAdvances,
     cod: cod,
-    pendingToBilled: pendingToBilled,
+    pendingTobilled: pendingTobilled,
     intermediateBalance: intermediateBalance,
-    extraAmount: extra,
+    extraAmount: extraAmount,
     pm: pm,
-    finalPending: finalPending
+    finalPending: finalPending,
+    finalBalc: finalBalc
   };
 }
 
@@ -409,6 +416,8 @@ function handleGetAll(optId) {
     var advances = amount(r[14]) +
       amount(r[16]) +
       amount(r[18]);
+    var pendingTobilled = freight - amount(r[13]) - advances;
+    var finalBalc = pendingTobilled + amount(r[22]) - amount(r[24]);
 
     var podText = String(r[19] || '').trim();
     var missingPod = !podText ||
@@ -444,12 +453,12 @@ function handleGetAll(optId) {
       advance3: amount(r[18]),
       pod: missingPod ? '' : formatDate(r[19]),
       cod: calc.cod,
-      pendingTobilled: calc.pendingToBilled,
-      balc: calc.pendingToBilled,
+      pendingTobilled: pendingTobilled,
+      balc: finalBalc,
       extraAmount: amount(r[22]),
       payDate: formatDate(r[23]),
       pm: amount(r[24]),
-      finalBalc: calc.finalPending,
+      finalBalc: finalBalc,
       podAmountStatus: r[26],
       note: String(r[27] || '')
     });

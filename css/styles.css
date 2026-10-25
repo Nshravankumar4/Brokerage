@@ -1556,6 +1556,316 @@ tr.excel-totals-row td {
   padding: 1.6rem;
 }
 
+.shipment-modal-container {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.28);
+  width: min(100%, 980px);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.shipment-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem 0.9rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.shipment-modal-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.shipment-modal-header-text h3 {
+  margin: 0;
+  font-size: clamp(1.2rem, 1.4vw, 1.6rem);
+  line-height: 1.2;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.shipment-modal-subtitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.shipment-modal-close-btn {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shipment-modal-close-btn:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.shipment-modal-body {
+  overflow-y: auto;
+  padding: 1rem 1.25rem 1.2rem;
+}
+
+.shipment-modal-body form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.shipment-modal-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.shipment-modal-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.shipment-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1rem;
+}
+
+.shipment-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.shipment-modal-field-full {
+  grid-column: 1 / -1;
+}
+
+.shipment-modal-field label,
+.shipment-modal-topay-group label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.shipment-modal-required {
+  color: #dc2626;
+}
+
+.shipment-modal-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-control {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.7rem 0.8rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.shipment-modal-textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.shipment-modal-topay-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.shipment-modal-summary {
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+}
+
+.shipment-modal-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.shipment-modal-summary-card {
+  border: 1px solid #dbeafe;
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.8rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 95px;
+}
+
+.shipment-modal-summary-card.shipment-modal-summary-pending {
+  background: linear-gradient(135deg, #fefce8 0%, #fff7ed 100%);
+  border-color: #fcd34d;
+}
+
+.shipment-modal-summary-card.shipment-modal-summary-final {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%);
+  border-color: #fda4af;
+}
+
+.shipment-modal-summary-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.shipment-modal-summary-value {
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.shipment-modal-rule-text {
+  margin-bottom: 0.75rem;
+  font-size: 0.77rem;
+  font-weight: 700;
+  color: #7c2d12;
+}
+
+.shipment-modal-summary-note {
+  margin-top: 0.7rem;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.shipment-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.35rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 42px;
+  padding: 0.7rem 1.1rem;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  color: #fff;
+  box-shadow: 0 10px 18px -12px rgba(37, 99, 235, 0.6);
+}
+
+.shipment-modal-summary-card.shipment-modal-summary-cod {
+  background: linear-gradient(135deg, #ecfeff 0%, #f0fdf4 100%);
+  border-color: #67e8f9;
+}
+
+.shipment-modal-val-cod {
+  color: #0f766e;
+}
+
+.shipment-modal-val-pending {
+  color: #a16207;
+}
+
+.shipment-modal-val-final {
+  color: #b91c1c;
+}
+
+@media (max-width: 768px) {
+  .shipment-modal-container {
+    width: min(100%, 100%);
+    border-radius: 12px;
+    max-height: 92vh;
+  }
+
+  .shipment-modal-header {
+    padding: 0.9rem 1rem;
+  }
+
+  .shipment-modal-body {
+    padding: 0.9rem 1rem 1rem;
+  }
+
+  .shipment-modal-section {
+    padding: 0.85rem;
+  }
+
+  .shipment-modal-grid,
+  .shipment-modal-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shipment-modal-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .shipment-modal-footer .btn {
+    width: 100%;
+  }
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -2025,17 +2335,206 @@ tr.excel-totals-row td {
   }
 }
 
+/* ========================================================
+   ENHANCED SHIPMENT MODAL FORM ARCHITECTURE & CARD STYLING
+   ======================================================== */
+.modal-content.modal-enhanced {
+  max-width: 860px;
+  width: 95%;
+  max-height: 90vh;
+  padding: 1.5rem;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header-enhanced {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.85rem;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 0.85rem;
+}
+
+.modal-header-enhanced h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-scrollable-body {
+  overflow-y: auto;
+  padding-right: 0.4rem;
+  flex: 1;
+}
+
+.modal-scrollable-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scrollable-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.form-section-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.form-section-header {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.col-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #475569;
+  background: #e2e8f0;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 0.65rem;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 0.65rem;
+}
+
+.form-grid-pair {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 0.85rem;
+  margin-bottom: 0.55rem;
+}
+
+.form-group-clean {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.form-control-clean {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  color: #0f172a;
+  background: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.form-control-clean:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+.form-control-topay {
+  border: 2px solid #16a34a !important;
+  background: #f0fdf4 !important;
+  font-weight: 800 !important;
+  color: #15803d !important;
+  cursor: pointer;
+}
+
+.modal-calc-banner-master {
+  background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+  border: 2px solid #eab308;
+  border-radius: 10px;
+  padding: 0.85rem 1.15rem;
+  margin: 0.85rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.calc-rule-badge-master {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #854d0e;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.calc-box-group-master {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.calc-box-item-master {
+  text-align: right;
+}
+
+.calc-box-label-master {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.calc-box-val-master {
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
 /* ================= NARROW VIEWPORTS (320px - 480px) ================= */
 @media (max-width: 480px) {
   .modal-overlay {
     padding: 0.4rem;
   }
-  .modal-content {
+  .modal-content.modal-enhanced {
     padding: 1rem 0.85rem;
     max-height: 94dvh;
     border-radius: 10px;
   }
-  .form-grid-3 {
+  .form-grid-3, .form-grid-2, .form-grid-pair {
     grid-template-columns: 1fr;
     gap: 0.65rem;
     margin-bottom: 0.65rem;
