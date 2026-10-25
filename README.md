@@ -1,171 +1,113 @@
 # 🚛 SR Brokerage Ledger
 ### Fleet Logistics & Financial Accounts Management
 
-A production-grade, high-performance enterprise web application designed for freight brokerage accounts, broker advances reconciliation, multi-point delivery tracking, and Proof of Delivery (POD) monitoring. Developed by **Shravan Kumar** for **Transport Brokerage Ledger Pvt Ltd**.
+A production-grade, high-performance enterprise web application designed for freight brokerage accounts, broker advances reconciliation, multi-point delivery tracking, Proof of Delivery (POD) monitoring, and genuine multi-sheet Excel reporting. Developed by **Shravan Kumar** for **Transport Brokerage Ledger Pvt Ltd**.
 
 * **Mandatory Project Scope:** `E:\TR\P1\` (All development, UI, and backend code resides strictly in `P1`)
-* **Reference System (Read-Only):** `E:\TR\SR_T` (`https://github.com/Nshravankumar4/SR_T`)
-* **Authoritative Workbook:** `BROKER DETAILS ADVANCE BALC DETAILS.xlsx` (Sheet: `final`, 27 Columns A to AA)
-* **Authoritative Cloud Backend:** `E:\TR\P1\backend\Code.gs` (Google Apps Script with atomic locks and Drive backup)
+* **Reference System (Read-Only):** `E:\TR\SR_T`
+* **Authoritative Workbook:** `Final Sheet Broker.xlsx` (Sheet: `final`, 28 Columns A to AB)
+* **Pre-Modification Backup:** `E:\TR\P1\backups\Final_Sheet_Broker_backup.xlsx`
+* **Authoritative Cloud Backend:** `E:\TR\P1\backend\Code.gs` (Google Apps Script Web App)
 
 ---
 
-## 🔐 1. Authentication & Security (Identical to SR_T)
+## 📑 1. Master 28-Column Architecture (Columns A through AB)
 
-The application features an enterprise login screen with quick role switching, password security, and automated session persistence:
+The application and workbook maintain a strict 28-column schema:
 
-```
-┌────────────────────────────────────────────────────────┐
-│                 🚛 SR Brokerage Ledger                 │
-│     Fleet Logistics & Financial Accounts Management    │
-│             Sign in with your secure account           │
-│                                                        │
-│  Select User Account:                                  │
-│  ┌───────────────────────┐  ┌───────────────────────┐  │
-│  │ 👑 ADMIN              │  │ 👤 RUDRA              │  │
-│  │   Administrator       │  │    User / Employee    │  │
-│  └───────────────────────┘  └───────────────────────┘  │
-│                                                        │
-│  🔑 Password: [ •••••••••••• ] [ 👁️ ]                   │
-│                                                        │
-│  [ 🚀 Secure Login ]                                   │
-│                                                        │
-│  Developed by Shravan Kumar                            │
-│  Enterprise Freight & Fleet Management • 2026          │
-└────────────────────────────────────────────────────────┘
-```
-
-### Pre-Configured Accounts & Permissions
-
-| Role | User Account | Display Name | Permissions | Security Verification |
-|:---:|:---:|:---:|:---|:---|
-| 👑 | **ADMIN** | `Shravan (Admin)` | **Full Control:** Add shipments, edit details, update POD, delete records (`🗑️`), restore default data, change passwords, export Excel | SHA-256 Hash Verified (Client & Server RBAC Enforced) |
-| 👤 | **RUDRA** | `Rudra (Employee)` | **Fleet Operations:** Add shipments, edit details, update POD. **Delete is restricted (`🔒 Admin Delete`)** | SHA-256 Hash Verified (Client & Server RBAC Enforced) |
-
-### Security Features:
-* **Strict Authentication:** Grounded with SHA-256 cryptographic hashing. Zero plain-text credentials stored in source code or runtime files.
-* **Instant Login:** Authentication is instantaneous (<40ms) using SHA-256 local verification; cloud syncing executes asynchronously in background without blocking the UI.
-* **10-Minute Inactivity Auto-Logout:** Automated idle timer automatically logs out after 10 minutes of user inactivity (`mousemove`, `keydown`, `touchstart`, `scroll`) and prompts to sign in again.
-
-### Mandatory Global Footer Branding Across All Pages
-Both the authentication screen and all main views (Dashboard, Trip Edit, View Excel Type) display the clean enterprise footer:
-* `SR Brokerage Ledger • Enterprise Freight & Fleet Management`
-* `© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by Shravan Kumar • All Rights Reserved`
+| Col | Field Heading | Formula / Source | Role |
+| :---: | :--- | :--- | :--- |
+| **A** | `SL NO` | Sequential ID | Serial Number |
+| **B** | `TRSP NAME` | Input | Transporter / Vendor Name |
+| **C** | `DATE` | Input | Booking / Trip Dispatch Date |
+| **D** | `LR NO` | Input | **Strictly Unique** Lorry Receipt Number |
+| **E** | `TRUCK NO` | Input | Vehicle Registration Plate |
+| **F** | `FROM` | Input | Origin Loading Point (Default: `MEDCHAL`) |
+| **G** | `TO` | Input | Destination Unloading Point |
+| **H** | `ACCOUNT NO` | Input | Transporter Bank Account Number |
+| **I** | `IFSC CODE` | Input | Bank Branch IFSC Code |
+| **J** | `PAYMENT MADE` | Input | Bank / Channel (e.g. `SBI BANK`) |
+| **K** | `FRIGHT` | Input | Gross Freight Amount Agreed (₹) |
+| **L** | `DATE` | Input | Advance 1 Date |
+| **M** | `ToPayStatus` | Dropdown | Status: `A/TO-PAY`, `F/TO-PAY`, `TOBILLED` |
+| **N** | `T/M` | Input | Tapal Mamul / Commission deduction (₹) |
+| **O** | `ADVANCE` | Input | Advance 1 paid at loading (₹) |
+| **P** | `DATE 2` | Input | Advance 2 Date |
+| **Q** | `ADVANCE2` | Input | En-route Advance 2 (₹) |
+| **R** | `DATE3` | Input | Advance 3 Date |
+| **S** | `ADVANCE3` | Input | En-route Advance 3 (₹) |
+| **T** | `POD RECD Date` | Input | Physical POD Confirmation Date |
+| **U** | `Cash on Delivery (COD) :A/Topay&Ftopay` | **Calculated** | Balance collected at destination unloading (₹) |
+| **V** | `Pending Amount: Tobilled` | **Calculated** | $\text{Col K} - \text{Col N} - (\text{Col O} + \text{Col Q} + \text{Col S})$ |
+| **W** | `Extra Amount` | Input | Halting Charges / Extra Hamali (₹) |
+| **X** | `PM/PA Date` | Input | Payment Mamul Settlement Date |
+| **Y** | `P/M` | Input | Payment Mamul deduction on settlement (₹) |
+| **Z** | `Pending Amount` | **Calculated** | Final net outstanding balance payable (₹) |
+| **AA**| `POD Amount Status` | **Calculated** | Settlement status index (= 0 upon settlement) |
+| **AB**| `REMARKS / NOTE` | Input | Operational remarks, halting notes, transfers |
 
 ---
 
-## ☁️ 2. Authoritative Cloud Backend (`backend/Code.gs`)
+## 🧮 2. Authoritative Accounting Rules
 
-The cloud backend is implemented in `E:\TR\P1\backend\Code.gs` for Google Sheets deployment:
+The accounting engine in [`js/calculations.js`](file:///e:/TR/P1/js/calculations.js) implements the three transport statuses:
 
-### Backend Capabilities:
-1. **Google Sheets Database (`final` Sheet, Columns A to AA):** 27-column structure mapping 1:1 with `BROKER DETAILS ADVANCE BALC DETAILS.xlsx`.
-2. **Multi-Tier Sheet Discovery (Prevents "Spreadsheet not found"):**
-   * Accepts explicit `sheetId` parameter from URL (`?sheetId=...`) or POST body.
-   * Checks container-bound active spreadsheet (`SpreadsheetApp.getActiveSpreadsheet()`).
-   * Checks configured `SPREADSHEET_ID` variable at top of `Code.gs`.
-   * Checks saved persistent Script Properties.
-   * Auto-discovers existing workbook in Google Drive by filename (`BROKER DETAILS ADVANCE BALC DETAILS` or `Transport Brokerage Ledger`).
-   * Auto-creates a new Google Spreadsheet in Drive if none exists so the script never crashes.
-3. **Real-Time Version Tracking (`getVersion` / `DATA_VERSION`):** State-machine tracking every mutation for 3.5s background polling without heavy reads.
-4. **Concurrency Locking (`LockService.getScriptLock()`):** 15-second atomic lock prevention against race conditions during simultaneous edits.
-5. **Automated Dynamic Calculation Engine:** Automatic computation of intermediate balance (`BALC` - Col W) and net balance (`FINAL BALC` - Col Y).
-6. **Point-in-Time Automated Backups (`DriveApp`):** Automated creation of timestamped copies in Google Drive folder `Brokerage_Backups`.
-5. **Endpoints:**
-   * `GET ?action=getAll`: Returns all trips, totals, and pending POD count.
-   * `GET ?action=getVersion`: Returns active data revision tag for instant browser sync.
-   * `POST {action: 'saveTrip', trip: {...}}`: Atomically inserts or updates a trip row.
-   * `POST {action: 'deleteTrip', rowNum: N}`: Deletes trip row (Admin only).
-   * `POST {action: 'backupDatabase'}`: Creates Drive backup snapshot.
-   * `POST {action: 'restoreDatabase'}`: Resets sheet to the verified current workbook snapshot.
+### 1. `TOBILLED` (Broker Pays Transporter Upon Delivery)
+- **Pending ToBilled (Col V)**:
+  $$\text{Col V} = \text{Freight} - \text{T/M} - (\text{Advance 1} + \text{Advance 2} + \text{Advance 3})$$
+- **Final Pending Amount (Col Z)**:
+  $$\text{Col Z} = \text{Col V} + \text{Extra Amount (Halting)} - \text{Payment Mamul (P/M)}$$
+- **COD (Col U)**: Nonapplicable (₹0 / hidden).
 
-### How to Deploy `backend/Code.gs`:
-1. Open your Google Spreadsheet containing the `final` sheet.
-2. In the top menu, go to **Extensions > Apps Script**.
-3. Clear existing contents and paste the code from `E:\TR\P1\backend\Code.gs`.
-4. Click **Deploy > New deployment**.
-5. Select type: **Web app**.
-   * Description: `Brokerage Ledger v7.0`
-   * Execute as: `Me`
-   * Who has access: `Anyone`
-6. Click **Deploy** and copy the generated Web App URL.
-7. Open the application, open the Drawer Menu > **Settings & API**, paste your Web App URL into the **Google Sheets API Sync** input, and click **Save URL**.
+### 2. `A/TO-PAY` (Advance Paid at Origin, Balance Collected as COD)
+- **COD @ Unloading (Col U)**:
+  $$\text{Col U} = \text{Freight} - \text{T/M} - \text{Advance 1}$$
+- **Final Pending Amount (Col Z)**: ₹0 (when COD is collected at destination).
+  *If destination party does not pay, unpaid amount is recorded as transferred to transport account.*
+
+### 3. `F/TO-PAY` (Full Freight Payable as COD at Unloading)
+- **COD @ Unloading (Col U)**: $\text{Freight}$ (Full Freight Amount).
+- **Final Pending Amount (Col Z)**: ₹0 (fully settled via destination collection).
 
 ---
 
-## 📌 3. Verified Excel Formulas & Financial Reconciliation
+## 🚀 3. Key Enhancements & Features
 
-Reconciled directly against `BROKER DETAILS ADVANCE BALC DETAILS.xlsx` (Sheet: `final`):
-
-### 1️⃣ Column W (`BALC` — Intermediate Balance)
-```excel
-=IF(LEFT(UPPER(TRIM(M2)),1)="F", 0, IF(LEFT(UPPER(TRIM(M2)),1)="A", K2-N2-O2-T2, K2-(O2+Q2+S2+U2+T2)))
-```
-* **Column M Header:** `ToPayStatus` (Strict Dropdown Options: `A/TO-PAY`, `F/TO-PAY`, `TOBILLED`).
-* **`F/TO-PAY` (Col M starts with `F`):** Evaluates to `0`. (Consignee pays entire freight at destination).
-* **`A/TO-PAY` (Col M starts with `A`):** $\text{Freight (K)} - \text{T/M (N)} - \text{Advance (O)} - \text{To-Billed COD (T)}$.
-* **`TOBILLED` (Standard Default):** $\text{Freight (K)} - (\text{Adv1 (O)} + \text{Adv2 (Q)} + \text{Adv3 (S)} + \text{P/M (U)} + \text{To-Billed COD (T)})$.
-
-### 2️⃣ Column Y (`FINAL BALC` — Net Outstanding Balance)
-```excel
-=W2-X2
-```
-* Subtracts Col X (`P/M` — Secondary Mamul) from intermediate balance (`Col W`).
-* Trips 18 & 19 (where Advance + COD equals Freight) correctly evaluate to ₹0 balance.
-
-### Master Ledger Financial Verification (19 Trips)
-* **Total Shipments:** `19`
-* **Gross Freight (Col K):** `₹25,69,250`
-* **Advances Paid (Col O + Q + S):** `₹11,90,184`
-* **Net Final Balance (Col Y):** `₹11,66,700`
-* **Proof of Delivery (POD):** `10 Pending` | `9 Received`
+1. **Dynamic Add/Edit Form**: Mode selector pills (`📋 TOBILLED`, `💳 A/TO-PAY`, `🚚 F/TO-PAY`) show only the inputs relevant to the chosen mode.
+2. **3-Sheet Spreadsheet View**: The web UI spreadsheet includes tabs for `Master Ledger (All)`, `Sheet 1: TOBILLED`, `Sheet 2: A/TO-PAY`, and `Sheet 3: F/TO-PAY`, dynamically recalculating column sums.
+3. **Genuine Multi-Worksheet Excel Export**: Exports `.xlsx` with all 4 formatted sheets using ExcelJS.
+4. **Strict Duplicate LR Protection**: Prevents duplicate shipment entries across the entire database.
+5. **Clean UTF-8 Typography**: 100% resolution of text encoding corruption and mojibake.
 
 ---
 
-## 🖥️ 4. Application Architecture & Views
+## 🧪 4. Automated Verification Test Suites
 
-### 1. Slide-In Sidebar / Navigation Drawer
-Accessed via the **☰ Menu** button in the header. Sleek navy dark theme matching `SR_T`:
-* **Header:** 🚛 SR Brokerage Ledger • Fleet Logistics & Financial Accounts Management
-* **User Badge:** Compact avatar, active user name, role badge (`ADMIN` / `EMPLOYEE`).
-* **Navigation Links (Single-Line, No Wrapping):**
-  * `📊 Dashboard`
-  * `✏️ Trip Operations`
-  * `📑 Spreadsheet View`
-  * `🔄 Sync Cloud Database`
-  * `📥 Export Excel (.xlsx)`
-  * `⚙️ Settings & API` (Admin Only)
-* **Footer:** Live status indicator (`Online • 19 Verified Trips`), sync button (`🔄 Sync`), prominent red logout button (`🚪 Logout / Switch User`), and mandatory enterprise footer:
-  `SR Brokerage Ledger • Enterprise Freight & Fleet Management`
-  `© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by Shravan Kumar • All Rights Reserved`
-* **Zero Scrollbar Guarantee:** Sleek scrollbar-free styling with `scrollbar-width: none` ensures clean presentation across mobile, tablet, and desktop without native scrollbar intrusion.
+Two dedicated test suites verify the complete system:
 
-### 2. Executive Dashboard (Linear Top-to-Bottom Layout)
-* **Top (UP):** 4 Primary KPI metric cards across the top (`Total Shipments: 19`, `Total Freight: ₹25,69,250`, `Advances Paid: ₹11,90,184`, `Final Outstanding Balance: ₹11,66,700`).
-* **Middle:** Dedicated **⚠️ POD Status & Missing Alerts** panel spanning 100% full width from left to right.
-  * Displays 10 pending POD shipments in a multi-column responsive grid.
-  * Overlapping bug completely eliminated using strict flex constraints (`min-width: 0`, text truncation, and fixed-shrink action button).
-  * Direct **`Enter POD →`** action button opens edit modal with autofocus on the date picker.
-* **Bottom (LAST DOWN):** **📅 MONTHLY FINANCIAL BREAKDOWN (CLICK ANY MONTH TO FILTER)** spanning full 100% width.
-  * Monthly cards for August, September, October 2026 showing trip counts, freight, advances, and balances.
+```powershell
+# 1. Structural, architectural, backend, and security suite (37 tests)
+powershell -ExecutionPolicy Bypass -File "verify_enhancements.ps1"
 
-### 3. Trip Operations View (`✏️ Trip Operations`)
-* High-density enterprise dispatch cards.
-* Route visualizer: `MEDCHAL ── 🚛 ──> COOCHBEHAR`.
-* ToPayStatus badges, financial boxes, and delivery confirmation status.
-* Full-height scrolling layout filling 100% of the screen height with zero dead bottom whitespace.
-* Single prominent action button: `➕ Add Shipment` with sleek icon accent.
+# 2. Section 20 authoritative mathematical accounting suite (20 tests)
+powershell -ExecutionPolicy Bypass -File "verify_calculations.ps1"
+```
 
-### 4. Spreadsheet View (`📑 Spreadsheet View`)
-* 1:1 clean replica of Excel columns A to AA:
-  `SL NO`, `TRSP NAME`, `DATE`, `LR NO`, `TRUCK NO`, `FROM`, `TO`, `ACCOUNT NO`, `IFSC CODE`, `PAYMENT MADE`, `FRIGHT`, `DATE`, `ToPayStatus`, `T/M`, `ADVANCE`, `DATE 2`, `ADVANCE2`, `DATE3`, `ADVANCE3`, `To-Billed (COD)`, `P/M`, `DATE`, `BALC`, `P/M`, `FINAL BALC`, `POD RECD`, `NOTE`.
-* Pinned header row (`sticky top: 0`).
-* Professional accounting totals row pinned at bottom (`sticky bottom: 0`) with single top line and double bottom line (not oversized or bright yellow).
-* **Zoom Controls:** `80% Fit`, `90%`, `100%`, `115%` to view all 27 columns comfortably on any laptop or phone screen.
-* Sequential SL NO starting at `1` and auto-incrementing.
+All 57 automated assertions execute with **100% pass rate** (0 failures).
 
-### 5. Genuine Excel (.xlsx) Export
-* Powered by `ExcelJS` and `FileSaver.js`.
-* Preserves authentic column header colors (Navy blue `#002060`, Green `#15803d` for ToPayStatus, Purple `#7e22ce` for Advance, Red `#b91c1c` for Final Balance).
-* Formats currency amounts as comma-separated Indian numbers (`₹##,##,###`).
-* Preserves accounting sum formulas in the exported file.
+---
+
+## 📚 5. Documentation Directory (`docs/`)
+
+- [`docs/PROJECT_STRUCTURE.md`](file:///e:/TR/P1/docs/PROJECT_STRUCTURE.md): Architecture overview and component map.
+- [`docs/CALCULATION_RULES.md`](file:///e:/TR/P1/docs/CALCULATION_RULES.md): Complete mathematical formulas & handwritten note reconciliation.
+- [`docs/BUG_AUDIT.md`](file:///e:/TR/P1/docs/BUG_AUDIT.md): Diagnostic bug register with root causes and fixes.
+- [`docs/TEST_REPORT.md`](file:///e:/TR/P1/docs/TEST_REPORT.md): Full test report across calculation scenarios and 8 screen viewports.
+- [`docs/DEPLOYMENT.md`](file:///e:/TR/P1/docs/DEPLOYMENT.md): Setup, default passwords, Google Apps Script deployment, and rollback guide.
+
+---
+
+## 👤 Branding & Copyright
+- **Application:** SR Brokerage Ledger • Enterprise Freight & Fleet Management
+- **Developer:** Shravan Kumar
+- **Copyright:** © 2026 Transport Brokerage Ledger Pvt Ltd • All Rights Reserved
