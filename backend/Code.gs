@@ -188,22 +188,16 @@ function calculateLedgerAmounts(input) {
     finalBalc = 0;
 
   } else if (status === 'A/TO-PAY') {
-    // Formula: COD = Freight - T/M - all advances.
+    // Formula: COD = Freight - T/M - all advances (Col U: K - N - O - Q - S)
     cod = input.codProvided
       ? amount(input.cod)
       : Math.max(0, freight - tm - totalAdvances);
 
-    // Formula specified for A/TO-PAY intermediate balance.
-    intermediateBalance = freight - tm - adv1 - cod;
-
+    intermediateBalance = 0;
     pendingTobilled = 0;
-
-    // Include later advances, extra charges and P/M in final balance.
-    finalPending = Math.max(
-      0,
-      intermediateBalance - adv2 - adv3 + extraAmount - pm
-    );
-    finalBalc = pendingTobilled + extraAmount - pm;
+    // Formula Z: K - N - O - U (Evaluates to 0 when COD is collected at destination)
+    finalPending = Math.max(0, freight - tm - adv1 - cod);
+    finalBalc = finalPending;
 
   } else {
     // TOBILLED: Freight - T/M - all advances.
@@ -416,8 +410,8 @@ function handleGetAll(optId) {
     var advances = amount(r[14]) +
       amount(r[16]) +
       amount(r[18]);
-    var pendingTobilled = freight - amount(r[13]) - advances;
-    var finalBalc = pendingTobilled + amount(r[22]) - amount(r[24]);
+    var pendingTobilled = calc.pendingTobilled;
+    var finalBalc = calc.finalBalc;
 
     var podText = String(r[19] || '').trim();
     var missingPod = !podText ||
@@ -574,7 +568,7 @@ function handleSaveTrip(t, optId) {
     amount(t.advance3),
     t.pod || '',
     calc.status === 'TOBILLED' ? 'if Tobilled NA' : calc.cod,
-    calc.status === 'TOBILLED' ? calc.pendingToBilled : 'if A/Topay&Ftopay Na',
+    calc.status === 'TOBILLED' ? calc.pendingTobilled : 'if A/Topay&Ftopay Na',
     calc.extraAmount,
     t.payDate || '',
     calc.pm,
