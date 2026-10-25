@@ -1,4 +1,4 @@
-# Excel Formula & Workbook Analysis — Brokerage Ledger Pvt. Ltd.
+# Excel Formula & Workbook Analysis — SR Brokerage Ledger
 ### Master Workbook: `BROKER DETAILS ADVANCE BALC DETAILS.xlsx` (Sheet: `final`)
 
 ---
@@ -90,7 +90,7 @@ In the web application, only these 10 cells are styled with the targeted red ale
 ---
 
 ## 5. Enterprise Footprint & Attribution
-* **System Brand:** Transport Brokerage Ledger
+* **System Brand:** SR Brokerage Ledger
 * **Parent Organization:** Transport Brokerage Ledger Pvt Ltd
 * **Lead Architect & Developer:** Shravan Kumar
 * **Year:** 2026

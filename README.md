@@ -1,4 +1,4 @@
-# 🚛 Shinex Transport & Brokerage Ledger
+# 🚛 SR Brokerage Ledger
 ### Fleet Logistics & Financial Accounts Management
 
 A production-grade, high-performance enterprise web application designed for freight brokerage accounts, broker advances reconciliation, multi-point delivery tracking, and Proof of Delivery (POD) monitoring. Developed by **Shravan Kumar** for **Transport Brokerage Ledger Pvt Ltd**.
@@ -16,7 +16,7 @@ The application features an enterprise login screen with quick role switching, p
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│         🚛 Shinex Transport & Brokerage Ledger         │
+│                 🚛 SR Brokerage Ledger                 │
 │     Fleet Logistics & Financial Accounts Management    │
 │             Sign in with your secure account           │
 │                                                        │
@@ -37,19 +37,19 @@ The application features an enterprise login screen with quick role switching, p
 
 ### Pre-Configured Accounts & Permissions
 
-| Role | User Account | Display Name | Permissions | Strict Password |
+| Role | User Account | Display Name | Permissions | Security Verification |
 |:---:|:---:|:---:|:---|:---|
-| 👑 | **ADMIN** | `Shravan (Admin)` | **Full Control:** Add shipments, edit details, update POD, delete records (`🗑️`), restore default data, change passwords, export Excel | `Shravan@2505` |
-| 👤 | **RUDRA** | `Rudra (Employee)` | **Fleet Operations:** Add shipments, edit details, update POD. **Delete is restricted (`🔒 Admin Delete`)** | `RudraSarika@2505` |
+| 👑 | **ADMIN** | `Shravan (Admin)` | **Full Control:** Add shipments, edit details, update POD, delete records (`🗑️`), restore default data, change passwords, export Excel | SHA-256 Hash Verified (Client & Server RBAC Enforced) |
+| 👤 | **RUDRA** | `Rudra (Employee)` | **Fleet Operations:** Add shipments, edit details, update POD. **Delete is restricted (`🔒 Admin Delete`)** | SHA-256 Hash Verified (Client & Server RBAC Enforced) |
 
 ### Security Features:
-* **Strict Authentication:** Only the credentials above are accepted. Zero default password hints (`123` or test credentials removed).
+* **Strict Authentication:** Grounded with SHA-256 cryptographic hashing. Zero plain-text credentials stored in source code or runtime files.
 * **Instant Login:** Authentication is instantaneous (<40ms) using SHA-256 local verification; cloud syncing executes asynchronously in background without blocking the UI.
 * **10-Minute Inactivity Auto-Logout:** Automated idle timer automatically logs out after 10 minutes of user inactivity (`mousemove`, `keydown`, `touchstart`, `scroll`) and prompts to sign in again.
 
 ### Mandatory Global Footer Branding Across All Pages
 Both the authentication screen and all main views (Dashboard, Trip Edit, View Excel Type) display the clean enterprise footer:
-* `Brokerage Ledger • Enterprise Freight & Fleet Management`
+* `SR Brokerage Ledger • Enterprise Freight & Fleet Management`
 * `© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by Shravan Kumar • All Rights Reserved`
 
 ---
@@ -101,9 +101,10 @@ Reconciled directly against `BROKER DETAILS ADVANCE BALC DETAILS.xlsx` (Sheet: `
 ```excel
 =IF(LEFT(UPPER(TRIM(M2)),1)="F", 0, IF(LEFT(UPPER(TRIM(M2)),1)="A", K2-N2-O2-T2, K2-(O2+Q2+S2+U2+T2)))
 ```
+* **Column M Header:** `ToPayStatus` (Strict Dropdown Options: `A/TO-PAY`, `F/TO-PAY`, `TOBILLED`).
 * **`F/TO-PAY` (Col M starts with `F`):** Evaluates to `0`. (Consignee pays entire freight at destination).
-* **`A/TO-PAY` (Col M starts with `A`):** $\text{Freight (K)} - \text{T/M (N)} - \text{Advance (O)} - \text{Topay COD (T)}$.
-* **Standard (Blank / Other):** $\text{Freight (K)} - (\text{Adv1 (O)} + \text{Adv2 (Q)} + \text{Adv3 (S)} + \text{P/M (U)} + \text{Topay COD (T)})$.
+* **`A/TO-PAY` (Col M starts with `A`):** $\text{Freight (K)} - \text{T/M (N)} - \text{Advance (O)} - \text{To-Billed COD (T)}$.
+* **`TOBILLED` (Standard Default):** $\text{Freight (K)} - (\text{Adv1 (O)} + \text{Adv2 (Q)} + \text{Adv3 (S)} + \text{P/M (U)} + \text{To-Billed COD (T)})$.
 
 ### 2️⃣ Column Y (`FINAL BALC` — Net Outstanding Balance)
 ```excel
@@ -125,17 +126,19 @@ Reconciled directly against `BROKER DETAILS ADVANCE BALC DETAILS.xlsx` (Sheet: `
 
 ### 1. Slide-In Sidebar / Navigation Drawer
 Accessed via the **☰ Menu** button in the header. Sleek navy dark theme matching `SR_T`:
-* **Header:** 🚛 Brokerage Ledger • Transport & Accounts
-* **User Badge:** Compact avatar, active user name, role badge (`ADMIN` / `USER`).
+* **Header:** 🚛 SR Brokerage Ledger • Fleet Logistics & Financial Accounts Management
+* **User Badge:** Compact avatar, active user name, role badge (`ADMIN` / `EMPLOYEE`).
 * **Navigation Links (Single-Line, No Wrapping):**
   * `📊 Dashboard`
   * `✏️ Trip Operations`
   * `📑 Spreadsheet View`
   * `🔄 Sync Cloud Database`
   * `📥 Export Excel (.xlsx)`
-  * `⚙️ Settings & API`
-* **Footer:** Live status indicator (`Online • 19 Verified Trips`), sync button (`🔄 Sync`), and red logout button (`🚪 Logout / Switch User`).
-* **Zero Scrollbar Guarantee:** Custom subtle scrollbar styling and compact vertical structure guarantees no scrolling on standard screens.
+  * `⚙️ Settings & API` (Admin Only)
+* **Footer:** Live status indicator (`Online • 19 Verified Trips`), sync button (`🔄 Sync`), prominent red logout button (`🚪 Logout / Switch User`), and mandatory enterprise footer:
+  `SR Brokerage Ledger • Enterprise Freight & Fleet Management`
+  `© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by Shravan Kumar • All Rights Reserved`
+* **Zero Scrollbar Guarantee:** Sleek scrollbar-free styling with `scrollbar-width: none` ensures clean presentation across mobile, tablet, and desktop without native scrollbar intrusion.
 
 ### 2. Executive Dashboard (Linear Top-to-Bottom Layout)
 * **Top (UP):** 4 Primary KPI metric cards across the top (`Total Shipments: 19`, `Total Freight: ₹25,69,250`, `Advances Paid: ₹11,90,184`, `Final Outstanding Balance: ₹11,66,700`).
@@ -149,13 +152,13 @@ Accessed via the **☰ Menu** button in the header. Sleek navy dark theme matchi
 ### 3. Trip Operations View (`✏️ Trip Operations`)
 * High-density enterprise dispatch cards.
 * Route visualizer: `MEDCHAL ── 🚛 ──> COOCHBEHAR`.
-* Topay badges, financial boxes, and delivery confirmation status.
+* ToPayStatus badges, financial boxes, and delivery confirmation status.
 * Full-height scrolling layout filling 100% of the screen height with zero dead bottom whitespace.
 * Single prominent action button: `➕ Add Shipment` with sleek icon accent.
 
 ### 4. Spreadsheet View (`📑 Spreadsheet View`)
 * 1:1 clean replica of Excel columns A to AA:
-  `SL NO`, `TRSP NAME`, `DATE`, `LR NO`, `TRUCK NO`, `FROM`, `TO`, `ACCOUNT NO`, `IFSC CODE`, `PAYMENT MADE`, `FRIGHT`, `DATE`, `Topay`, `T/M`, `ADVANCE`, `DATE 2`, `ADVANCE2`, `DATE3`, `ADVANCE3`, `Topay(COD)`, `P/M`, `DATE`, `BALC`, `P/M`, `FINAL BALC`, `POD RECD`, `NOTE`.
+  `SL NO`, `TRSP NAME`, `DATE`, `LR NO`, `TRUCK NO`, `FROM`, `TO`, `ACCOUNT NO`, `IFSC CODE`, `PAYMENT MADE`, `FRIGHT`, `DATE`, `ToPayStatus`, `T/M`, `ADVANCE`, `DATE 2`, `ADVANCE2`, `DATE3`, `ADVANCE3`, `To-Billed (COD)`, `P/M`, `DATE`, `BALC`, `P/M`, `FINAL BALC`, `POD RECD`, `NOTE`.
 * Pinned header row (`sticky top: 0`).
 * Professional accounting totals row pinned at bottom (`sticky bottom: 0`) with single top line and double bottom line (not oversized or bright yellow).
 * **Zoom Controls:** `80% Fit`, `90%`, `100%`, `115%` to view all 27 columns comfortably on any laptop or phone screen.
@@ -163,6 +166,6 @@ Accessed via the **☰ Menu** button in the header. Sleek navy dark theme matchi
 
 ### 5. Genuine Excel (.xlsx) Export
 * Powered by `ExcelJS` and `FileSaver.js`.
-* Preserves authentic column header colors (Navy blue `#002060`, Green `#15803d` for Topay, Purple `#7e22ce` for Advance, Red `#b91c1c` for Final Balance).
+* Preserves authentic column header colors (Navy blue `#002060`, Green `#15803d` for ToPayStatus, Purple `#7e22ce` for Advance, Red `#b91c1c` for Final Balance).
 * Formats currency amounts as comma-separated Indian numbers (`₹##,##,###`).
 * Preserves accounting sum formulas in the exported file.

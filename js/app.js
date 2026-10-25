@@ -78,7 +78,9 @@ const AppModule = {
   initRealtimeSync() {
     // 1. BroadcastChannel across all open tabs/windows
     if ('BroadcastChannel' in window) {
-      window.brokerSyncChannel = new BroadcastChannel('broker_ledger_sync');
+      if (!window.brokerSyncChannel) {
+        window.brokerSyncChannel = new BroadcastChannel('broker_ledger_sync');
+      }
       window.brokerSyncChannel.onmessage = async (event) => {
         const type = event.data?.type || 'Data updated';
         console.log("⚡ Real-time broadcast event received:", type);
@@ -86,19 +88,24 @@ const AppModule = {
       };
     }
 
-    // 2. Storage event listener fallback (for multi-tab / incognito)
+    // 2. Custom Window Event Listener for instant same-tab/cross-script refreshes
+    window.addEventListener('broker_trips_updated', () => {
+      this.refresh();
+    });
+
+    // 3. Storage event listener fallback (for multi-tab / incognito)
     window.addEventListener('storage', (e) => {
       if (e.key && (e.key.startsWith('broker_') || e.key === 'broker_ledger_version_v5')) {
         this.refresh();
       }
     });
 
-    // 3. Tab focus auto-sync (when user switches back to this tab)
+    // 4. Tab focus auto-sync (when user switches back to this tab)
     window.addEventListener('focus', () => {
       this.checkCloudVersionAndSync();
     });
 
-    // 4. Background lightweight DATA_VERSION poller every 3.5 seconds
+    // 5. Background lightweight DATA_VERSION poller every 3.5 seconds
     if (this._pollerInterval) clearInterval(this._pollerInterval);
     this._pollerInterval = setInterval(() => {
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
@@ -279,6 +286,10 @@ const AppModule = {
   },
 
   openSettingsModal() {
+    if (typeof AuthModule !== 'undefined' && !AuthModule.isAdmin()) {
+      alert('Access Restricted: Only Administrator has permission to access API and System Settings!');
+      return;
+    }
     const modal = document.getElementById('settingsModal');
     if (modal) {
       if (typeof AuthModule !== 'undefined') AuthModule.updateHeaderUI();
@@ -337,9 +348,22 @@ const AppModule = {
     }
 
     this.applyFilterAndRender();
+
+    if (filterType === 'missingPod') {
+      this.showToast('⚠️ Filtered: Showing shipments with Missing POD');
+    } else if (filterType === 'A/TO-PAY') {
+      this.showToast('Filtered: A/TO-PAY shipments');
+    } else if (filterType === 'F/TO-PAY') {
+      this.showToast('Filtered: F/TO-PAY shipments');
+    } else if (filterType === 'TOBILLED') {
+      this.showToast('Filtered: TOBILLED shipments');
+    }
   },
 
   filterMissingPod() {
+    if (this.currentView === 'dashboard') {
+      this.switchView('tripEdit');
+    }
     const chipMissing = document.getElementById('chipMissingPod');
     this.setFilter('missingPod', chipMissing);
   },
@@ -386,11 +410,27 @@ const AppModule = {
     const allTrips = DataManager.getAll();
     let filtered = allTrips;
 
-    // 1. Status Chip Filter
-    if (this.currentFilter === 'missingPod') {
-      filtered = filtered.filter(t => CalculationEngine.calculate(t).isPodMissing);
-    } else if (this.currentFilter === 'topay') {
-      filtered = filtered.filter(t => Boolean(t.topay && t.topay.trim()));
+    // 1. Status Filter (A/TO-PAY, F/TO-PAY, TOBILLED, missingPod)
+    if (this.currentFilter === 'A/TO-PAY') {
+      filtered = filtered.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'A/TO-PAY' || s === 'A/TO-BILLED' || s.startsWith('A');
+      });
+    } else if (this.currentFilter === 'F/TO-PAY') {
+      filtered = filtered.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'F/TO-PAY' || s === 'F/TO-BILLED' || s.startsWith('F');
+      });
+    } else if (this.currentFilter === 'TOBILLED') {
+      filtered = filtered.filter(t => {
+        const s = String(t.topay || '').trim().toUpperCase();
+        return s === 'TOBILLED' || s === 'TO-BILLED' || s === 'TO-PAY' || s === 'TO BILLED' || s === '';
+      });
+    } else if (this.currentFilter === 'missingPod' || this.currentFilter === 'POD missing' || this.currentFilter === 'podMissing') {
+      filtered = filtered.filter(t => {
+        const calc = CalculationEngine.calculate(t);
+        return calc.isPodMissing;
+      });
     }
 
     // 2. Month Filter
@@ -412,8 +452,10 @@ const AppModule = {
         const to = (t.to || '').toLowerCase();
         const topay = (t.topay || '').toLowerCase();
         const sl = String(t.slNo || '');
+        const matchToBilled = (q === 'to-billed' || q === 'tobilled' || q === 'to billed') && topay === 'tobilled';
+        const matchToPay = (q === 'topaystatus' || q === 'topay' || q === 'to-pay') && topay.includes('pay');
         return lr.includes(q) || truck.includes(q) || trsp.includes(q) || 
-               from.includes(q) || to.includes(q) || topay.includes(q) || sl === q;
+               from.includes(q) || to.includes(q) || topay.includes(q) || matchToBilled || matchToPay || sl === q;
       });
     }
 

@@ -1,5 +1,6 @@
 /**
- * styles.css - Transport Brokerage Ledger Pvt Ltd Theme
+ * styles.css - SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd Theme
+ * Fleet Logistics & Financial Accounts Management
  * Professional Fleet Logistics, Accounting & Spreadsheet Design System
  */
 
@@ -129,6 +130,26 @@ html, body {
   box-shadow: 10px 0 35px rgba(0, 0, 0, 0.5);
   border-right: 1px solid #1e293b;
   overflow: hidden;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.app-sidebar-drawer,
+.app-sidebar-drawer *,
+.drawer-menu,
+.drawer-menu * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.app-sidebar-drawer::-webkit-scrollbar,
+.app-sidebar-drawer *::-webkit-scrollbar,
+.drawer-menu::-webkit-scrollbar,
+.drawer-menu *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 .app-sidebar-drawer.open {
@@ -276,30 +297,24 @@ html, body {
   margin-top: 1px;
 }
 
+
 .drawer-menu {
   flex: 1;
   min-height: 0;
-  padding: 0.5rem 0.75rem;
+  padding: 0.35rem 0.65rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
 .drawer-menu::-webkit-scrollbar {
-  width: 4px;
-}
-
-.drawer-menu::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.drawer-menu::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .drawer-menu-label {
@@ -1142,10 +1157,13 @@ html, body {
 }
 
 .btn-add-plus {
-  font-size: 1.05rem;
+  font-size: 1.25rem;
+  font-weight: 900;
   line-height: 1;
-  display: inline-block;
-  filter: drop-shadow(0 0 2px rgba(168, 85, 247, 0.6));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
 }
 
 .btn-add-prominent:hover {
@@ -1884,5 +1902,44 @@ tr.excel-totals-row td {
   }
   .monthly-cards-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* ================= NARROW VIEWPORTS (320px - 480px) ================= */
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 0.4rem;
+  }
+  .modal-content {
+    padding: 1rem 0.85rem;
+    max-height: 94dvh;
+    border-radius: 10px;
+  }
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+    margin-bottom: 0.65rem;
+  }
+  .filter-chips-group {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .chip-btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+  }
+  .btn-add-prominent {
+    padding: 0.5rem 0.95rem;
+    font-size: 0.84rem;
+  }
+  .trip-card {
+    padding: 0.85rem;
+  }
+  .trip-financial-grid {
+    gap: 0.35rem;
+    padding: 0.45rem;
+  }
+  .fin-box .fin-val {
+    font-size: 0.82rem;
   }
 }

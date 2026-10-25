@@ -89,20 +89,20 @@ const TableModule = {
         <td class="col-center" style="font-family:monospace;">${escapeHtml(t.accountNo || '')}</td>
         <td class="col-center" style="font-family:monospace;">${escapeHtml(t.ifsc || '')}</td>
         <td>${escapeHtml(t.paymentMade || '')}</td>
-        <td class="col-right col-bold">${calc.fright ? CalculationEngine.formatCurrency(calc.fright, false) : ''}</td>
+        <td class="col-right col-bold">${CalculationEngine.formatCurrency(calc.fright, false)}</td>
         <td class="col-center">${t.date1 || ''}</td>
         <td class="col-center" style="${t.topay ? 'background:#dcfce7; font-weight:700; color:#15803d;' : ''}">${escapeHtml(t.topay || '')}</td>
-        <td class="col-right">${calc.tm ? CalculationEngine.formatCurrency(calc.tm, false) : ''}</td>
-        <td class="col-right col-bold" style="color:#7e22ce;">${calc.adv1 ? CalculationEngine.formatCurrency(calc.adv1, false) : ''}</td>
+        <td class="col-right">${CalculationEngine.formatCurrency(calc.tm, false)}</td>
+        <td class="col-right col-bold" style="color:#7e22ce;">${CalculationEngine.formatCurrency(calc.adv1, false)}</td>
         <td class="col-center">${t.date2 || ''}</td>
-        <td class="col-right">${calc.adv2 ? CalculationEngine.formatCurrency(calc.adv2, false) : ''}</td>
+        <td class="col-right">${CalculationEngine.formatCurrency(calc.adv2, false)}</td>
         <td class="col-center">${t.date3 || ''}</td>
-        <td class="col-right">${calc.adv3 ? CalculationEngine.formatCurrency(calc.adv3, false) : ''}</td>
-        <td class="col-right col-bold">${calc.cod ? CalculationEngine.formatCurrency(calc.cod, false) : ''}</td>
-        <td class="col-right">${calc.pm ? CalculationEngine.formatCurrency(calc.pm, false) : ''}</td>
+        <td class="col-right">${CalculationEngine.formatCurrency(calc.adv3, false)}</td>
+        <td class="col-right col-bold">${CalculationEngine.formatCurrency(calc.cod, false)}</td>
+        <td class="col-right">${CalculationEngine.formatCurrency(calc.pm, false)}</td>
         <td class="col-center">${t.payDate || ''}</td>
         <td class="col-right col-bold" style="background:#fef9c3;">${CalculationEngine.formatCurrency(calc.balc, false)}</td>
-        <td class="col-right">${calc.pmFinal ? CalculationEngine.formatCurrency(calc.pmFinal, false) : ''}</td>
+        <td class="col-right">${CalculationEngine.formatCurrency(calc.pmFinal, false)}</td>
         <td class="col-right col-bold" style="background:#fee2e2; color:${calc.finalBalc > 0 ? '#b91c1c' : '#15803d'};">
           ${CalculationEngine.formatCurrency(calc.finalBalc, false)}
         </td>
@@ -174,15 +174,15 @@ const TableModule = {
           <span class="route-point">${escapeHtml(t.to || 'Destination')}</span>
         </div>
 
-        <!-- Vehicle & Topay Status -->
+        <!-- Vehicle & To-Billed Status -->
         <div class="trip-details-row">
           <div>
             <span class="trip-detail-label">Truck No:</span>
             <span class="truck-plate">${escapeHtml(t.truckNo || '—')}</span>
           </div>
           <div style="text-align: right;">
-            <span class="trip-detail-label">Topay Status:</span>
-            <span class="topay-tag ${t.topay ? 'has-topay' : ''}">${escapeHtml(t.topay || 'Standard')}</span>
+            <span class="trip-detail-label">ToPayStatus:</span>
+            <span class="topay-tag ${t.topay ? 'has-topay' : ''}">${escapeHtml(t.topay || 'TOBILLED')}</span>
           </div>
         </div>
 
@@ -278,25 +278,46 @@ const TableModule = {
     document.getElementById('m_slNo').value = trip.slNo || '';
     document.getElementById('m_trspName').value = trip.trspName || '';
     document.getElementById('m_date').value = this.toInputDate(trip.date);
-    document.getElementById('m_lrNo').value = trip.lrNo || '';
+    const lrInput = document.getElementById('m_lrNo');
+    if (lrInput) {
+      lrInput.value = trip.lrNo || '';
+      lrInput.style.borderColor = '';
+      lrInput.style.backgroundColor = '';
+    }
+    const errSpan = document.getElementById('m_lrNoError');
+    if (errSpan) {
+      errSpan.innerText = '';
+      errSpan.style.display = 'none';
+    }
     document.getElementById('m_truckNo').value = trip.truckNo || '';
     document.getElementById('m_from').value = trip.from || '';
     document.getElementById('m_to').value = trip.to || '';
     document.getElementById('m_accountNo').value = trip.accountNo || '';
     document.getElementById('m_ifsc').value = trip.ifsc || '';
     document.getElementById('m_paymentMade').value = trip.paymentMade || '';
-    document.getElementById('m_fright').value = trip.fright || '';
-    document.getElementById('m_topay').value = trip.topay || '';
-    document.getElementById('m_tm').value = trip.tm || '';
-    document.getElementById('m_advance1').value = trip.advance1 || '';
+    document.getElementById('m_fright').value = (trip.fright !== undefined && trip.fright !== null && trip.fright !== '') ? trip.fright : 0;
+    
+    // Normalize status into exactly one of the 3 supported options: A/TO-PAY, F/TO-PAY, TOBILLED
+    let currentStatus = String(trip.topay || '').trim().toUpperCase();
+    if (currentStatus.startsWith('F')) {
+      currentStatus = 'F/TO-PAY';
+    } else if (currentStatus.startsWith('A')) {
+      currentStatus = 'A/TO-PAY';
+    } else {
+      currentStatus = 'TOBILLED';
+    }
+    document.getElementById('m_topay').value = currentStatus;
+
+    document.getElementById('m_tm').value = (trip.tm !== undefined && trip.tm !== null && trip.tm !== '') ? trip.tm : 0;
+    document.getElementById('m_advance1').value = (trip.advance1 !== undefined && trip.advance1 !== null && trip.advance1 !== '') ? trip.advance1 : 0;
     document.getElementById('m_date1').value = this.toInputDate(trip.date1);
-    document.getElementById('m_advance2').value = trip.advance2 || '';
+    document.getElementById('m_advance2').value = (trip.advance2 !== undefined && trip.advance2 !== null && trip.advance2 !== '') ? trip.advance2 : 0;
     document.getElementById('m_date2').value = this.toInputDate(trip.date2);
-    document.getElementById('m_advance3').value = trip.advance3 || '';
+    document.getElementById('m_advance3').value = (trip.advance3 !== undefined && trip.advance3 !== null && trip.advance3 !== '') ? trip.advance3 : 0;
     document.getElementById('m_date3').value = this.toInputDate(trip.date3);
-    document.getElementById('m_cod').value = trip.cod || '';
-    document.getElementById('m_pm').value = trip.pm || '';
-    document.getElementById('m_pmFinal').value = trip.pmFinal || '';
+    document.getElementById('m_cod').value = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '') ? trip.cod : 0;
+    document.getElementById('m_pm').value = (trip.pm !== undefined && trip.pm !== null && trip.pm !== '') ? trip.pm : 0;
+    document.getElementById('m_pmFinal').value = (trip.pmFinal !== undefined && trip.pmFinal !== null && trip.pmFinal !== '') ? trip.pmFinal : 0;
     document.getElementById('m_payDate').value = this.toInputDate(trip.payDate);
     document.getElementById('m_pod').value = this.toInputDate(trip.pod);
     document.getElementById('m_note').value = trip.note || '';
@@ -330,25 +351,37 @@ const TableModule = {
     document.getElementById('m_slNo').value = nextSlNo;
     document.getElementById('m_trspName').value = '';
     document.getElementById('m_date').value = today;
-    document.getElementById('m_lrNo').value = '';
+    
+    const lrInput = document.getElementById('m_lrNo');
+    if (lrInput) {
+      lrInput.value = '';
+      lrInput.style.borderColor = '';
+      lrInput.style.backgroundColor = '';
+    }
+    const errSpan = document.getElementById('m_lrNoError');
+    if (errSpan) {
+      errSpan.innerText = '';
+      errSpan.style.display = 'none';
+    }
+
     document.getElementById('m_truckNo').value = '';
     document.getElementById('m_from').value = 'MEDCHAL';
     document.getElementById('m_to').value = '';
     document.getElementById('m_accountNo').value = '';
     document.getElementById('m_ifsc').value = '';
     document.getElementById('m_paymentMade').value = 'SBI BANK';
-    document.getElementById('m_fright').value = '';
-    document.getElementById('m_topay').value = '';
-    document.getElementById('m_tm').value = '';
-    document.getElementById('m_advance1').value = '';
+    document.getElementById('m_fright').value = 0;
+    document.getElementById('m_topay').value = 'A/TO-PAY';
+    document.getElementById('m_tm').value = 0;
+    document.getElementById('m_advance1').value = 0;
     document.getElementById('m_date1').value = '';
-    document.getElementById('m_advance2').value = '';
+    document.getElementById('m_advance2').value = 0;
     document.getElementById('m_date2').value = '';
-    document.getElementById('m_advance3').value = '';
+    document.getElementById('m_advance3').value = 0;
     document.getElementById('m_date3').value = '';
-    document.getElementById('m_cod').value = '';
-    document.getElementById('m_pm').value = '';
-    document.getElementById('m_pmFinal').value = '';
+    document.getElementById('m_cod').value = 0;
+    document.getElementById('m_pm').value = 0;
+    document.getElementById('m_pmFinal').value = 0;
     document.getElementById('m_payDate').value = '';
     document.getElementById('m_pod').value = '';
     document.getElementById('m_note').value = '';
@@ -358,7 +391,59 @@ const TableModule = {
   },
 
   closeModal() {
+    const lrInput = document.getElementById('m_lrNo');
+    if (lrInput) {
+      lrInput.style.borderColor = '';
+      lrInput.style.backgroundColor = '';
+    }
+    const errSpan = document.getElementById('m_lrNoError');
+    if (errSpan) {
+      errSpan.innerText = '';
+      errSpan.style.display = 'none';
+    }
     document.getElementById('editModal').style.display = 'none';
+  },
+
+  validateLrNoLive() {
+    const lrInput = document.getElementById('m_lrNo');
+    const errSpan = document.getElementById('m_lrNoError');
+    if (!lrInput) return true;
+
+    const rowNum = parseInt(document.getElementById('m_editRow').value) || 0;
+    const isAdd = document.getElementById('m_isAdd').value === 'true';
+    const lrVal = lrInput.value.trim();
+
+    if (!lrVal) {
+      lrInput.style.borderColor = '';
+      lrInput.style.backgroundColor = '';
+      if (errSpan) {
+        errSpan.innerText = '';
+        errSpan.style.display = 'none';
+      }
+      return true;
+    }
+
+    const duplicate = (typeof DataManager !== 'undefined') ? DataManager.isDuplicateLr(lrVal, isAdd ? null : rowNum) : null;
+
+    if (duplicate) {
+      lrInput.style.borderColor = '#ef4444';
+      lrInput.style.backgroundColor = '#fef2f2';
+      if (errSpan) {
+        errSpan.innerText = `⚠️ Duplicate (Trip #${duplicate.slNo})`;
+        errSpan.style.color = '#ef4444';
+        errSpan.style.display = 'inline';
+      }
+      return false;
+    } else {
+      lrInput.style.borderColor = '#22c55e';
+      lrInput.style.backgroundColor = '';
+      if (errSpan) {
+        errSpan.innerText = '✓ Unique LR';
+        errSpan.style.color = '#15803d';
+        errSpan.style.display = 'inline';
+      }
+      return true;
+    }
   },
 
   liveCalcModal() {
@@ -386,13 +471,40 @@ const TableModule = {
 
     const rowNum = parseInt(document.getElementById('m_editRow').value);
     const isAdd = document.getElementById('m_isAdd').value === 'true';
+    const lrNo = document.getElementById('m_lrNo').value.trim();
+
+    if (!lrNo) {
+      alert('⚠️ LR NO is required. Please enter an LR NO.');
+      document.getElementById('m_lrNo').focus();
+      return;
+    }
+
+    // Strict Duplicate LR NO Enforcement: LR NO must be unique across all trips
+    const duplicate = (typeof DataManager !== 'undefined') ? DataManager.isDuplicateLr(lrNo, isAdd ? null : rowNum) : null;
+
+    if (duplicate) {
+      const lrInput = document.getElementById('m_lrNo');
+      if (lrInput) {
+        lrInput.style.borderColor = '#ef4444';
+        lrInput.style.backgroundColor = '#fef2f2';
+        lrInput.focus();
+      }
+      const errSpan = document.getElementById('m_lrNoError');
+      if (errSpan) {
+        errSpan.innerText = `⚠️ Duplicate of Trip #${duplicate.slNo}`;
+        errSpan.style.color = '#ef4444';
+        errSpan.style.display = 'inline';
+      }
+      alert(`❌ Duplicate LR NO Error:\n\nLR NO "${lrNo}" is already in use by Trip #${duplicate.slNo} (${duplicate.truckNo} - ${duplicate.trspName})!\n\nEach shipment must have a unique LR NO. Duplicate LR numbers are not allowed.`);
+      return;
+    }
 
     const tripData = {
       row: rowNum,
       slNo: document.getElementById('m_slNo').value || String(DataManager.getAll().length + 1),
       trspName: document.getElementById('m_trspName').value.trim(),
       date: this.toDisplayDate(document.getElementById('m_date').value),
-      lrNo: document.getElementById('m_lrNo').value.trim(),
+      lrNo: lrNo,
       truckNo: document.getElementById('m_truckNo').value.trim().toUpperCase(),
       from: document.getElementById('m_from').value.trim(),
       to: document.getElementById('m_to').value.trim(),
@@ -416,6 +528,11 @@ const TableModule = {
       note: document.getElementById('m_note').value.trim()
     };
 
+    // Auto-calculate exact BALC (W) and FINAL BALC (Y) according to To-Billed condition before saving
+    const calc = CalculationEngine.calculate(tripData);
+    tripData.balc = calc.balc;
+    tripData.finalBalc = calc.finalBalc;
+
     DataManager.saveTrip(tripData);
     this.closeModal();
 
@@ -428,6 +545,9 @@ const TableModule = {
     if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
       ApiService.saveTrip(tripData).then(async (res) => {
         console.log('✅ Cloud mutation synced to Google Sheets:', res);
+        if (res && res.version) {
+          DataManager.setVersion(String(res.version));
+        }
         if (typeof AppModule !== 'undefined') {
           await AppModule.syncNow(true);
         }
@@ -494,14 +614,14 @@ const TableModule = {
         { header: 'PAYMENT MADE', key: 'paymentMade', width: 16 },
         { header: 'FRIGHT', key: 'fright', width: 14 },
         { header: 'DATE', key: 'date1', width: 13 },
-        { header: 'Topay', key: 'topay', width: 13 },
+        { header: 'ToPayStatus', key: 'topay', width: 16 },
         { header: 'T/M', key: 'tm', width: 11 },
         { header: 'ADVANCE', key: 'adv1', width: 14 },
         { header: 'DATE 2', key: 'date2', width: 13 },
         { header: 'ADVANCE2', key: 'adv2', width: 12 },
         { header: 'DATE3', key: 'date3', width: 13 },
         { header: 'ADVANCE3', key: 'adv3', width: 12 },
-        { header: 'Topay(COD)', key: 'cod', width: 13 },
+        { header: 'To-Billed (COD)', key: 'cod', width: 15 },
         { header: 'P/M', key: 'pm', width: 11 },
         { header: 'DATE', key: 'payDate', width: 13 },
         { header: 'BALC', key: 'balc', width: 14 },
@@ -537,7 +657,7 @@ const TableModule = {
 
         // Custom Header colors matching Excel
         if (colNumber === 13) {
-          cell.fill = greenFill; // Col M Topay
+          cell.fill = greenFill; // Col M To-Billed
         } else if (colNumber === 15) {
           cell.fill = purpleFill; // Col O ADVANCE
         } else if (colNumber === 23) {
@@ -704,7 +824,7 @@ const TableModule = {
       const buf = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const nowStr = new Date().toISOString().slice(0, 10);
-      saveAs(blob, `Transport_Brokerage_Ledger_${nowStr}.xlsx`);
+      saveAs(blob, `SR_Brokerage_Ledger_${nowStr}.xlsx`);
 
       if (typeof AppModule !== 'undefined') {
         AppModule.showToast('📊 Genuine Excel (.xlsx) downloaded with cell colors & formatting!');
@@ -724,9 +844,9 @@ const TableModule = {
 
     const headers = [
       'SL NO', 'TRSP NAME', 'DATE', 'LR NO', 'TRUCK NO', 'FROM', 'TO',
-      'ACCOUNT NO', 'IFSC CODE', 'PAYMENT MADE', 'FRIGHT', 'DATE', 'Topay',
+      'ACCOUNT NO', 'IFSC CODE', 'PAYMENT MADE', 'FRIGHT', 'DATE', 'ToPayStatus',
       'T/M', 'ADVANCE', 'DATE 2', 'ADVANCE2', 'DATE3', 'ADVANCE3',
-      'Topay(COD)', 'P/M', 'DATE', 'BALC', 'P/M', 'FINAL BALC', 'POD RECD', 'NOTE'
+      'To-Billed (COD)', 'P/M', 'DATE', 'BALC', 'P/M', 'FINAL BALC', 'POD RECD', 'NOTE'
     ];
 
     const rows = list.map(t => {
@@ -742,21 +862,21 @@ const TableModule = {
         `"${t.accountNo || ''}"`,
         `"${t.ifsc || ''}"`,
         `"${(t.paymentMade || '').replace(/"/g, '""')}"`,
-        calc.fright,
+        calc.fright || 0,
         `"${t.date1 || ''}"`,
         `"${(t.topay || '').replace(/"/g, '""')}"`,
-        calc.tm,
-        calc.adv1,
+        calc.tm || 0,
+        calc.adv1 || 0,
         `"${t.date2 || ''}"`,
-        calc.adv2,
+        calc.adv2 || 0,
         `"${t.date3 || ''}"`,
-        calc.adv3,
-        calc.cod,
-        calc.pm,
+        calc.adv3 || 0,
+        calc.cod || 0,
+        calc.pm || 0,
         `"${t.payDate || ''}"`,
-        calc.balc,
-        calc.pmFinal,
-        calc.finalBalc,
+        calc.balc || 0,
+        calc.pmFinal || 0,
+        calc.finalBalc || 0,
         `"${(t.pod || '').replace(/"/g, '""')}"`,
         `"${(t.note || '').replace(/"/g, '""')}"`
       ].join(',');
@@ -766,7 +886,7 @@ const TableModule = {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Broker_Trip_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `SR_Brokerage_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

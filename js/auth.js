@@ -1,10 +1,12 @@
 /**
  * auth.js - Cryptographically Grounded RBAC Authentication System
- * Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * Fleet Logistics & Financial Accounts Management
+ * Developed by Shravan Kumar
  * 
  * Strict Credentials Enforced:
- *  - ADMIN: Administrator (Shravan) | Password: Shravan@2505
- *  - RUDRA: User / Fleet Employee   | Password: RudraSarika@2505
+ *  - ADMIN: Administrator (Shravan) | Role: Admin (SHA-256 authenticated)
+ *  - RUDRA: User / Fleet Employee   | Role: Employee (SHA-256 authenticated)
  * 
  * Permissions:
  *  - ADMIN: Full CRUD Control (Add, Edit, Update POD, Delete Records, Restore Data)
@@ -20,7 +22,7 @@ const AuthModule = {
   idleTimeoutMs: 10 * 60 * 1000, // 10 minutes
   _idleTimer: null,
 
-  // Pre-configured SHA-256 hashes of authorized credentials
+  // Pre-configured SHA-256 hashes of authorized credentials (NO PLAIN-TEXT PASSWORDS STORED)
   accounts: {
     admin: {
       username: 'admin',
@@ -28,8 +30,7 @@ const AuthModule = {
       role: 'admin',
       badgeColor: '#1e3a8a',
       permissions: { canAdd: true, canEdit: true, canDelete: true },
-      passHash: 'ded12726612993e58a7f6f1b0428300adcf13f6cabb7515436c5888b3de21c0b', // SHA-256 of Shravan@2505
-      primaryPass: 'Shravan@2505'
+      passHash: 'ded12726612993e58a7f6f1b0428300adcf13f6cabb7515436c5888b3de21c0b' // SHA-256 of authorized Admin credential
     },
     rudra: {
       username: 'rudra',
@@ -37,8 +38,7 @@ const AuthModule = {
       role: 'employee',
       badgeColor: '#059669',
       permissions: { canAdd: true, canEdit: true, canDelete: false },
-      passHash: '0a623bcaece42a5740cdfb0b78849ec8717d811c8c2583697ab884513f4d9e3f', // SHA-256 of RudraSarika@2505
-      primaryPass: 'RudraSarika@2505'
+      passHash: '0a623bcaece42a5740cdfb0b78849ec8717d811c8c2583697ab884513f4d9e3f' // SHA-256 of authorized Employee credential
     }
   },
 
@@ -187,12 +187,12 @@ const AuthModule = {
 
     const inputHash = await this.computeSha256(pwd);
 
-    // Exact strict match against authorized password or SHA-256 hash
+    // Exact strict match against SHA-256 hash
     let isMatch = false;
     if (customOverride) {
       isMatch = (pwd === customOverride);
     } else {
-      isMatch = (pwd === account.primaryPass) || (inputHash && inputHash === account.passHash);
+      isMatch = (inputHash && inputHash === account.passHash);
     }
 
     if (isMatch) {
@@ -201,7 +201,9 @@ const AuthModule = {
         displayName: account.displayName,
         role: account.role,
         badgeColor: account.badgeColor,
-        permissions: account.permissions
+        permissions: account.permissions,
+        authHash: account.passHash,
+        loginTime: Date.now()
       };
       localStorage.setItem(this.storageKey, JSON.stringify(sessionUser));
 
@@ -271,6 +273,7 @@ const AuthModule = {
 
   updateHeaderUI() {
     const user = this.getCurrentUser() || this.accounts.admin;
+    const isAdmin = (user.role === 'admin');
     const userDisplay = document.getElementById('currentUserDisplay');
     const roleBadge = document.getElementById('currentUserRoleBadge');
     const drawerUser = document.getElementById('drawerUserName');
@@ -294,6 +297,11 @@ const AuthModule = {
     if (drawerRole) {
       drawerRole.innerText = user.role.toUpperCase();
     }
+
+    // Role-Based UI Visibility: Hide Admin-only controls from Employee (Rudra)
+    document.querySelectorAll('.admin-only').forEach(el => {
+      el.style.display = isAdmin ? '' : 'none';
+    });
   },
 
   changePassword() {

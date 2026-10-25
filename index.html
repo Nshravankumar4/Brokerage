@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transport Brokerage Ledger — Fleet Logistics &amp; Financial Accounts Management</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <title>SR Brokerage Ledger — Fleet Logistics &amp; Financial Accounts Management</title>
+  <link rel="stylesheet" href="css/styles.css?v=8.3">
   <script src="libs/exceljs.min.js"></script>
   <script src="libs/FileSaver.min.js"></script>
 </head>
@@ -14,7 +14,7 @@
   <div id="welcomeSplashOverlay" class="welcome-splash-overlay" style="display: none;">
     <div class="welcome-splash-card">
       <div class="welcome-splash-icon">🚛</div>
-      <h2 id="welcomeSplashGreeting" class="welcome-splash-title">👋 Welcome, Shravan (Admin)!</h2>
+      <h2 id="welcomeSplashGreeting" class="welcome-splash-title">👋 Welcome to SR Brokerage Ledger!</h2>
       <p class="welcome-splash-sub">Transport Brokerage Ledger Pvt Ltd</p>
       <div class="welcome-spinner-ring"></div>
       <div id="welcomeSplashStatus" class="welcome-splash-status">Connecting to live cloud ledger &amp; verifying financial totals...</div>
@@ -25,7 +25,7 @@
   <div id="authWrapper" class="auth-wrapper" style="display: none;">
     <div class="auth-card">
       <div class="auth-header">
-        <h1>🚛 Transport Brokerage Ledger</h1>
+        <h1>🚛 SR Brokerage Ledger</h1>
         <p style="font-size: 0.82rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.9; margin-top: -0.35rem; color: #1e3a8a;">Fleet Logistics &amp; Financial Accounts Management</p>
         <p>Sign in with your secure account</p>
       </div>
@@ -74,7 +74,7 @@
 
     <!-- Login page footer bar -->
     <div class="auth-footer-bar">
-      <span><strong>Brokerage Ledger • Enterprise Freight &amp; Fleet Management</strong></span>
+      <span><strong>SR Brokerage Ledger • Enterprise Freight &amp; Fleet Management</strong></span>
       <span>© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by <strong>Shravan Kumar</strong> • All Rights Reserved</span>
     </div>
   </div>
@@ -85,8 +85,8 @@
       <div class="drawer-brand">
         <div class="brand-icon">🚛</div>
         <div class="brand-text">
-          <h3>Brokerage Ledger</h3>
-          <span>Transport &amp; Accounts</span>
+          <h3>SR Brokerage Ledger</h3>
+          <span>Fleet Logistics &amp; Financial Accounts Management</span>
         </div>
       </div>
       <button class="drawer-close-btn" onclick="AppModule.closeSidebar()" aria-label="Close menu">✕</button>
@@ -124,7 +124,7 @@
         <span class="drawer-item-icon">📥</span>
         <span>Export Excel (.xlsx)</span>
       </button>
-      <button class="drawer-nav-item" onclick="AppModule.openSettingsModal(); AppModule.closeSidebar();">
+      <button class="drawer-nav-item admin-only" id="drawerNavSettings" onclick="AppModule.openSettingsModal(); AppModule.closeSidebar();">
         <span class="drawer-item-icon">⚙️</span>
         <span>Settings &amp; API</span>
       </button>
@@ -144,8 +144,9 @@
       <button id="logoutBtn" class="sidebar-logout-btn" onclick="AuthModule.logout(); AppModule.closeSidebar();">
         <span>🚪</span> Logout / Switch User
       </button>
-      <div style="font-size: 0.67rem; color: #64748b; text-align: center; margin-top: 2px;">
-        © 2026 Transport Brokerage Ledger Pvt Ltd
+      <div style="font-size: 0.67rem; color: #64748b; text-align: center; margin-top: 4px; line-height: 1.4;">
+        <div style="font-weight: 600; color: #94a3b8; margin-bottom: 2px;">SR Brokerage Ledger • Enterprise Freight &amp; Fleet Management</div>
+        © 2026 Transport Brokerage Ledger Pvt Ltd • Developed by <strong>Shravan Kumar</strong> • All Rights Reserved
       </div>
     </div>
   </aside>
@@ -163,7 +164,7 @@
         </button>
         <div class="brand-icon">🚛</div>
         <div class="brand-text">
-          <h1>Transport Brokerage Ledger</h1>
+          <h1>SR Brokerage Ledger</h1>
           <span>Fleet Logistics &amp; Financial Accounts Management</span>
         </div>
       </div>
@@ -222,11 +223,13 @@
             <input type="date" id="filterDateTo" class="date-input">
           </div>
 
-          <!-- Status Filter Chips -->
+          <!-- Status Filter Chips (All Trips, A/TO-PAY, F/TO-PAY, TOBILLED, POD Missing, Clear) -->
           <div class="filter-chips-group">
             <button id="chipAllTrips" class="chip-btn active" onclick="AppModule.setFilter('all', this)">All Trips</button>
-            <button id="chipMissingPod" class="chip-btn chip-danger" onclick="AppModule.setFilter('missingPod', this)">⚠️ Missing POD</button>
-            <button class="chip-btn" onclick="AppModule.setFilter('topay', this)">Topay Shipments</button>
+            <button id="chipAToPay" class="chip-btn" onclick="AppModule.setFilter('A/TO-PAY', this)">A/TO-PAY</button>
+            <button id="chipFToPay" class="chip-btn" onclick="AppModule.setFilter('F/TO-PAY', this)">F/TO-PAY</button>
+            <button id="chipToBilled" class="chip-btn" onclick="AppModule.setFilter('TOBILLED', this)">TOBILLED</button>
+            <button id="chipMissingPod" class="chip-btn chip-danger" onclick="AppModule.setFilter('missingPod', this)">⚠️ POD Missing</button>
             <button class="btn btn-secondary btn-sm" onclick="AppModule.clearAllFilters()" title="Reset all filters">Clear</button>
           </div>
         </div>
@@ -250,7 +253,7 @@
           </button>
           <!-- Single Primary Add Trip / Shipment Button -->
           <button class="btn-add-prominent" onclick="TableModule.openAddModal()" title="Add a new shipment record">
-            <span class="btn-add-plus">➕</span> Add Shipment
+            <span class="btn-add-plus">+</span> Add Shipment
           </button>
         </div>
       </div>
@@ -385,14 +388,14 @@
                 <th>PAYMENT MADE</th>
                 <th>FRIGHT</th>
                 <th>DATE</th>
-                <th class="th-green">Topay</th>
+                <th class="th-green" style="min-width: 120px;">ToPayStatus</th>
                 <th>T/M</th>
                 <th class="th-purple">ADVANCE</th>
                 <th>DATE 2</th>
                 <th>ADVANCE2</th>
                 <th>DATE3</th>
                 <th>ADVANCE3</th>
-                <th>Topay(COD)</th>
+                <th>To-Billed (COD)</th>
                 <th>P/M</th>
                 <th>DATE</th>
                 <th class="th-yellow">BALC</th>
@@ -435,7 +438,7 @@
 
     <!-- Pinned Global Footer Bar across all tabs/pages (MANDATORY BRANDING: NO 'SHINEX LEDGER') -->
     <footer class="app-footer">
-      <span><strong>Brokerage Ledger • Enterprise Freight &amp; Fleet Management</strong></span>
+      <span><strong>SR Brokerage Ledger • Enterprise Freight &amp; Fleet Management</strong></span>
       <span>© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by <strong>Shravan Kumar</strong> • All Rights Reserved</span>
     </footer>
   </div>
@@ -470,8 +473,11 @@
 
         <div class="form-grid-3">
           <div class="form-group">
-            <label>LR NO (Col D)</label>
-            <input type="text" id="m_lrNo" class="form-control" required>
+            <label for="m_lrNo" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>LR NO (Col D) <strong style="color: #ef4444;">*</strong></span>
+              <span id="m_lrNoError" style="font-size: 0.73rem; font-weight: 700; display: none;"></span>
+            </label>
+            <input type="text" id="m_lrNo" class="form-control" placeholder="e.g. 207 or 191/192" required oninput="TableModule.validateLrNoLive()">
           </div>
           <div class="form-group">
             <label>Truck No (Col E)</label>
@@ -508,8 +514,12 @@
             <input type="number" id="m_fright" class="form-control" required>
           </div>
           <div class="form-group">
-            <label style="color: #15803d; font-weight: 800;">Topay Condition (Col M)</label>
-            <input type="text" id="m_topay" class="form-control" placeholder="e.g. F/TO-PAY, A/TO-PAY, TO-PAY" style="border: 2px solid #86efac;">
+            <label for="m_topay" style="color: #15803d; font-weight: 800;">ToPayStatus</label>
+            <select id="m_topay" class="form-control" onchange="TableModule.liveCalcModal()" style="border: 2px solid #86efac; font-weight: 700; cursor: pointer;">
+              <option value="A/TO-PAY">A/TO-PAY</option>
+              <option value="F/TO-PAY">F/TO-PAY</option>
+              <option value="TOBILLED">TOBILLED</option>
+            </select>
           </div>
         </div>
 
@@ -550,7 +560,7 @@
             <input type="date" id="m_date3" class="form-control">
           </div>
           <div class="form-group">
-            <label>Topay COD (Col T)</label>
+            <label>To-Billed COD (Col T)</label>
             <input type="number" id="m_cod" class="form-control">
           </div>
           <div class="form-group">
@@ -618,7 +628,7 @@
         <!-- System Info Card -->
         <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 1rem 1.2rem;">
           <div style="font-weight: 800; color: #1e3a8a; font-size: 0.95rem; margin-bottom: 0.35rem;">
-            Transport Brokerage Ledger v7.0
+            SR Brokerage Ledger v8.3
           </div>
           <div style="font-size: 0.8rem; color: #64748b; line-height: 1.6;">
             Authoritative Workbook: <strong>BROKER DETAILS ADVANCE BALC DETAILS.xlsx</strong><br>
@@ -676,12 +686,12 @@
   </div>
 
   <!-- Modular Scripts -->
-  <script src="js/api.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/calculations.js"></script>
-  <script src="js/dashboard.js"></script>
-  <script src="js/table.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/api.js?v=8.3"></script>
+  <script src="js/auth.js?v=8.3"></script>
+  <script src="js/data.js?v=8.3"></script>
+  <script src="js/calculations.js?v=8.3"></script>
+  <script src="js/dashboard.js?v=8.3"></script>
+  <script src="js/table.js?v=8.3"></script>
+  <script src="js/app.js?v=8.3"></script>
 </body>
 </html>

@@ -1,20 +1,22 @@
-# Transport Brokerage Ledger — Master Technical Architecture & Specification
+# SR Brokerage Ledger — Master Technical Architecture & Specification
 ### Transport Brokerage Ledger Pvt Ltd • Enterprise Freight & Fleet Management System
 
-**System Brand:** `Transport Brokerage Ledger`  
+**System Brand:** `SR Brokerage Ledger`  
 **Parent Entity:** `Transport Brokerage Ledger Pvt Ltd`  
+**Developer:** `Shravan Kumar`  
 **Local Codebase:** `E:\TR\P1\` (All development, UI, and backend code resides strictly in `P1`)  
 **Reference System (Read-Only):** `E:\TR\SR_T` (`https://github.com/Nshravankumar4/SR_T`)  
 **Authoritative Workbook Source:** `BROKER DETAILS ADVANCE BALC DETAILS.xlsx` (Worksheet: `final`)  
-**Authoritative Cloud Endpoint:** `https://script.google.com/macros/s/AKfycbxhwvJi8UDsJd2yFo9oprDAQGS8M9L6UfcM5M9Tmn98UPZFP8ijYdS9ZIYAl4hiyKbopA/exec`  
-**Specification Version:** 7.0 (Production Layout, Date Pickers, Full-Width POD Alerts & Exact Workbook Reconciled)
+**Authoritative Cloud Endpoint:** `https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec`  
+**Authoritative Google Spreadsheet ID:** `1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA`  
+**Specification Version:** 8.3 (SR Brokerage Ledger, ToPayStatus Column M, Server-Side RBAC Authorization, Cloud-Native Google Sheets Sync)
 
 ---
 
 ## 1. Application Branding & Footer Standard
 
 ### 1.1 Application Heading & Subtitle
-- **Header Title:** `Transport Brokerage Ledger`
+- **Header Title:** `SR Brokerage Ledger`
 - **Header Subtitle:** `Fleet Logistics & Financial Accounts Management`
 - **Menu Button:** A functional `☰ Menu` button is positioned immediately before the application title in the header navbar, opening a left slide-in drawer.
 
@@ -22,7 +24,7 @@
 Applied consistently across all screens: the Login Portal (`#authWrapper`), Executive Dashboard, Trip Edit, Spreadsheet View, and Settings:
 ```html
 <footer class="app-footer">
-  <span><strong>Brokerage Ledger • Enterprise Freight &amp; Fleet Management</strong></span>
+  <span><strong>SR Brokerage Ledger • Enterprise Freight &amp; Fleet Management</strong></span>
   <span>© 2026 Transport Brokerage Ledger Pvt Ltd • Developed by <strong>Shravan Kumar</strong> • All Rights Reserved</span>
 </footer>
 ```
@@ -134,7 +136,7 @@ All date entry and editing operations use native browser date inputs:
 | **A** | `SL NO` | Number | Sequential starting at 1 |
 | **B** | `TRSP NAME` | String | Transporter / Fleet owner |
 | **C** | `DATE` | Date (`DD-MM-YYYY`) | Dispatch date |
-| **D** | `LR NO` | String | Lorry receipt reference |
+| **D** | `LR NO` | String | Unique Lorry Receipt reference (**Duplicate LR strictly prevented in UI & backend**) |
 | **E** | `TRUCK NO` | String | Vehicle registration |
 | **F** | `FROM` | String | Loading station (e.g. Medchal) |
 | **G** | `TO` | String | Unloading destination |
@@ -143,14 +145,14 @@ All date entry and editing operations use native browser date inputs:
 | **J** | `PAYMENT MADE` | String | Bank name / payment mode |
 | **K** | `FRIGHT` | Currency | Agreed freight amount |
 | **L** | `DATE` | Date (`DD-MM-YYYY`) | Advance 1 payment date |
-| **M** | `Topay` | String | `F/TO-PAY`, `A/TO-PAY`, or Blank (Green header) |
+| **M** | `ToPayStatus` | String | `A/TO-PAY`, `F/TO-PAY`, `TOBILLED` (Green header) |
 | **N** | `T/M` | Currency | Transit Mamul deduction |
 | **O** | `ADVANCE` | Currency | Advance 1 amount (Purple header) |
 | **P** | `DATE 2` | Date (`DD-MM-YYYY`) | Advance 2 payment date |
 | **Q** | `ADVANCE2` | Currency | Advance 2 amount |
 | **R** | `DATE3` | Date (`DD-MM-YYYY`) | Advance 3 payment date |
 | **S** | `ADVANCE3` | Currency | Advance 3 amount |
-| **T** | `Topay(COD)` | Currency | Cash on Delivery / Consignee collection |
+| **T** | `To-Billed (COD)` | Currency | Cash on Delivery / Consignee collection |
 | **U** | `P/M` | Currency | Point Mamul deduction |
 | **V** | `DATE` | Date (`DD-MM-YYYY`) | Balance settlement date |
 | **W** | `BALC` | Currency | Intermediate balance (Yellow header) |
@@ -169,9 +171,9 @@ Formulas extracted from `BROKER DETAILS ADVANCE BALC DETAILS.xlsx` worksheet `fi
 ```excel
 =IF(LEFT(UPPER(TRIM(M2)),1)="F", 0, IF(LEFT(UPPER(TRIM(M2)),1)="A", K2-N2-O2-T2, K2-(O2+Q2+S2+U2+T2)))
 ```
-1. **Full ToPay (`F/TO-PAY`)**: Returns `0`. Consignee pays full freight at destination; no broker balance payable at dispatch.
-2. **Advance ToPay (`A/TO-PAY`)**: Freight ($K$) $-$ Transit Mamul ($N$) $-$ Advance 1 ($O$) $-$ COD ($T$). Evaluates to `₹0` for trips 18 & 19 where COD equals the net balance.
-3. **Standard Freight**: Freight ($K$) $-$ (Advances $O+Q+S$ + Mamul $U$ + COD $T$).
+1. **Full To-Pay (`F/TO-PAY`)**: Returns `0`. Consignee pays full freight at destination; no broker balance payable at dispatch.
+2. **Advance To-Pay (`A/TO-PAY`)**: Freight ($K$) $-$ Transit Mamul ($N$) $-$ Advance 1 ($O$) $-$ COD ($T$). Evaluates to `₹0` for trips 18 & 19 where COD equals the net balance.
+3. **To-Billed (`TOBILLED`)**: Freight ($K$) $-$ (Advances $O+Q+S$ + Point Mamul $U$ + COD $T$).
 
 ### 7.2 Final Balance (`FINAL BALC` — Column Y)
 ```excel
