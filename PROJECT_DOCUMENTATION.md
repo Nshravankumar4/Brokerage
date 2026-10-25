@@ -113,7 +113,7 @@ Every column in the application maps directly to `BROKER DETAILS ADVANCE BALC DE
 | **A** | `SL NO` | Number | Serial sequence number (starts at `1`, auto-incrementing) |
 | **B** | `TRSP NAME` | Text | Transporter / fleet vendor name (e.g. `ANTP SAINATH`, `SARITHA TRSP`) |
 | **C** | `DATE` | Date (`DD-MM-YYYY`) | Shipment booking / dispatch date |
-| **D** | `LR NO` | Text | Lorry Receipt number (e.g. `207`, `191/192`) |
+| **D** | `LR NO` | Text | Unique Lorry Receipt number (e.g. `207`, `191/192`). **Duplicate LR NO is strictly prohibited across active trips** |
 | **E** | `TRUCK NO` | Text | Vehicle registration plate (e.g. `AP39UD3564`, `TG15T6666`) |
 | **F** | `FROM` | Text | Dispatch origin city (e.g. `MEDCHAL`, `LUCKNOW`, `RAIPUR`) |
 | **G** | `TO` | Text | Destination city (e.g. `MEDCHAL`, `COOCHBEHAR`, `PURNIA`) |
@@ -122,14 +122,14 @@ Every column in the application maps directly to `BROKER DETAILS ADVANCE BALC DE
 | **J** | `PAYMENT MADE` | Text | Beneficiary bank / payment gateway (e.g. `SBI BANK`, `ICICI BANK`) |
 | **K** | `FRIGHT` | Currency (₹) | Agreed gross freight charge |
 | **L** | `DATE` | Date (`DD-MM-YYYY`) | First advance payment date |
-| **M** | `Topay` | Text | ToPay classification flag: `F/TO-PAY`, `A/TO-PAY`, or Blank |
+| **M** | `ToPayStatus` | Dropdown | Status options: `A/TO-PAY`, `F/TO-PAY`, `TOBILLED` (Col M) |
 | **N** | `T/M` | Number (₹) | Transporter commission / loading fee deduction |
 | **O** | `ADVANCE` | Currency (₹) | Advance 1 amount |
 | **P** | `DATE 2` | Date (`DD-MM-YYYY`) | Advance 2 payment date |
 | **Q** | `ADVANCE2` | Currency (₹) | Advance 2 amount |
 | **R** | `DATE3` | Date (`DD-MM-YYYY`) | Advance 3 payment date |
 | **S** | `ADVANCE3` | Currency (₹) | Advance 3 amount |
-| **T** | `Topay(COD)` | Currency (₹) | Cash-on-Delivery amount collected from consignee |
+| **T** | `To-Billed (COD)` | Currency (₹) | Cash-on-Delivery amount collected from consignee |
 | **U** | `P/M` | Number (₹) | Point Mamul / unloading labor deduction 1 |
 | **V** | `DATE` | Date (`DD-MM-YYYY`) | Intermediate settlement date |
 | **W** | `BALC` | Currency (₹) | **Computed intermediate balance:** `=IF(LEFT(M,1)="F",0,IF(LEFT(M,1)="A",K-N-O-T,K-(O+Q+S+U+T)))` |

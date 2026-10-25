@@ -1,19 +1,27 @@
 /**
  * api.js - Authoritative Cloud API & Synchronization Service
- * Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * Fleet Logistics & Financial Accounts Management
+ * Developed by Shravan Kumar
  * Interfaces with Google Apps Script backend (backend/Code.gs)
- * Live Production Endpoint: https://script.google.com/macros/s/AKfycbxhwvJi8UDsJd2yFo9oprDAQGS8M9L6UfcM5M9Tmn98UPZFP8ijYdS9ZIYAl4hiyKbopA/exec
+ * Live Production Endpoint: https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec
  */
 
 const ApiService = {
   config: {
-    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbxhwvJi8UDsJd2yFo9oprDAQGS8M9L6UfcM5M9Tmn98UPZFP8ijYdS9ZIYAl4hiyKbopA/exec',
-    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbxhwvJi8UDsJd2yFo9oprDAQGS8M9L6UfcM5M9Tmn98UPZFP8ijYdS9ZIYAl4hiyKbopA/exec',
-    sheetId: localStorage.getItem('broker_sheet_id') || '',
+    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec',
+    defaultSheetId: '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
+    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec',
+    sheetId: localStorage.getItem('broker_sheet_id') || '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
     timeoutMs: 12000
   },
 
   getApiUrl() {
+    const stored = localStorage.getItem('broker_api_url');
+    // Auto-migrate legacy deployment endpoints to active Version 3 endpoint
+    if (!stored || stored.includes('AKfycbwVgbDsDazKLlwR2Bh') || stored.includes('AKfycbxhwvJi8UDsJd2yFo')) {
+      return this.config.defaultApiUrl;
+    }
     return this.config.apiUrl || this.config.defaultApiUrl;
   },
 
@@ -23,7 +31,7 @@ const ApiService = {
   },
 
   getSheetId() {
-    return this.config.sheetId || '';
+    return this.config.sheetId || this.config.defaultSheetId || '';
   },
 
   setSheetId(id) {
@@ -148,6 +156,12 @@ const ApiService = {
   },
 
   async deleteTrip(rowNum) {
+    if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
+      alert('Access Denied: Only Administrator is authorized to delete trips.');
+      return { status: 'error', message: 'Unauthorized: Admin role required' };
+    }
+
+    const session = (typeof AuthModule !== 'undefined') ? AuthModule.getCurrentUser() : null;
     DataManager.deleteTrip(rowNum);
 
     const url = this.getApiUrl();
@@ -159,6 +173,8 @@ const ApiService = {
           body: JSON.stringify({
             action: 'deleteTrip',
             rowNum: rowNum,
+            role: session?.role || '',
+            authHash: session?.authHash || '',
             sheetId: this.getSheetId()
           })
         });
@@ -166,6 +182,9 @@ const ApiService = {
           const result = await res.json();
           if (result && result.version) {
             DataManager.setVersion(String(result.version));
+          }
+          if (result && result.status === 'error') {
+            console.error('Server rejection on deleteTrip:', result.message);
           }
         }
       } catch (err) {
@@ -177,6 +196,12 @@ const ApiService = {
   },
 
   async triggerRestoreDatabase() {
+    if (typeof AuthModule !== 'undefined' && !AuthModule.isAdmin()) {
+      alert('Access Denied: Only Administrator is authorized to restore database.');
+      return { status: 'error', message: 'Unauthorized: Admin role required' };
+    }
+
+    const session = (typeof AuthModule !== 'undefined') ? AuthModule.getCurrentUser() : null;
     const url = this.getApiUrl();
     if (url && window.navigator.onLine) {
       try {
@@ -185,6 +210,8 @@ const ApiService = {
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'restoreDatabase',
+            role: session?.role || '',
+            authHash: session?.authHash || '',
             sheetId: this.getSheetId()
           })
         });

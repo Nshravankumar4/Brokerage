@@ -1,5 +1,8 @@
 /**
  * dashboard.js - Executive Logistics Dashboard & Operational Alerts System
+ * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * Fleet Logistics & Financial Accounts Management
+ * Developed by Shravan Kumar
  * Features:
  *  - 4 Primary KPI Cards across the top (Trips, Freight, Advances, Net Balance)
  *  - 2-Column Desktop Grid:

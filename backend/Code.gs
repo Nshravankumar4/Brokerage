@@ -23,42 +23,54 @@ var BACKUP_FOLDER_NAME = 'Brokerage_Backups';
  * https://docs.google.com/spreadsheets/d/1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg/edit
  * The ID is the string between '/d/' and '/edit': 1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg
  */
-var SPREADSHEET_ID = '';
+var SPREADSHEET_ID = '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA';
 
 var HEADERS = [
   'SL NO', 'TRSP NAME', 'DATE', 'LR NO', 'TRUCK NO', 'FROM', 'TO',
-  'ACCOUNT NO', 'IFSC CODE', 'PAYMENT MADE', 'FRIGHT', 'DATE', 'Topay',
+  'ACCOUNT NO', 'IFSC CODE', 'PAYMENT MADE', 'FRIGHT', 'DATE', 'ToPayStatus',
   'T/M', 'ADVANCE', 'DATE 2', 'ADVANCE2', 'DATE3', 'ADVANCE3',
-  'Topay(COD)', 'P/M', 'DATE', 'BALC', 'P/M', 'FINAL BALC', 'POD RECD', 'NOTE'
+  'To-Billed (COD)', 'P/M', 'DATE', 'BALC', 'P/M', 'FINAL BALC', 'POD RECD', 'NOTE'
 ];
 
 var INITIAL_DATA = [
-  [1, "ANTP SAINATH", "20-08-2026", "207", "AP39UD3564", "LUCKNOW", "MEDCHAL", "38216860303", "SBIN0010659", "SBI BANK", 65000, "02-09-2026", "", 0, 65000, "", 0, "", 0, 0, 0, "", 0, 0, 0, "29-08-2026", ""],
-  [2, "SARITHA TRSP", "03-09-2026", "208", "TG15T6666", "RAIPUR", "MEDCHAL", "0312035592", "KKBK0008406", "KKBK BANK", 110250, "15-10-2026", "", 0, 110250, "", 0, "", 0, 0, 0, "", 0, 0, 0, "07-09-2026", ""],
-  [3, "SARITHA TRSP", "10-09-2026", "190", "TG15T6666", "MEDCHAL", "COOCHBEHAR", "0312035592", "KKBK0008406", "KKBK BANK", 231000, "", "", 0, 0, "", 0, "", 0, 0, 0, "", 231000, 0, 231000, "25-09-2026", ""],
-  [4, "MISHRA PIWARAN", "12-09-2026", "191/192", "RJ14GN7169", "MEDCHAL", "RAIGUNJ&DALKOLA", "279805000462", "ICIC0002798", "ICICI BANK", 135000, "16-09-2026", "", 200, 124800, "", 0, "", 0, 0, 200, "", 10000, 0, 10000, "05-10-2026", ""],
-  [5, "ANDHRA GORKARPUR", "16-09-2026", "193/194", "UP38T6479", "MEDCHAL", "SABDHAN/KALIACHAK", "52641131001394", "PUNB0219910", "PNB BANK", 130000, "18-09-2026", "", 0, 100000, "21-09-2026", 20000, "", 0, 0, 0, "", 10000, 0, 10000, "10-10-2026", ""],
-  [6, "ABHISHEK TRSP", "19-09-2026", "209", "TS05UF1719", "MEDCHAL", "MURISIRABAD", "23405500018", "ICIC0002384", "ICICI BANK", 134750, "21-09-2026", "", 0, 100000, "", 0, "", 0, 0, 0, "", 34750, 0, 34750, "", "41BAGS WET CONDITION"],
-  [7, "SARITHA TRSP", "24-09-2026", "210/211", "TS15UE1122", "MEDCHAL", "ARRARIYA/PURNIA", "0312035592", "KKBK0008406", "KKBK BANK", 155000, "", "", 0, 0, "", 0, "", 0, 0, 0, "", 155000, 0, 155000, "05-10-2026", ""],
+  [1, "ANTP SAINATH", "20-08-2026", "207", "AP39UD3564", "LUCKNOW", "MEDCHAL", "38216860303", "SBIN0010659", "SBI BANK", 65000, "02-09-2026", "TOBILLED", 0, 65000, "", 0, "", 0, 0, 0, "", 0, 0, 0, "29-08-2026", ""],
+  [2, "SARITHA TRSP", "03-09-2026", "208", "TG15T6666", "RAIPUR", "MEDCHAL", "0312035592", "KKBK0008406", "KKBK BANK", 110250, "15-10-2026", "TOBILLED", 0, 110250, "", 0, "", 0, 0, 0, "", 0, 0, 0, "07-09-2026", ""],
+  [3, "SARITHA TRSP", "10-09-2026", "190", "TG15T6666", "MEDCHAL", "COOCHBEHAR", "0312035592", "KKBK0008406", "KKBK BANK", 231000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 231000, 0, 231000, "25-09-2026", ""],
+  [4, "MISHRA PIWARAN", "12-09-2026", "191/192", "RJ14GN7169", "MEDCHAL", "RAIGUNJ&DALKOLA", "279805000462", "ICIC0002798", "ICICI BANK", 135000, "16-09-2026", "TOBILLED", 200, 124800, "", 0, "", 0, 0, 200, "", 10000, 0, 10000, "05-10-2026", ""],
+  [5, "ANDHRA GORKARPUR", "16-09-2026", "193/194", "UP38T6479", "MEDCHAL", "SABDHAN/KALIACHAK", "52641131001394", "PUNB0219910", "PNB BANK", 130000, "18-09-2026", "TOBILLED", 0, 100000, "21-09-2026", 20000, "", 0, 0, 0, "", 10000, 0, 10000, "10-10-2026", ""],
+  [6, "ABHISHEK TRSP", "19-09-2026", "209", "TS05UF1719", "MEDCHAL", "MURISIRABAD", "23405500018", "ICIC0002384", "ICICI BANK", 134750, "21-09-2026", "TOBILLED", 0, 100000, "", 0, "", 0, 0, 0, "", 34750, 0, 34750, "", "41BAGS WET CONDITION"],
+  [7, "SARITHA TRSP", "24-09-2026", "210/211", "TS15UE1122", "MEDCHAL", "ARRARIYA/PURNIA", "0312035592", "KKBK0008406", "KKBK BANK", 155000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 155000, 0, 155000, "05-10-2026", ""],
   [8, "CG RANCHI R/WAYS", "29-09-2026", "195", "CG08AZ4714", "MEDCHAL", "PANKANJUR", "29122900001083", "DCBL0000291", "DCB BANK", 42000, "01-10-2026", "F/TO-PAY", 0, 0, "", 0, "", 0, 0, 0, "", 0, 0, 0, "", "F/TO-PAY Shipment"],
-  [9, "SARITHA TRSP", "01-10-2026", "196", "TG15T6666", "MEDCHAL", "MADHAPURA", "0312035592", "KKBK0008406", "KKBK BANK", 175000, "", "", 0, 0, "", 0, "", 0, 0, 0, "", 175000, 0, 175000, "19-10-2026", ""],
-  [10, "SARITHA TRSP", "06-10-2026", "212", "TS15UE1122", "MEDCHAL", "MUZUFFARPUR", "0312035592", "KKBK0008406", "KKBK BANK", 141000, "", "", 0, 0, "", 0, "", 0, 0, 0, "", 141000, 0, 141000, "19-10-2026", ""],
-  [11, "ANTP SAINATH", "08-10-2026", "213", "AP39UD3564", "MEDCHAL", "BEGUSARAI", "38216860303", "SBIN0010659", "SBI BANK", 136500, "17-10-2026", "", 0, 126000, "", 567, "", 667, 0, 500, "", 8766, 266, 8500, "19-10-2026", ""],
-  [12, "MISHRA PIWARAN", "09-10-2026", "214", "JH02BM3030", "MEDCHAL", "PURNIA", "279805000462", "ICIC0002798", "ICICI BANK", 154000, "15-10-2026", "", 500, 143750, "", 0, "", 0, 0, 300, "", 9950, 0, 9950, "", ""],
-  [13, "MISHRA PIWARAN", "10-10-2026", "215", "BR44GB0148", "MEDCHAL", "MOTHIHARI", "279805000462", "ICIC0002798", "ICICI BANK", 157500, "15-10-2026", "", 300, 147200, "", 0, "", 0, 0, 300, "", 10000, 0, 10000, "", ""],
-  [14, "MISHRA PIWARAN", "13-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 162750, "17-10-2026", "", 300, 152450, "", 0, "", 0, 0, 300, "", 10000, 0, 10000, "", ""],
-  [15, "MISHRA PIWARAN", "14-10-2026", "197/198", "UP60BT2385", "MEDCHAL", "ARRARIYA/KALIGUNJ", "279805000462", "ICIC0002798", "ICICI BANK", 171500, "", "", 300, 0, "", 0, "", 0, 0, 0, "", 171500, 0, 171500, "", ""],
-  [16, "ANTP SAINATH", "17-10-2026", "217/218", "AP02TH2345", "MEDCHAL", "BHAGALPUR/PURNIA", "38216860303", "SBIN0010659", "SBI BANK", 158000, "", "", 0, 50000, "", 0, "", 0, 108000, 0, "", 0, 0, 0, "", ""],
+  [9, "SARITHA TRSP", "01-10-2026", "196", "TG15T6666", "MEDCHAL", "MADHAPURA", "0312035592", "KKBK0008406", "KKBK BANK", 175000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 175000, 0, 175000, "19-10-2026", ""],
+  [10, "SARITHA TRSP", "06-10-2026", "212", "TS15UE1122", "MEDCHAL", "MUZUFFARPUR", "0312035592", "KKBK0008406", "KKBK BANK", 141000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 141000, 0, 141000, "19-10-2026", ""],
+  [11, "ANTP SAINATH", "08-10-2026", "213", "AP39UD3564", "MEDCHAL", "BEGUSARAI", "38216860303", "SBIN0010659", "SBI BANK", 136500, "17-10-2026", "TOBILLED", 0, 126000, "", 567, "", 667, 0, 500, "", 8766, 266, 8500, "19-10-2026", ""],
+  [12, "MISHRA PIWARAN", "09-10-2026", "214", "JH02BM3030", "MEDCHAL", "PURNIA", "279805000462", "ICIC0002798", "ICICI BANK", 154000, "15-10-2026", "TOBILLED", 500, 143750, "", 0, "", 0, 0, 300, "", 9950, 0, 9950, "", ""],
+  [13, "MISHRA PIWARAN", "10-10-2026", "215", "BR44GB0148", "MEDCHAL", "MOTHIHARI", "279805000462", "ICIC0002798", "ICICI BANK", 157500, "15-10-2026", "TOBILLED", 300, 147200, "", 0, "", 0, 0, 300, "", 10000, 0, 10000, "", ""],
+  [14, "MISHRA PIWARAN", "13-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 162750, "17-10-2026", "TOBILLED", 300, 152450, "", 0, "", 0, 0, 300, "", 10000, 0, 10000, "", ""],
+  [15, "MISHRA PIWARAN", "14-10-2026", "197/198", "UP60BT2385", "MEDCHAL", "ARRARIYA/KALIGUNJ", "279805000462", "ICIC0002798", "ICICI BANK", 171500, "", "TOBILLED", 300, 0, "", 0, "", 0, 0, 0, "", 171500, 0, 171500, "", ""],
+  [16, "ANTP SAINATH", "17-10-2026", "217/218", "AP02TH2345", "MEDCHAL", "BHAGALPUR/PURNIA", "38216860303", "SBIN0010659", "SBI BANK", 158000, "", "TOBILLED", 0, 50000, "", 0, "", 0, 108000, 0, "", 0, 0, 0, "", ""],
   [17, "MISHRA PIWARAN", "18-10-2026", "219", "UP61BT7437", "MEDCHAL", "COOCHBEHAR", "279805000462", "ICIC0002798", "ICICIBANK", 200000, "", "A/TO-PAY", 0, 0, "", 0, "", 0, 0, 0, "", 200000, 0, 200000, "", ""],
   [18, "MISHRA PIWARAN", "19-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 50000, "", "A/TO-PAY", 200, 19800, "", 0, "", 0, 30000, 0, "", 0, 0, 0, "", ""],
   [19, "MISHRA PIWARAN", "20-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 60000, "", "A/TO-PAY", 300, 29700, "", 0, "", 0, 30000, 0, "", 0, 0, 0, "", ""]
 ];
 
+function cleanSpreadsheetId(idOrUrl) {
+  if (!idOrUrl) return '';
+  var str = String(idOrUrl).trim();
+  var match = str.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return str;
+}
+
 function getSpreadsheet(optId) {
+  var cleanOptId = cleanSpreadsheetId(optId);
+
   // 1. Parameter sheetId if explicitly passed
-  if (optId && String(optId).trim()) {
+  if (cleanOptId) {
     try {
-      var passedSs = SpreadsheetApp.openById(String(optId).trim());
+      var passedSs = SpreadsheetApp.openById(cleanOptId);
       if (passedSs) {
         PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', passedSs.getId());
         return passedSs;
@@ -78,7 +90,8 @@ function getSpreadsheet(optId) {
   // 3. Configured SPREADSHEET_ID variable at top of Code.gs
   if (typeof SPREADSHEET_ID !== 'undefined' && SPREADSHEET_ID && SPREADSHEET_ID.trim()) {
     try {
-      var hardcodedSs = SpreadsheetApp.openById(SPREADSHEET_ID.trim());
+      var hardcodedId = cleanSpreadsheetId(SPREADSHEET_ID);
+      var hardcodedSs = SpreadsheetApp.openById(hardcodedId);
       if (hardcodedSs) {
         PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', hardcodedSs.getId());
         return hardcodedSs;
@@ -192,6 +205,21 @@ function doPost(e) {
     var action = data.action || 'saveTrip';
     var sheetId = data.sheetId || (e && e.parameter && e.parameter.sheetId) || null;
 
+    // Strict Server-Side RBAC Enforcement: Administrative actions require authenticated Admin token
+    var adminActions = ['deleteTrip', 'restoreDatabase', 'backupDatabase'];
+    if (adminActions.indexOf(action) !== -1) {
+      var role = String(data.role || (data.user && data.user.role) || '').toLowerCase();
+      var authHash = String(data.authHash || data.token || '');
+      var ADMIN_HASH = 'ded12726612993e58a7f6f1b0428300adcf13f6cabb7515436c5888b3de21c0b';
+      if (role !== 'admin' || authHash !== ADMIN_HASH) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: 'error',
+          code: 'UNAUTHORIZED',
+          message: 'Server Access Denied: Administrator role is strictly required to perform ' + action
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
     if (action === 'saveTrip') {
       result = handleSaveTrip(data.trip || data, sheetId);
     } else if (action === 'deleteTrip') {
@@ -239,13 +267,14 @@ function handleGetAll(optId) {
     var pmFinal = Number(r[23]) || 0;
     var topay = String(r[12] || '').trim().toUpperCase();
 
-    // Calculate intermediate balance (BALC - Col W)
+    // Calculate intermediate balance (BALC - Col W) based on To-Billed - ToPayStatus
     var balc = 0;
-    if (topay.indexOf('F') === 0) {
+    if (topay.indexOf('F') === 0 || topay === 'FULL' || topay === 'FULL TO-BILLED' || topay === 'FULL TO-PAY') {
       balc = 0;
-    } else if (topay.indexOf('A') === 0) {
+    } else if (topay.indexOf('A') === 0 || topay === 'ADV' || topay === 'ADV TO-BILLED' || topay === 'ADV TO-PAY') {
       balc = fright - tm - adv1 - cod;
     } else {
+      // TOBILLED or standard freight
       balc = fright - (adv1 + adv2 + adv3 + pm + cod);
     }
 
@@ -310,6 +339,24 @@ function handleSaveTrip(t, optId) {
   var sheet = getOrCreateSheet(optId);
   var rowNum = parseInt(t.row, 10);
 
+  // Validate Unique LR NO: LR NO must not be duplicate across active trips
+  var targetLr = String(t.lrNo || '').trim().toUpperCase();
+  if (targetLr) {
+    var dataVals = sheet.getDataRange().getValues();
+    // Col D is index 3 (0-based)
+    for (var i = 1; i < dataVals.length; i++) {
+      var sheetRowIndex = i + 1; // 1-based row in sheet
+      var existingLr = String(dataVals[i][3] || '').trim().toUpperCase();
+      if (existingLr && existingLr === targetLr && (!rowNum || rowNum !== sheetRowIndex)) {
+        return {
+          status: 'error',
+          code: 'DUPLICATE_LR',
+          message: 'Duplicate LR NO Error: LR NO "' + t.lrNo + '" already exists in row ' + sheetRowIndex + ' (Trip #' + (dataVals[i][0] || i) + '). Duplicate LR NO is not allowed.'
+        };
+      }
+    }
+  }
+
   var fright = Number(t.fright) || 0;
   var tm = Number(t.tm) || 0;
   var adv1 = Number(t.advance1) || 0;
@@ -318,14 +365,21 @@ function handleSaveTrip(t, optId) {
   var cod = Number(t.cod) || 0;
   var pm = Number(t.pm) || 0;
   var pmFinal = Number(t.pmFinal) || 0;
-  var topay = String(t.topay || '').trim().toUpperCase();
+  var rawStatus = String(t.topay || '').trim().toUpperCase();
+  var topay = 'TOBILLED';
+  if (rawStatus.indexOf('F') === 0 || rawStatus === 'FULL') {
+    topay = 'F/TO-PAY';
+  } else if (rawStatus.indexOf('A') === 0 || rawStatus === 'ADV') {
+    topay = 'A/TO-PAY';
+  }
 
   var balc = 0;
-  if (topay.indexOf('F') === 0) {
+  if (topay === 'F/TO-PAY') {
     balc = 0;
-  } else if (topay.indexOf('A') === 0) {
+  } else if (topay === 'A/TO-PAY') {
     balc = fright - tm - adv1 - cod;
   } else {
+    // TOBILLED
     balc = fright - (adv1 + adv2 + adv3 + pm + cod);
   }
   var finalBalc = balc - pmFinal;
@@ -343,7 +397,7 @@ function handleSaveTrip(t, optId) {
     t.paymentMade || '',
     fright,
     t.date1 || '',
-    t.topay || '',
+    topay,
     tm,
     adv1,
     t.date2 || '',
@@ -367,8 +421,8 @@ function handleSaveTrip(t, optId) {
     rowNum = sheet.getLastRow();
   }
 
-  incrementVersion();
-  return { status: 'success', rowNum: rowNum, trip: t };
+  var currentVer = incrementVersion();
+  return { status: 'success', rowNum: rowNum, version: currentVer, trip: t };
 }
 
 function handleDeleteTrip(rowNum, optId) {
@@ -376,8 +430,8 @@ function handleDeleteTrip(rowNum, optId) {
   var r = parseInt(rowNum, 10);
   if (r >= 2 && r <= sheet.getLastRow()) {
     sheet.deleteRow(r);
-    incrementVersion();
-    return { status: 'success', message: 'Trip deleted' };
+    var currentVer = incrementVersion();
+    return { status: 'success', version: currentVer, message: 'Trip deleted' };
   }
   return { status: 'error', message: 'Invalid row number: ' + rowNum };
 }

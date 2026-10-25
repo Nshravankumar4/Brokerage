@@ -1,13 +1,19 @@
 /**
  * calculations.js - Dynamic Mathematical Formula Engine & Aggregates
- * Faithfully executes the Excel logic based on Topay condition (Column M)
+ * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * Executes the exact Excel logic based on ToPayStatus (Column M)
+ * Supported statuses: A/TO-PAY, F/TO-PAY, TOBILLED
  */
 
 const CalculationEngine = {
   /**
-   * Recalculates BALC (W) and FINAL BALC (Y) dynamically based on Topay (M)
+   * Recalculates BALC (W) and FINAL BALC (Y) dynamically based on ToPayStatus (M)
    * Formula 1 (Column W): =IF(LEFT(UPPER(TRIM(M2)),1)="F", 0, IF(LEFT(UPPER(TRIM(M2)),1)="A", K2-N2-O2-T2, K2-(O2+Q2+S2+U2+T2)))
    * Formula 2 (Column Y): =W2-X2
+   * Options:
+   *   1. A/TO-PAY -> Freight − TM − Adv1 − COD
+   *   2. F/TO-PAY -> Balance = 0 (Destination party pays full freight)
+   *   3. TOBILLED -> Freight − (Advances + PM + COD)
    */
   calculate(trip) {
     const fright = Number(trip.fright) || 0;
@@ -24,19 +30,19 @@ const CalculationEngine = {
     let ruleText = '';
 
     // Condition 1: F/TO-PAY (Starts with 'F')
-    if (topay.startsWith('F')) {
+    if (topay.startsWith('F') || topay === 'FULL' || topay === 'FULL TO-BILLED' || topay === 'FULL TO-PAY') {
       balc = 0;
-      ruleText = 'Full ToPay: Balance = 0 (Destination party pays in full)';
+      ruleText = 'F/TO-PAY: Balance = 0 (Destination party pays in full)';
     }
     // Condition 2: A/TO-PAY (Starts with 'A')
-    else if (topay.startsWith('A')) {
+    else if (topay.startsWith('A') || topay === 'ADV' || topay === 'ADV TO-BILLED' || topay === 'ADV TO-PAY') {
       balc = fright - tm - adv1 - cod;
-      ruleText = 'Advance ToPay: Freight − TM − Adv1 − COD';
+      ruleText = 'A/TO-PAY: Freight − TM − Adv1 − COD';
     }
-    // Condition 3: Standard Freight (Blank / Normal)
+    // Condition 3: TOBILLED (Starts with 'T' or standard default)
     else {
       balc = fright - (adv1 + adv2 + adv3 + pm + cod);
-      ruleText = 'Standard: Freight − (Advances + PM + COD)';
+      ruleText = 'TOBILLED: Freight − (Advances + PM + COD)';
     }
 
     if (isNaN(balc)) balc = 0;
