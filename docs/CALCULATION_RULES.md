@@ -154,3 +154,4 @@ No advance is paid at loading. The entire freight is collected as COD from the c
    - Reopening an existing record, modifying unrelated fields, or clicking save multiple times reads original base values ($K, N, O, W, Y$) and evaluates the equation once. Payments are never subtracted from an already-reduced balance.
 3. **Extra Amount Isolation**:
    - Extra Amount ($W$) is an independent operational addition. It is never merged into freight ($K$) or subtracted as an advance.
+

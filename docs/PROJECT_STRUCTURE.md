@@ -123,3 +123,4 @@ E:\TR\P1\
 - Google Apps Script web application serving `doGet` and `doPost`.
 - Maintains 28 authoritative column headers matching master workbook.
 - Enforces strict unique LR verification to reject duplicate shipments.
+

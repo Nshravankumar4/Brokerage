@@ -85,3 +85,4 @@ The application features full 2-way cloud synchronization with Google Sheets via
    DataManager.reset();
    ```
 3. **Git Rollback**: The git repository at `E:\TR\P1` maintains commit history on branch `Upgrade_1.2`.
+

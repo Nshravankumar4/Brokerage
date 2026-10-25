@@ -81,3 +81,4 @@ The application was tested across all required desktop and mobile viewports:
   Total '??' lines: 0
   Encoding: UTF-8 without BOM
   ```
+

@@ -195,3 +195,4 @@ Write-Host " Total:  $($passed + $failed)" -ForegroundColor Cyan
 Write-Host "========================================================`n" -ForegroundColor Cyan
 
 if ($failed -gt 0) { exit 1 }
+

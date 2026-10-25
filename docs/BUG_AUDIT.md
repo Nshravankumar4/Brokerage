@@ -58,3 +58,4 @@ All identified critical, high, and medium priority issues have been diagnosed, c
 - **Reproduction**: Spreadsheet View displayed all trips mixed together; export was a single sheet.
 - **Root Cause**: Missing multi-sheet navigation and ExcelJS worksheet population.
 - **Correction**: Implemented `.excel-sheets-tab-bar` with live filtering and total recalculation for `Master Ledger`, `Sheet 1: TOBILLED`, `Sheet 2: A/TO-PAY`, and `Sheet 3: F/TO-PAY`. Updated `exportToExcel()` to generate all 4 sheets in the `.xlsx` download.
+
