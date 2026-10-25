@@ -73,8 +73,9 @@ Assert-Test "Modal has COD (Col U) input" `
 Assert-Test "Modal has ToPayStatus dropdown with exactly 3 options" `
     ($html -match 'id="m_topay"' -and $html -match '<option value="A/TO-PAY">A/TO-PAY</option>' -and $html -match '<option value="F/TO-PAY">F/TO-PAY</option>' -and $html -match '<option value="TOBILLED">TOBILLED</option>')
 
-Assert-Test "Modal has To-Billed Point of Contact (POC) section" `
-    ($html -match 'id="pocSection"' -and $html -match 'id="m_pocDate"' -and $html -match 'id="m_pocAmount"' -and $html -match 'id="m_pocNotes"')
+Assert-Test "Modal and table do not include removed POC details" `
+    ($html -notmatch 'pocSection|m_pocDate|m_pocAmount|m_pocNotes' -and
+     (Get-Content -Raw "js\table.js") -notmatch 'pocDate|pocAmount|pocNotes|POC:')
 
 Assert-Test "Modal has quick search & datalist autofill" `
     ($html -match 'id="modalAutofillBox"' -and $html -match 'id="m_autofillSearch"' -and $html -match 'id="m_trspName_list"')

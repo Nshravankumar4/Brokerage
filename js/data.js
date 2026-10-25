@@ -14,31 +14,181 @@ if (typeof window !== 'undefined' && 'BroadcastChannel' in window && !window.bro
   } catch (e) {}
 }
 
-const INITIAL_TRIPS = [
-  { row: 2, slNo: "1", trspName: "ANTP SAINATH", date: "20-08-2026", lrNo: "207", truckNo: "AP39UD3564", from: "LUCKNOW", to: "MEDCHAL", accountNo: "38216860303", ifsc: "SBIN0010659", paymentMade: "SBI BANK", fright: 65000, date1: "02-09-2026", topay: "TOBILLED", tm: 0, advance1: 65000, date2: "", advance2: 0, date3: "", advance3: 0, pod: "29-08-2026", cod: 0, pendingTobilled: 0, extraAmount: 0, payDate: "", pm: 0, finalBalc: 0, podAmountStatus: 0, note: "" },
-  { row: 3, slNo: "2", trspName: "SARITHA TRSP", date: "03-09-2026", lrNo: "208", truckNo: "TG15T6666", from: "RAIPUR", to: "MEDCHAL", accountNo: "0312035592", ifsc: "KKBK0008406", paymentMade: "KKBK BANK", fright: 110250, date1: "15-10-2026", topay: "TOBILLED", tm: 0, advance1: 110250, date2: "", advance2: 0, date3: "", advance3: 0, pod: "07-09-2026", cod: 0, pendingTobilled: 0, extraAmount: 5000, payDate: "", pm: 0, finalBalc: 5000, podAmountStatus: 0, note: "" },
-  { row: 4, slNo: "3", trspName: "SARITHA TRSP", date: "10-09-2026", lrNo: "190", truckNo: "TG15T6666", from: "MEDCHAL", to: "COOCHBEHAR", accountNo: "0312035592", ifsc: "KKBK0008406", paymentMade: "KKBK BANK", fright: 231000, date1: "", topay: "F/TO-PAY", tm: 0, advance1: 0, date2: "", advance2: 0, date3: "", advance3: 0, pod: "25-09-2026", cod: 231000, pendingTobilled: 0, extraAmount: 0, payDate: "", pm: 0, finalBalc: 0, podAmountStatus: 0, note: "" },
-  { row: 5, slNo: "4", trspName: "MISHRA PIWARAN", date: "12-09-2026", lrNo: "191/192", truckNo: "RJ14GN7169", from: "MEDCHAL", to: "RAIGUNJ&DALKOLA", accountNo: "279805000462", ifsc: "ICIC0002798", paymentMade: "ICICI BANK", fright: 135000, date1: "16-09-2026", topay: "A/TO-PAY", tm: 200, advance1: 124800, date2: "", advance2: 0, date3: "", advance3: 0, pod: "05-10-2026", cod: 10000, pendingTobilled: 0, extraAmount: 0, payDate: "", pm: 200, finalBalc: 0, podAmountStatus: 0, note: "" },
-  { row: 6, slNo: "5", trspName: "ANDHRA GORKARPUR", date: "16-09-2026", lrNo: "193/194", truckNo: "UP38T6479", from: "MEDCHAL", to: "SABDHAN/KALIACHAK", accountNo: "52641131001394", ifsc: "PUNB0219910", paymentMade: "PNB BANK", fright: 130000, date1: "18-09-2026", topay: "TOBILLED", tm: 0, advance1: 100000, date2: "21-09-2026", advance2: 20000, date3: "", advance3: 0, pod: "10-10-2026", cod: 0, pendingTobilled: 10000, extraAmount: 0, payDate: "", pm: 0, finalBalc: 10000, podAmountStatus: 0, note: "" },
-  { row: 7, slNo: "6", trspName: "ABHISHEK TRSP", date: "19-09-2026", lrNo: "209", truckNo: "TS05UF1719", from: "MEDCHAL", to: "MURISIRABAD", accountNo: "23405500018", ifsc: "ICIC0002384", paymentMade: "ICICI BANK", fright: 134750, date1: "21-09-2026", topay: "TOBILLED", tm: 0, advance1: 100000, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 0, pendingTobilled: 34750, extraAmount: 0, payDate: "", pm: 0, finalBalc: 34750, podAmountStatus: 0, note: "41BAGS WET CONDITION" },
-  { row: 8, slNo: "7", trspName: "SARITHA TRSP", date: "24-09-2026", lrNo: "210/211", truckNo: "TS15UE1122", from: "MEDCHAL", to: "ARRARIYA/PURNIA", accountNo: "0312035592", ifsc: "KKBK0008406", paymentMade: "KKBK BANK", fright: 155000, date1: "", topay: "TOBILLED", tm: 0, advance1: 0, date2: "", advance2: 0, date3: "", advance3: 0, pod: "05-10-2026", cod: 0, pendingTobilled: 155000, extraAmount: 0, payDate: "", pm: 0, finalBalc: 155000, podAmountStatus: 0, note: "" },
-  { row: 9, slNo: "8", trspName: "CG RANCHI R/WAYS", date: "29-09-2026", lrNo: "195", truckNo: "CG08AZ4714", from: "MEDCHAL", to: "PANKANJUR", accountNo: "29122900001083", ifsc: "DCBL0000291", paymentMade: "DCB BANK", fright: 42000, date1: "01-10-2026", topay: "F/TO-PAY", tm: 0, advance1: 0, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 42000, pendingTobilled: 0, extraAmount: 0, payDate: "", pm: 0, finalBalc: 0, podAmountStatus: 0, note: "F/TO-PAY Shipment" },
-  { row: 10, slNo: "9", trspName: "SARITHA TRSP", date: "01-10-2026", lrNo: "196", truckNo: "TG15T6666", from: "MEDCHAL", to: "MADHAPURA", accountNo: "0312035592", ifsc: "KKBK0008406", paymentMade: "KKBK BANK", fright: 175000, date1: "", topay: "TOBILLED", tm: 0, advance1: 0, date2: "", advance2: 0, date3: "", advance3: 0, pod: "19-10-2026", cod: 0, pendingTobilled: 175000, extraAmount: 0, payDate: "", pm: 0, finalBalc: 175000, podAmountStatus: 0, note: "" },
-  { row: 11, slNo: "10", trspName: "SARITHA TRSP", date: "06-10-2026", lrNo: "212", truckNo: "TS15UE1122", from: "MEDCHAL", to: "MUZUFFARPUR", accountNo: "0312035592", ifsc: "KKBK0008406", paymentMade: "KKBK BANK", fright: 141000, date1: "", topay: "TOBILLED", tm: 0, advance1: 0, date2: "", advance2: 0, date3: "", advance3: 0, pod: "19-10-2026", cod: 0, pendingTobilled: 141000, extraAmount: 0, payDate: "", pm: 0, finalBalc: 141000, podAmountStatus: 0, note: "" },
-  { row: 12, slNo: "11", trspName: "ANTP SAINATH", date: "08-10-2026", lrNo: "213", truckNo: "AP39UD3564", from: "MEDCHAL", to: "BEGUSARAI", accountNo: "38216860303", ifsc: "SBIN0010659", paymentMade: "SBI BANK", fright: 136500, date1: "17-10-2026", topay: "TOBILLED", tm: 0, advance1: 126000, date2: "", advance2: 567, date3: "", advance3: 667, pod: "19-10-2026", cod: 0, pendingTobilled: 9266, extraAmount: 0, payDate: "", pm: 500, finalBalc: 8766, podAmountStatus: 0, note: "" },
-  { row: 13, slNo: "12", trspName: "MISHRA PIWARAN", date: "09-10-2026", lrNo: "214", truckNo: "JH02BM3030", from: "MEDCHAL", to: "PURNIA", accountNo: "279805000462", ifsc: "ICIC0002798", paymentMade: "ICICI BANK", fright: 154000, date1: "15-10-2026", topay: "TOBILLED", tm: 500, advance1: 143750, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 0, pendingTobilled: 9750, extraAmount: 0, payDate: "", pm: 300, finalBalc: 9450, podAmountStatus: 0, note: "" },
-  { row: 14, slNo: "13", trspName: "MISHRA PIWARAN", date: "10-10-2026", lrNo: "215", truckNo: "BR44GB0148", from: "MEDCHAL", to: "MOTHIHARI", accountNo: "279805000462", ifsc: "ICIC0002798", paymentMade: "ICICI BANK", fright: 157500, date1: "15-10-2026", topay: "TOBILLED", tm: 300, advance1: 147200, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 0, pendingTobilled: 10000, extraAmount: 0, payDate: "", pm: 300, finalBalc: 9700, podAmountStatus: 0, note: "" },
-  { row: 15, slNo: "14", trspName: "MISHRA PIWARAN", date: "13-10-2026", lrNo: "2106", truckNo: "HR56C4156", from: "MEDCHAL", to: "ARRARIYA", accountNo: "279805000462", ifsc: "ICIC0002798", paymentMade: "ICICI BANK", fright: 162750, date1: "17-10-2026", topay: "TOBILLED", tm: 300, advance1: 152450, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 0, pendingTobilled: 10000, extraAmount: 0, payDate: "", pm: 300, finalBalc: 9700, podAmountStatus: 0, note: "" },
-  { row: 16, slNo: "15", trspName: "MISHRA PIWARAN", date: "14-10-2026", lrNo: "197/198", truckNo: "UP60BT2385", from: "MEDCHAL", to: "ARRARIYA/KALIGUNJ", accountNo: "279805000462", ifsc: "ICIC0002798", paymentMade: "ICICI BANK", fright: 171500, date1: "", topay: "TOBILLED", tm: 300, advance1: 0, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 0, pendingTobilled: 171200, extraAmount: 0, payDate: "", pm: 0, finalBalc: 171200, podAmountStatus: 0, note: "" },
-  { row: 17, slNo: "16", trspName: "ANTP SAINATH", date: "17-10-2026", lrNo: "217/218", truckNo: "AP02TH2345", from: "MEDCHAL", to: "BHAGALPUR/PURNIA", accountNo: "38216860303", ifsc: "SBIN0010659", paymentMade: "SBI BANK", fright: 158000, date1: "", topay: "TOBILLED", tm: 0, advance1: 50000, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 0, pendingTobilled: 108000, extraAmount: 0, payDate: "", pm: 0, finalBalc: 108000, podAmountStatus: 0, note: "" },
-  { row: 18, slNo: "17", trspName: "MISHRA PIWARAN", date: "18-10-2026", lrNo: "219", truckNo: "UP61BT7437", from: "MEDCHAL", to: "COOCHBEHAR", accountNo: "279805000462", ifsc: "ICIC0002798", paymentMade: "ICICIBANK", fright: 200000, date1: "", topay: "A/TO-PAY", tm: 0, advance1: 0, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 200000, pendingTobilled: 0, extraAmount: 0, payDate: "", pm: 0, finalBalc: 0, podAmountStatus: 0, note: "" },
-  { row: 19, slNo: "18", trspName: "MISHRA PIWARAN", date: "19-10-2026", lrNo: "2106", truckNo: "HR56C4156", from: "MEDCHAL", to: "ARRARIYA", accountNo: "279805000462", ifsc: "ICIC0002798", paymentMade: "ICICI BANK", fright: 50000, date1: "", topay: "A/TO-PAY", tm: 200, advance1: 19800, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 30000, pendingTobilled: 0, extraAmount: 0, payDate: "", pm: 0, finalBalc: 0, podAmountStatus: 0, note: "" },
-  { row: 20, slNo: "19", trspName: "MISHRA PIWARAN", date: "20-10-2026", lrNo: "2106", truckNo: "HR56C4156", from: "MEDCHAL", to: "ARRARIYA", accountNo: "279805000462", ifsc: "ICIC0002798", paymentMade: "ICICI BANK", fright: 60000, date1: "", topay: "A/TO-PAY", tm: 300, advance1: 29700, date2: "", advance2: 0, date3: "", advance3: 0, pod: "", cod: 30000, pendingTobilled: 0, extraAmount: 0, payDate: "", pm: 0, finalBalc: 0, podAmountStatus: 0, note: "" }
+const CURRENT_WORKBOOK_TRIPS = [
+  {
+    row: 2,
+    slNo: "1",
+    trspName: "ANTP SAINATH",
+    date: "20-08-2026",
+    lrNo: "207",
+    truckNo: "AP39UD3564",
+    from: "LUCKNOW",
+    to: "MEDCHAL",
+    accountNo: "38216860303",
+    ifsc: "SBIN0010659",
+    paymentMade: "SBI BANK",
+    fright: 60000,
+    date1: "02-09-2026",
+    topay: "TOBILLED",
+    tm: 300,
+    advance1: 49700,
+    date2: "na",
+    advance2: 0,
+    date3: "na",
+    advance3: 0,
+    pod: "20-08-2026",
+    cod: 10000,
+    pendingTobilled: 10000,
+    extraAmount: 0,
+    payDate: "28-08-2026",
+    pm: 200,
+    finalBalc: 9800,
+    podAmountStatus: 0,
+    note: ""
+  },
+  {
+    row: 3,
+    slNo: "2",
+    trspName: "SARITHA TRSP",
+    date: "03-09-2026",
+    lrNo: "208",
+    truckNo: "TG15T6666",
+    from: "RAIPUR",
+    to: "MEDCHAL",
+    accountNo: "0312035592",
+    ifsc: "KKBK0008406",
+    paymentMade: "KKBK BANK",
+    fright: 60000,
+    date1: "15-10-2026",
+    topay: "TOBILLED",
+    tm: 300,
+    advance1: 49700,
+    date2: "na",
+    advance2: 0,
+    date3: "na",
+    advance3: 0,
+    pod: "07-09-2026",
+    cod: 10000,
+    pendingTobilled: 10000,
+    extraAmount: 5000,
+    payDate: "29-08-2026",
+    pm: 300,
+    finalBalc: 14700,
+    podAmountStatus: 0,
+    note: "Halted"
+  },
+  {
+    row: 4,
+    slNo: "3",
+    trspName: "CG RANCHI R/WAYS",
+    date: "29-09-2026",
+    lrNo: "195",
+    truckNo: "CG08AZ4714",
+    from: "MEDCHAL",
+    to: "PANKANJUR",
+    accountNo: "29122900001083",
+    ifsc: "DCBL0000291",
+    paymentMade: "DCB BANK",
+    fright: 42000,
+    date1: "01-10-2026",
+    topay: "F/TO-PAY",
+    tm: 0,
+    advance1: 0,
+    date2: "na",
+    advance2: 0,
+    date3: "na",
+    advance3: 0,
+    pod: "Pending",
+    cod: 42000,
+    pendingTobilled: 0,
+    extraAmount: 0,
+    payDate: "30-08-2026",
+    pm: 0,
+    finalBalc: 0,
+    podAmountStatus: 0,
+    note: "F/TO-PAY Shipment"
+  },
+  {
+    row: 5,
+    slNo: "4",
+    trspName: "SARITHA TRSP",
+    date: "01-10-2026",
+    lrNo: "196",
+    truckNo: "TG15T6666",
+    from: "MEDCHAL",
+    to: "MADHAPURA",
+    accountNo: "0312035592",
+    ifsc: "KKBK0008406",
+    paymentMade: "KKBK BANK",
+    fright: 90000,
+    date1: "17-10-2026",
+    topay: "A/TO-PAY",
+    tm: 200,
+    advance1: 49800,
+    date2: "na",
+    advance2: 0,
+    date3: "na",
+    advance3: 0,
+    pod: "19-10-2026",
+    cod: 40000,
+    pendingTobilled: 0,
+    extraAmount: 0,
+    payDate: "31-08-2026",
+    pm: 0,
+    finalBalc: 0,
+    podAmountStatus: 0,
+    note: ""
+  }
 ];
 
+const CURRENT_WORKBOOK_STORAGE_VERSION = 'current-workbook-v1';
+const LEGACY_WORKBOOK_VALUES = new Set(['65000', '110250', '231000', '135000']);
+
+function normalizeTrip(trip) {
+  const item = trip || {};
+  const normalized = { ...item };
+  delete normalized.pocDate;
+  delete normalized.pocAmount;
+  delete normalized.pocNotes;
+  const s = String(normalized.topay || '').trim().toUpperCase();
+  if (s.startsWith('F')) normalized.topay = 'F/TO-PAY';
+  else if (s.startsWith('A')) normalized.topay = 'A/TO-PAY';
+  else normalized.topay = 'TOBILLED';
+  return normalized;
+}
+
+function isLegacyWorkbookData(list) {
+  if (!Array.isArray(list) || list.length === 0) return false;
+
+  if (list.length >= 10) {
+    const hasLegacyValues = list.some(trip => {
+      const freight = Number(trip && trip.fright);
+      return LEGACY_WORKBOOK_VALUES.has(String(freight || '')) || String(trip && trip.lrNo || '').trim() === '';
+    });
+    if (hasLegacyValues) return true;
+  }
+
+  if (list.length === CURRENT_WORKBOOK_TRIPS.length) {
+    const mismatched = list.some(trip => {
+      const item = trip || {};
+      const expected = CURRENT_WORKBOOK_TRIPS.find(sample => Number(sample.row) === Number(item.row));
+      if (!expected) return true;
+      const matches = String(item.trspName || '').trim() === String(expected.trspName || '').trim() &&
+        Number(item.fright || 0) === Number(expected.fright || 0) &&
+        String(item.topay || '').trim().toUpperCase() === String(expected.topay || '').trim().toUpperCase();
+      return !matches;
+    });
+    return mismatched;
+  }
+
+  return list.length === 19;
+}
+
+const INITIAL_TRIPS = CURRENT_WORKBOOK_TRIPS;
+
 const DataManager = {
-  storageKey: 'broker_ledger_trips_v7',
-  versionKey: 'broker_ledger_version_v7',
+  storageKey: 'broker_ledger_trips_v8_current_workbook',
+  versionKey: 'broker_ledger_version_v8_current_workbook',
 
   getAll() {
     try {
@@ -46,24 +196,25 @@ const DataManager = {
       if (data) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(t => {
-            const s = String(t.topay || '').trim().toUpperCase();
-            if (s.startsWith('F')) t.topay = 'F/TO-PAY';
-            else if (s.startsWith('A')) t.topay = 'A/TO-PAY';
-            else t.topay = 'TOBILLED';
-            return t;
-          });
+          if (isLegacyWorkbookData(parsed)) {
+            this.saveAll(INITIAL_TRIPS);
+            this.setVersion(CURRENT_WORKBOOK_STORAGE_VERSION);
+            return JSON.parse(JSON.stringify(INITIAL_TRIPS));
+          }
+          this.setVersion(CURRENT_WORKBOOK_STORAGE_VERSION);
+          return parsed.map(normalizeTrip);
         }
       }
     } catch (e) {}
-    // Initialize with fresh verified records
     this.saveAll(INITIAL_TRIPS);
+    this.setVersion(CURRENT_WORKBOOK_STORAGE_VERSION);
     return JSON.parse(JSON.stringify(INITIAL_TRIPS));
   },
 
   saveAll(list) {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(list));
+      localStorage.setItem(this.storageKey, JSON.stringify(list.map(normalizeTrip)));
+      this.setVersion(CURRENT_WORKBOOK_STORAGE_VERSION);
       // Broadcast to other open tabs
       if (window.brokerSyncChannel) {
         window.brokerSyncChannel.postMessage({ type: 'trips_updated', timestamp: Date.now() });

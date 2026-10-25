@@ -213,15 +213,10 @@ const TableModule = {
           <div>${podBadge}</div>
         </div>
 
-        <!-- To-Billed POC Tracking Info -->
-        ${(t.topay === 'TOBILLED' || t.pocAmount || t.pocDate || calc.extraAmount > 0) ? `
-          <div class="trip-card-poc-row" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:4px 8px; margin:6px 0; font-size:0.75rem; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <span style="font-weight:700; color:#15803d;">📋 POC:</span>
-              <strong style="color:#166534;">${t.pocAmount ? '₹' + Number(t.pocAmount).toLocaleString('en-IN') : 'Pending'}</strong>
-              ${t.pocDate ? `<span style="color:#64748b; font-size:0.7rem;">(${escapeHtml(t.pocDate)})</span>` : ''}
-            </div>
-            ${calc.extraAmount > 0 ? `<div><span style="font-weight:700; color:#0284c7;">Extra/Halting:</span> <strong style="color:#0369a1;">₹${Number(calc.extraAmount).toLocaleString('en-IN')}</strong></div>` : ''}
+        ${calc.extraAmount > 0 ? `
+          <div style="margin:6px 0; font-size:0.75rem;">
+            <span style="font-weight:700; color:#0284c7;">Extra/Halting:</span>
+            <strong style="color:#0369a1;">₹${Number(calc.extraAmount).toLocaleString('en-IN')}</strong>
           </div>
         ` : ''}
 
@@ -502,11 +497,6 @@ const TableModule = {
     document.getElementById('m_pm').value = (trip.pm !== undefined && trip.pm !== null && trip.pm !== '') ? trip.pm : (trip.pmFinal || 0);
     document.getElementById('m_note').value = trip.note || '';
 
-    // To-Billed Point of Contact (POC) Details
-    document.getElementById('m_pocDate').value = this.toInputDate(trip.pocDate);
-    document.getElementById('m_pocAmount').value = (trip.pocAmount !== undefined && trip.pocAmount !== null && trip.pocAmount !== '') ? trip.pocAmount : 0;
-    document.getElementById('m_pocNotes').value = trip.pocNotes || '';
-
     this.populateAutofillDatalists();
     this.clearAutofillSearch();
     this.liveCalcModal();
@@ -576,11 +566,6 @@ const TableModule = {
     document.getElementById('m_payDate').value = '';
     document.getElementById('m_pm').value = 0;
     document.getElementById('m_note').value = '';
-
-    // To-Billed POC defaults
-    document.getElementById('m_pocDate').value = '';
-    document.getElementById('m_pocAmount').value = 0;
-    document.getElementById('m_pocNotes').value = '';
 
     this.populateAutofillDatalists();
     this.clearAutofillSearch();
@@ -706,15 +691,6 @@ const TableModule = {
     const mCalcFinalBalc = document.getElementById('mCalcFinalBalc');
     if (mCalcFinalBalc) mCalcFinalBalc.innerText = CalculationEngine.formatCurrency(calc.finalBalc);
 
-    // Highlight To-Billed POC Section when status is TOBILLED
-    const pocSec = document.getElementById('pocSection');
-    if (pocSec) {
-      if (topayVal === 'TOBILLED') {
-        pocSec.classList.add('highlight');
-      } else {
-        pocSec.classList.remove('highlight');
-      }
-    }
   },
 
   handleSaveModal(e) {
@@ -776,10 +752,7 @@ const TableModule = {
       extraAmount: Number(document.getElementById('m_extraAmount').value) || 0,
       payDate: this.toDisplayDate(document.getElementById('m_payDate').value),
       pm: Number(document.getElementById('m_pm').value) || 0,
-      note: document.getElementById('m_note').value.trim(),
-      pocDate: this.toDisplayDate(document.getElementById('m_pocDate').value),
-      pocAmount: Number(document.getElementById('m_pocAmount').value) || 0,
-      pocNotes: document.getElementById('m_pocNotes').value.trim()
+      note: document.getElementById('m_note').value.trim()
     };
 
     // Calculate exact authoritative balances matching BROKER DETAILS ADVANCE BALC DETAILS.xlsx

@@ -328,14 +328,14 @@ const AppModule = {
       alert('Access Restricted: Only Administrator can restore original database records!');
       return;
     }
-    if (confirm('Are you sure you want to restore the original 19 Excel records from BROKER DETAILS ADVANCE BALC DETAILS.xlsx? All unsaved manual edits will be reset.')) {
+    if (confirm('Are you sure you want to restore the current workbook records from BROKER DETAILS ADVANCE BALC DETAILS.xlsx? All unsaved manual edits will be reset.')) {
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
         await ApiService.triggerRestoreDatabase();
       } else {
         DataManager.reset();
       }
       this.refresh();
-      this.showToast('📋 Restored original Excel records successfully!');
+      this.showToast('📋 Restored current workbook records successfully!');
     }
   },
 

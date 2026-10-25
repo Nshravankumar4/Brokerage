@@ -77,7 +77,7 @@ The cloud backend is implemented in `E:\TR\P1\backend\Code.gs` for Google Sheets
    * `POST {action: 'saveTrip', trip: {...}}`: Atomically inserts or updates a trip row.
    * `POST {action: 'deleteTrip', rowNum: N}`: Deletes trip row (Admin only).
    * `POST {action: 'backupDatabase'}`: Creates Drive backup snapshot.
-   * `POST {action: 'restoreDatabase'}`: Resets sheet to the verified 19 records.
+   * `POST {action: 'restoreDatabase'}`: Resets sheet to the verified current workbook snapshot.
 
 ### How to Deploy `backend/Code.gs`:
 1. Open your Google Spreadsheet containing the `final` sheet.
