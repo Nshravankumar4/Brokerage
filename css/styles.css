@@ -1417,93 +1417,192 @@ tr.excel-totals-row td {
 }
 
 .trip-route-banner {
-  background: #f8fafc;
-  border: 1px solid var(--border-light);
-  border-radius: 6px;
-  padding: 0.45rem 0.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: 700;
-  font-size: 0.8rem;
 }
 
-.route-point { color: #1e293b; }
-.route-line { color: #0284c7; font-size: 0.75rem; letter-spacing: 1px; }
+.route-point {
+  font-weight: 800;
+  font-size: 0.82rem;
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.origin-point {
+  color: #1e40af;
+}
+
+.dest-point {
+  color: #047857;
+  text-align: right;
+}
+
+.route-connector {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0 0.5rem;
+}
+
+.route-line-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #cbd5e1;
+  border-top: 1px dashed #94a3b8;
+}
+
+.route-truck-icon {
+  position: relative;
+  z-index: 1;
+  background: #f8fafc;
+  padding: 0 4px;
+  font-size: 0.95rem;
+}
 
 .trip-details-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 0.8rem;
+  margin-top: 0.2rem;
 }
 
-.trip-detail-label { color: var(--text-muted); font-size: 0.74rem; }
+.truck-plate-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.truck-plate-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+}
 
 .truck-plate {
-  font-family: monospace;
-  font-weight: 800;
-  color: #0f172a;
-  background: #fef08a;
-  border: 1px solid #eab308;
-  padding: 1px 6px;
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid #0f172a;
   border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  background: #fef08a;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-weight: 800;
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.truck-plate-ind {
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 900;
+  padding: 3px 4px;
   letter-spacing: 0.5px;
 }
 
-.topay-tag {
-  font-weight: 700;
-  font-size: 0.76rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #f1f5f9;
-  color: #475569;
+.truck-plate-num {
+  padding: 3px 6px;
+  color: #0f172a;
+  letter-spacing: 0.75px;
 }
 
-.topay-tag.has-topay {
-  background: #dcfce7;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
+.topay-badge {
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  letter-spacing: 0.3px;
+}
+
+.topay-badge.topay-tobilled {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.topay-badge.topay-atopay {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.topay-badge.topay-ftopay {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
 }
 
 .trip-financial-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.5rem;
-  background: #f8fafc;
-  border: 1px solid var(--border-light);
-  border-radius: 7px;
-  padding: 0.55rem;
-  text-align: center;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
 }
 
 .fin-box {
   display: flex;
   flex-direction: column;
+  padding: 0.45rem 0.35rem;
+  border-radius: 8px;
+  text-align: center;
 }
 
-.fin-box.highlight-balc {
-  background: #ffffff;
-  border-radius: 5px;
-  padding: 2px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+.fin-box-fright {
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+}
+
+.fin-box-adv {
+  background: #f5f3ff;
+  border: 1px solid #ede9fe;
+}
+
+.fin-box-balc {
+  background: #fff1f2;
+  border: 1px solid #ffe4e6;
 }
 
 .fin-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--text-muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .fin-val {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 800;
   margin-top: 2px;
 }
 
-.fin-fright { color: var(--primary); }
-.fin-adv { color: #7e22ce; }
-.fin-final { color: #dc2626; }
+.fin-fright { color: #1e40af; }
+.fin-adv { color: #6b21a8; }
+.fin-final { color: #be123c; }
+
+.extra-halting-chip {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.74rem;
+  display: inline-block;
+  margin-top: 0.2rem;
+}
 
 .trip-card-pod-row {
   display: flex;
@@ -2329,9 +2428,46 @@ tr.excel-totals-row td {
   }
   .trip-cards-grid {
     grid-template-columns: 1fr !important;
+    gap: 0.85rem;
   }
   .monthly-cards-grid {
     grid-template-columns: 1fr !important;
+  }
+  .filter-chips-group {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding-bottom: 4px;
+  }
+  .filter-chips-group::-webkit-scrollbar {
+    display: none;
+  }
+  .topay-mode-pills {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .topay-pill-btn {
+    min-height: 44px;
+    width: 100%;
+  }
+  .modal-content.modal-enhanced {
+    width: 96% !important;
+    max-height: 94vh !important;
+    padding: 1rem !important;
+    border-radius: 14px !important;
+  }
+  .shipment-modal-footer {
+    position: sticky;
+    bottom: -1px;
+    background: #ffffff;
+    padding: 0.75rem 0;
+    border-top: 1px solid #e2e8f0;
+    z-index: 10;
+  }
+  .form-control {
+    font-size: 16px !important; /* Prevents auto-zoom on mobile */
   }
 }
 
@@ -2571,49 +2707,94 @@ tr.excel-totals-row td {
   gap: 0.5rem;
   margin-top: 0.35rem;
   width: 100%;
+  background: #f1f5f9;
+  padding: 5px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
 }
 
 .topay-pill-btn {
   flex: 1;
-  padding: 0.55rem 0.75rem;
-  font-size: 0.82rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.84rem;
   font-weight: 700;
   border-radius: 8px;
-  border: 1.5px solid #cbd5e1;
-  background: #f8fafc;
-  color: #334155;
+  border: 1.5px solid transparent;
+  background: #ffffff;
+  color: #64748b;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .topay-pill-btn:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
+  background: #f8fafc;
+  color: #1e293b;
 }
 
 .topay-pill-btn.active#pill_tobilled {
-  background: #eff6ff;
-  border-color: #2563eb;
-  color: #1d4ed8;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #1e40af;
+  border-color: #1d4ed8;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
 }
 
 .topay-pill-btn.active#pill_atopay {
-  background: #f0fdf4;
-  border-color: #16a34a;
-  color: #15803d;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+  background: #059669;
+  border-color: #047857;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
 }
 
 .topay-pill-btn.active#pill_ftopay {
-  background: #fefce8;
-  border-color: #ca8a04;
-  color: #a16207;
-  box-shadow: 0 0 0 3px rgba(202, 138, 4, 0.15);
+  background: #d97706;
+  border-color: #b45309;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+}
+
+/* Blocked Field Indicator */
+.field-blocked {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Hide raw numeric spinners */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Clear Filters Button */
+.btn-clear-filters {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+}
+.btn-clear-filters:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
 }
 
 /* Excel View 3-Sheet Tab Bar */

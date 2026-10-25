@@ -69,68 +69,80 @@ const TableModule = {
 
     if (badge) {
       if (s === 'F/TO-PAY') {
-        badge.innerText = '🚛 F/TO-PAY Mode (Full To-Pay)';
-        badge.style.background = '#fef9c3';
-        badge.style.color = '#854d0e';
+        badge.innerText = '🚚 F/TO-PAY Mode (Full To-Pay)';
+        badge.style.background = '#fef3c7';
+        badge.style.color = '#92400e';
       } else if (s === 'A/TO-PAY') {
         badge.innerText = '💳 A/TO-PAY Mode (Adv To-Pay)';
-        badge.style.background = '#dcfce7';
-        badge.style.color = '#15803d';
+        badge.style.background = '#d1fae5';
+        badge.style.color = '#065f46';
       } else {
-        badge.innerText = '📄 TOBILLED Mode';
-        badge.style.background = '#eff6ff';
-        badge.style.color = '#1d4ed8';
+        badge.innerText = '📋 TOBILLED Mode';
+        badge.style.background = '#dbeafe';
+        badge.style.color = '#1e40af';
       }
     }
 
-    // Dynamic field visibility elements
-    const setDisplay = (id, show) => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = show ? '' : 'none';
+    // Helper: Enable & show active fields, strictly block, disable & clear non-applicable fields
+    const setFieldState = (containerId, inputId, isVisible, isNumeric = true) => {
+      const container = document.getElementById(containerId);
+      const input = document.getElementById(inputId);
+      if (container) {
+        container.style.display = isVisible ? '' : 'none';
+      }
+      if (input) {
+        input.disabled = !isVisible;
+        if (!isVisible) {
+          input.value = isNumeric ? 0 : '';
+          input.classList.add('field-blocked');
+        } else {
+          input.classList.remove('field-blocked');
+        }
+      }
     };
 
     if (s === 'F/TO-PAY') {
-      // Full To-Pay: Only Freight & COD apply. Advances, T/M, Extra, P/M are hidden.
-      setDisplay('field_fright', true);
-      setDisplay('field_tm', false);
-      setDisplay('field_advance1', false);
-      setDisplay('field_date1', false);
-      setDisplay('field_advance2', false);
-      setDisplay('field_date2', false);
-      setDisplay('field_advance3', false);
-      setDisplay('field_date3', false);
-      setDisplay('field_cod', true);
-      setDisplay('field_extraAmount', false);
-      setDisplay('field_payDate', false);
-      setDisplay('field_pm', false);
+      // Full To-Pay: Only Freight & COD apply. All advances, T/M, Extra, P/M are strictly blocked & zeroed.
+      setFieldState('field_fright', 'm_fright', true, true);
+      setFieldState('field_tm', 'm_tm', false, true);
+      setFieldState('field_advance1', 'm_advance1', false, true);
+      setFieldState('field_date1', 'm_date1', false, false);
+      setFieldState('field_advance2', 'm_advance2', false, true);
+      setFieldState('field_date2', 'm_date2', false, false);
+      setFieldState('field_advance3', 'm_advance3', false, true);
+      setFieldState('field_date3', 'm_date3', false, false);
+      setFieldState('field_cod', 'm_cod', true, true);
+      setFieldState('field_extraAmount', 'm_extraAmount', false, true);
+      setFieldState('field_payDate', 'm_payDate', false, false);
+      setFieldState('field_pm', 'm_pm', false, true);
     } else if (s === 'A/TO-PAY') {
-      // Advance To-Pay: Freight, T/M, Advance 1 & Date, COD. Later advances, Extra, P/M are hidden.
-      setDisplay('field_fright', true);
-      setDisplay('field_tm', true);
-      setDisplay('field_advance1', true);
-      setDisplay('field_date1', true);
-      setDisplay('field_advance2', false);
-      setDisplay('field_date2', false);
-      setDisplay('field_advance3', false);
-      setDisplay('field_date3', false);
-      setDisplay('field_cod', true);
-      setDisplay('field_extraAmount', false);
-      setDisplay('field_payDate', false);
-      setDisplay('field_pm', false);
+      // Advance To-Pay: Freight, T/M, Advance 1 & Date, COD. Advances 2-3, Extra, P/M are strictly blocked & zeroed.
+      setFieldState('field_fright', 'm_fright', true, true);
+      setFieldState('field_tm', 'm_tm', true, true);
+      setFieldState('field_advance1', 'm_advance1', true, true);
+      setFieldState('field_date1', 'm_date1', true, false);
+      setFieldState('field_advance2', 'm_advance2', false, true);
+      setFieldState('field_date2', 'm_date2', false, false);
+      setFieldState('field_advance3', 'm_advance3', false, true);
+      setFieldState('field_date3', 'm_date3', false, false);
+      setFieldState('field_cod', 'm_cod', true, true);
+      setFieldState('field_extraAmount', 'm_extraAmount', false, true);
+      setFieldState('field_payDate', 'm_payDate', false, false);
+      setFieldState('field_pm', 'm_pm', false, true);
     } else {
-      // TOBILLED: Freight, T/M, All Advances 1/2/3, Extra Amount, PM/PA Date, P/M Mamul. COD is hidden.
-      setDisplay('field_fright', true);
-      setDisplay('field_tm', true);
-      setDisplay('field_advance1', true);
-      setDisplay('field_date1', true);
-      setDisplay('field_advance2', true);
-      setDisplay('field_date2', true);
-      setDisplay('field_advance3', true);
-      setDisplay('field_date3', true);
-      setDisplay('field_cod', false);
-      setDisplay('field_extraAmount', true);
-      setDisplay('field_payDate', true);
-      setDisplay('field_pm', true);
+      // TOBILLED: Freight, T/M, Advances 1-3 & Dates, Extra Amount, PM/PA Date, P/M Mamul. COD is strictly blocked & zeroed.
+      setFieldState('field_fright', 'm_fright', true, true);
+      setFieldState('field_tm', 'm_tm', true, true);
+      setFieldState('field_advance1', 'm_advance1', true, true);
+      setFieldState('field_date1', 'm_date1', true, false);
+      setFieldState('field_advance2', 'm_advance2', true, true);
+      setFieldState('field_date2', 'm_date2', true, false);
+      setFieldState('field_advance3', 'm_advance3', true, true);
+      setFieldState('field_date3', 'm_date3', true, false);
+      setFieldState('field_cod', 'm_cod', false, true);
+      setFieldState('field_extraAmount', 'm_extraAmount', true, true);
+      setFieldState('field_payDate', 'm_payDate', true, false);
+      setFieldState('field_pm', 'm_pm', true, true);
     }
   },
   activeTrips: [],
@@ -336,34 +348,43 @@ const TableModule = {
 
         <!-- Route Indicator -->
         <div class="trip-route-banner">
-          <span class="route-point">${escapeHtml(t.from || 'Origin')}</span>
-          <span class="route-line">── 🚛 ──&gt;</span>
-          <span class="route-point">${escapeHtml(t.to || 'Destination')}</span>
+          <div class="route-point origin-point">
+            <span class="route-city-text">${escapeHtml(t.from || 'Origin')}</span>
+          </div>
+          <div class="route-connector">
+            <div class="route-line-bar"></div>
+            <span class="route-truck-icon">🚛</span>
+          </div>
+          <div class="route-point dest-point">
+            <span class="route-city-text">${escapeHtml(t.to || 'Destination')}</span>
+          </div>
         </div>
 
         <!-- Vehicle & ToPayStatus -->
         <div class="trip-details-row">
-          <div>
-            <span class="trip-detail-label">Truck No:</span>
-            <span class="truck-plate">${escapeHtml(t.truckNo || '—')}</span>
+          <div class="truck-plate-wrapper">
+            <span class="truck-plate-label">TRUCK:</span>
+            <div class="truck-plate">
+              <span class="truck-plate-ind">IND</span>
+              <span class="truck-plate-num">${escapeHtml(t.truckNo || '—')}</span>
+            </div>
           </div>
           <div style="text-align: right;">
-            <span class="trip-detail-label">ToPayStatus:</span>
-            <span class="topay-tag ${t.topay ? 'has-topay' : ''}">${escapeHtml(t.topay || 'TOBILLED')}</span>
+            <span class="topay-badge topay-${(t.topay || 'TOBILLED').toLowerCase().replace(/[^a-z]/g, '')}">${escapeHtml(t.topay || 'TOBILLED')}</span>
           </div>
         </div>
 
         <!-- Financial Summary Grounded in 28-Column Engine -->
         <div class="trip-financial-grid">
-          <div class="fin-box">
+          <div class="fin-box fin-box-fright">
             <span class="fin-label">FREIGHT (Col K)</span>
             <span class="fin-val fin-fright">${CalculationEngine.formatCurrency(calc.fright)}</span>
           </div>
-          <div class="fin-box">
+          <div class="fin-box fin-box-adv">
             <span class="fin-label">${calc.cod > 0 ? 'COD (Col U)' : 'ADVANCES (O+Q+S)'}</span>
             <span class="fin-val fin-adv">${CalculationEngine.formatCurrency(calc.cod > 0 ? calc.cod : calc.totalAdvances)}</span>
           </div>
-          <div class="fin-box highlight-balc">
+          <div class="fin-box fin-box-balc highlight-balc">
             <span class="fin-label">PENDING (Col Z)</span>
             <span class="fin-val fin-final">${CalculationEngine.formatCurrency(calc.finalBalc)}</span>
           </div>
@@ -644,7 +665,6 @@ const TableModule = {
       currentStatus = 'TOBILLED';
     }
     document.getElementById('m_topay').value = currentStatus;
-    this.updateFormFieldsVisibility(currentStatus);
 
     document.getElementById('m_tm').value = (trip.tm !== undefined && trip.tm !== null && trip.tm !== '') ? trip.tm : 0;
     document.getElementById('m_advance1').value = (trip.advance1 !== undefined && trip.advance1 !== null && trip.advance1 !== '') ? trip.advance1 : 0;
@@ -663,6 +683,9 @@ const TableModule = {
     document.getElementById('m_payDate').value = this.toInputDate(trip.payDate);
     document.getElementById('m_pm').value = (trip.pm !== undefined && trip.pm !== null && trip.pm !== '') ? trip.pm : (trip.pmFinal || 0);
     document.getElementById('m_note').value = trip.note || '';
+
+    // Apply strict field visibility & zero out any blocked/non-applicable fields for this mode
+    this.updateFormFieldsVisibility(currentStatus);
 
     this.populateAutofillDatalists();
     this.clearAutofillSearch();
@@ -806,19 +829,28 @@ const TableModule = {
 
   liveCalcModal() {
     const fright = Number(document.getElementById('m_fright').value) || 0;
-    const topay = document.getElementById('m_topay').value;
-    const tm = Number(document.getElementById('m_tm').value) || 0;
-    const advance1 = Number(document.getElementById('m_advance1').value) || 0;
-    const advance2 = Number(document.getElementById('m_advance2').value) || 0;
-    const advance3 = Number(document.getElementById('m_advance3').value) || 0;
-    const extraAmount = Number(document.getElementById('m_extraAmount').value) || 0;
+    const topay = document.getElementById('m_topay').value || 'TOBILLED';
+    const topayVal = String(topay).trim().toUpperCase();
+
+    // Read only active/enabled fields; disabled/blocked fields are treated as 0
+    const getVal = (id) => {
+      const el = document.getElementById(id);
+      if (!el || el.disabled) return 0;
+      return Number(el.value) || 0;
+    };
+
+    const tm = (topayVal.startsWith('F')) ? 0 : getVal('m_tm');
+    const advance1 = (topayVal.startsWith('F')) ? 0 : getVal('m_advance1');
+    const advance2 = (topayVal === 'TOBILLED') ? getVal('m_advance2') : 0;
+    const advance3 = (topayVal === 'TOBILLED') ? getVal('m_advance3') : 0;
+    const extraAmount = (topayVal === 'TOBILLED') ? getVal('m_extraAmount') : 0;
+    const pm = (topayVal === 'TOBILLED') ? getVal('m_pm') : 0;
     const codInput = document.getElementById('m_cod');
-    const userCod = Number(codInput.value) || 0;
-    const pm = Number(document.getElementById('m_pm').value) || 0;
+    const userCod = (codInput && !codInput.disabled) ? (Number(codInput.value) || 0) : 0;
 
     const dummy = {
       fright,
-      topay,
+      topay: topayVal,
       tm,
       advance1,
       advance2,
@@ -834,10 +866,9 @@ const TableModule = {
     const ruleEl = document.getElementById('mRuleText');
     if (ruleEl) ruleEl.innerText = 'Rule Applied: ' + calc.ruleText;
 
-    // COD Banner Box (show for A/F-Topay)
+    // COD Banner Box (show for A/F-Topay, hide for TOBILLED)
     const mCodBox = document.getElementById('mCodBox');
     const mCalcCod = document.getElementById('mCalcCod');
-    const topayVal = String(topay || '').trim().toUpperCase();
 
     if (topayVal.startsWith('A') || topayVal.startsWith('F')) {
       if (mCodBox) mCodBox.style.display = 'block';
@@ -849,7 +880,7 @@ const TableModule = {
       }
     } else {
       if (mCodBox) mCodBox.style.display = 'none';
-      if (codInput && codInput.dataset.autoFilled === 'true') {
+      if (codInput) {
         codInput.value = 0;
         codInput.dataset.autoFilled = 'false';
       }
@@ -898,6 +929,51 @@ const TableModule = {
       return;
     }
 
+    // Determine strict normalized status and clean non-applicable fields
+    const rawTopay = String(document.getElementById('m_topay').value || 'TOBILLED').trim().toUpperCase();
+    let normalizedTopay = 'TOBILLED';
+    if (rawTopay.startsWith('F')) {
+      normalizedTopay = 'F/TO-PAY';
+    } else if (rawTopay.startsWith('A')) {
+      normalizedTopay = 'A/TO-PAY';
+    }
+
+    const frightVal = Number(document.getElementById('m_fright').value) || 0;
+    let tmVal = 0;
+    let adv1Val = 0;
+    let date1Val = '';
+    let adv2Val = 0;
+    let date2Val = '';
+    let adv3Val = 0;
+    let date3Val = '';
+    let codVal = 0;
+    let extraVal = 0;
+    let payDateVal = '';
+    let pmVal = 0;
+
+    if (normalizedTopay === 'F/TO-PAY') {
+      codVal = frightVal;
+      // All other advances, TM, Extra, PM are strictly 0 and blank dates
+    } else if (normalizedTopay === 'A/TO-PAY') {
+      tmVal = Number(document.getElementById('m_tm').value) || 0;
+      adv1Val = Number(document.getElementById('m_advance1').value) || 0;
+      date1Val = this.toDisplayDate(document.getElementById('m_date1').value);
+      codVal = Math.max(0, frightVal - tmVal - adv1Val);
+      // Adv 2, 3, Extra, PM are strictly 0 and blank dates
+    } else { // TOBILLED
+      tmVal = Number(document.getElementById('m_tm').value) || 0;
+      adv1Val = Number(document.getElementById('m_advance1').value) || 0;
+      date1Val = this.toDisplayDate(document.getElementById('m_date1').value);
+      adv2Val = Number(document.getElementById('m_advance2').value) || 0;
+      date2Val = this.toDisplayDate(document.getElementById('m_date2').value);
+      adv3Val = Number(document.getElementById('m_advance3').value) || 0;
+      date3Val = this.toDisplayDate(document.getElementById('m_date3').value);
+      codVal = 0;
+      extraVal = Number(document.getElementById('m_extraAmount').value) || 0;
+      payDateVal = this.toDisplayDate(document.getElementById('m_payDate').value);
+      pmVal = Number(document.getElementById('m_pm').value) || 0;
+    }
+
     const tripData = {
       row: rowNum,
       slNo: document.getElementById('m_slNo').value || String(DataManager.getAll().length + 1),
@@ -910,20 +986,20 @@ const TableModule = {
       accountNo: document.getElementById('m_accountNo').value.trim(),
       ifsc: document.getElementById('m_ifsc').value.trim().toUpperCase(),
       paymentMade: document.getElementById('m_paymentMade').value.trim(),
-      fright: Number(document.getElementById('m_fright').value) || 0,
-      date1: this.toDisplayDate(document.getElementById('m_date1').value),
-      topay: document.getElementById('m_topay').value.trim(),
-      tm: Number(document.getElementById('m_tm').value) || 0,
-      advance1: Number(document.getElementById('m_advance1').value) || 0,
-      date2: this.toDisplayDate(document.getElementById('m_date2').value),
-      advance2: Number(document.getElementById('m_advance2').value) || 0,
-      date3: this.toDisplayDate(document.getElementById('m_date3').value),
-      advance3: Number(document.getElementById('m_advance3').value) || 0,
+      fright: frightVal,
+      date1: date1Val,
+      topay: normalizedTopay,
+      tm: tmVal,
+      advance1: adv1Val,
+      date2: date2Val,
+      advance2: adv2Val,
+      date3: date3Val,
+      advance3: adv3Val,
       pod: this.toDisplayDate(document.getElementById('m_pod').value),
-      cod: Number(document.getElementById('m_cod').value) || 0,
-      extraAmount: Number(document.getElementById('m_extraAmount').value) || 0,
-      payDate: this.toDisplayDate(document.getElementById('m_payDate').value),
-      pm: Number(document.getElementById('m_pm').value) || 0,
+      cod: codVal,
+      extraAmount: extraVal,
+      payDate: payDateVal,
+      pm: pmVal,
       note: document.getElementById('m_note').value.trim()
     };
 
