@@ -1,17 +1,17 @@
 /**
  * api.js - Authoritative Cloud API & Synchronization Service
- * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger - Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * Interfaces with Google Apps Script backend (backend/Code.gs)
- * Live Production Endpoint: https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec
+ * Live Production Endpoint: https://script.google.com/macros/s/AKfycbzjzIDLeIpl63TC5RPrSPmusBktgCqILD6EemOKVwHUQj41gqYtYdJwQoufJYgHvZSoBQ/exec
  */
 
 const ApiService = {
   config: {
-    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec',
+    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbxHwxcs9iEPhSqRbNmtiGpEAxKdGL7A50Bg_hn3DHQuQMu-dPhaLcxc1GXeKX8nrVmuIQ/exec',
     defaultSheetId: '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
-    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow/exec',
+    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbxHwxcs9iEPhSqRbNmtiGpEAxKdGL7A50Bg_hn3DHQuQMu-dPhaLcxc1GXeKX8nrVmuIQ/exec',
     sheetId: localStorage.getItem('broker_sheet_id') || '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
     timeoutMs: 12000
   },
@@ -19,7 +19,7 @@ const ApiService = {
   getApiUrl() {
     const stored = localStorage.getItem('broker_api_url');
     // Auto-migrate legacy deployment endpoints to active Version 3 endpoint
-    if (!stored || stored.includes('AKfycbwVgbDsDazKLlwR2Bh') || stored.includes('AKfycbxhwvJi8UDsJd2yFo')) {
+    if (!stored || stored.includes('AKfycbwVgbDsDazKLlwR2Bh') || stored.includes('AKfycbxhwvJi8UDsJd2yFo') || stored.includes('AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow') || stored.includes('AKfycbzjzIDLeIpl63TC5RPrSPmusBktgCqILD6EemOKVwHUQj41gqYtYdJwQoufJYgHvZSoBQ') || stored.includes('AKfycbwqykkt53iglV7FrceyixlDjUSe5ry4JIG_jlLPwbBukqrRF1lagM49Hem7jYcHm7HK4A')) {
       return this.config.defaultApiUrl;
     }
     return this.config.apiUrl || this.config.defaultApiUrl;
@@ -137,6 +137,8 @@ const ApiService = {
           body: JSON.stringify({
             action: 'saveTrip',
             trip: trip,
+            sheetName: trip.sheetName || '',
+            sourceSheet: trip.sourceSheet || trip.sheetName || '',
             sheetId: this.getSheetId()
           })
         });
@@ -155,7 +157,7 @@ const ApiService = {
     return { status: 'success', source: 'local', trip: trip };
   },
 
-  async deleteTrip(rowNum) {
+  async deleteTrip(rowNum, sheetName = '') {
     if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
       alert('Access Denied: Only Administrator is authorized to delete trips.');
       return { status: 'error', message: 'Unauthorized: Admin role required' };
@@ -173,6 +175,7 @@ const ApiService = {
           body: JSON.stringify({
             action: 'deleteTrip',
             rowNum: rowNum,
+            sheetName: sheetName || '',
             role: session?.role || '',
             authHash: session?.authHash || '',
             sheetId: this.getSheetId()

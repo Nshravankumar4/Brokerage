@@ -1,62 +1,87 @@
 /**
  * calculations.js - Dynamic Mathematical Formula Engine & Aggregates
- * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
- * Executes the exact Excel logic based on ToPayStatus (Column M)
- * Supported statuses: A/TO-PAY, F/TO-PAY, TOBILLED
+ * SR Brokerage Ledger - Transport Brokerage Ledger Pvt Ltd
+ * Authoritative Workbook: BROKER DETAILS ADVANCE BALC DETAILS.xlsx
+ * Master 28-Column Formula Architecture (Columns A through AB)
+ * 
+ * Formula Rules Grounded in Master Excel:
+ *   1. Column U (COD: A/Topay & F/Topay): =K - N - O - Q - S (Freight - TM - Advances)
+ *   2. Column V (Pending Amount: Tobilled): =K - N - O - Q - S (Freight - TM - Advances)
+ *   3. Column W (Extra Amount): Halting / Extra Hamali addition
+ *   4. Column Y (P/M): Payment Mamul deduction
+ *   5. Column Z (Pending Amount / Final Net Balance):
+ *        - TOBILLED: =V + W - Y  [(Freight - TM - Advances) + Extra Amount - P/M]
+ *        - A/TO-PAY: =K - N - O - U = 0 (Destination party pays COD)
+ *        - F/TO-PAY: =0 (Destination party pays full freight via COD)
+ *   6. Column AA (POD Amount Status): =IF(M="TOBILLED", V + W - Y - Z, 0)
  */
 
 const CalculationEngine = {
-  /**
-   * Recalculates BALC (W) and FINAL BALC (Y) dynamically based on ToPayStatus (M)
-   * Formula 1 (Column W): =IF(LEFT(UPPER(TRIM(M2)),1)="F", 0, IF(LEFT(UPPER(TRIM(M2)),1)="A", K2-N2-O2-T2, K2-(O2+Q2+S2+U2+T2)))
-   * Formula 2 (Column Y): =W2-X2
-   * Options:
-   *   1. A/TO-PAY -> Freight − TM − Adv1 − COD
-   *   2. F/TO-PAY -> Balance = 0 (Destination party pays full freight)
-   *   3. TOBILLED -> Freight − (Advances + PM + COD)
-   */
   calculate(trip) {
     const fright = Number(trip.fright) || 0;
     const tm = Number(trip.tm) || 0;
     const adv1 = Number(trip.advance1) || 0;
     const adv2 = Number(trip.advance2) || 0;
     const adv3 = Number(trip.advance3) || 0;
-    const cod = Number(trip.cod) || 0;
-    const pm = Number(trip.pm) || 0;
-    const pmFinal = Number(trip.pmFinal) || 0;
+    const totalAdvances = adv1 + adv2 + adv3;
+    const extraAmount = Number(trip.extraAmount) || 0;
+    const pm = (trip.pm !== undefined && trip.pm !== null && trip.pm !== '') ? Number(trip.pm) : (Number(trip.pmFinal) || 0);
     const topay = String(trip.topay || '').trim().toUpperCase();
 
+    let cod = 0;
+    let pendingTobilled = 0;
     let balc = 0;
+    let finalBalc = 0;
+    let podAmountStatus = 0;
     let ruleText = '';
 
-    // Condition 1: F/TO-PAY (Starts with 'F')
+    // Condition 1: F/TO-PAY (Full ToPay)
     if (topay.startsWith('F') || topay === 'FULL' || topay === 'FULL TO-BILLED' || topay === 'FULL TO-PAY') {
+      // Master Formula: U = K - N - O - Q - S = Freight
+      cod = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '' && Number(trip.cod) > 0)
+        ? Number(trip.cod)
+        : Math.max(0, fright - tm - totalAdvances);
+      pendingTobilled = 0;
       balc = 0;
-      ruleText = 'F/TO-PAY: Balance = 0 (Destination party pays in full)';
+      finalBalc = 0;
+      podAmountStatus = 0;
+      ruleText = 'F/TO-PAY: COD = Full Freight (Col U); Pending Amount = 0';
     }
-    // Condition 2: A/TO-PAY (Starts with 'A')
+    // Condition 2: A/TO-PAY (Advance ToPay)
     else if (topay.startsWith('A') || topay === 'ADV' || topay === 'ADV TO-BILLED' || topay === 'ADV TO-PAY') {
-      balc = fright - tm - adv1 - cod;
-      ruleText = 'A/TO-PAY: Freight − TM − Adv1 − COD';
+      // Master Formula: U = K - N - O - Q - S (Consignee pays balance as COD)
+      const autoCod = Math.max(0, fright - tm - totalAdvances);
+      cod = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '' && Number(trip.cod) > 0)
+        ? Number(trip.cod)
+        : autoCod;
+      pendingTobilled = 0;
+      // Formula Z: K - N - O - U (Evaluates to 0 when COD collected)
+      finalBalc = Math.max(0, fright - tm - adv1 - cod);
+      balc = finalBalc;
+      podAmountStatus = 0;
+      ruleText = 'A/TO-PAY: COD = Freight \u2212 TM \u2212 Adv (Col U); Pending Amount = 0';
     }
-    // Condition 3: TOBILLED (Starts with 'T' or standard default)
+    // Condition 3: TOBILLED (To-Billed Master Formula)
     else {
-      balc = fright - (adv1 + adv2 + adv3 + pm + cod);
-      ruleText = 'TOBILLED: Freight − (Advances + PM + COD)';
+      cod = 0;
+      // Master Formula V: K - N - O - Q - S (Freight \u2212 TM \u2212 Advances)
+      pendingTobilled = fright - tm - totalAdvances;
+      balc = pendingTobilled;
+      // Master Formula Z: V + W - Y (Pending Tobilled + Extra Amount \u2212 PM)
+      finalBalc = pendingTobilled + extraAmount - pm;
+      // Master Formula AA: V + W - Y - Z = 0 (when settled)
+      podAmountStatus = pendingTobilled + extraAmount - pm - finalBalc;
+      ruleText = 'TOBILLED: Pending = (Freight \u2212 TM \u2212 Advances) + Extra \u2212 PM';
     }
 
     if (isNaN(balc)) balc = 0;
-
-    // Final Balance: BALC - Secondary PM (Column Y = W - X)
-    let finalBalc = balc - pmFinal;
     if (isNaN(finalBalc)) finalBalc = 0;
 
-    const totalAdvances = adv1 + adv2 + adv3;
-    const totalMamul = tm + pm + pmFinal;
+    const totalMamul = tm + pm;
 
     // Check if POD date is missing
     const rawPod = String(trip.pod || '').trim();
-    const isPodMissing = (!rawPod || rawPod.toLowerCase().includes('if date') || rawPod.toLowerCase().includes('empty'));
+    const isPodMissing = (!rawPod || rawPod.toLowerCase().includes('pending') || rawPod.toLowerCase().includes('if date') || rawPod.toLowerCase().includes('empty'));
 
     // Extract trip month label (e.g., '08-2026' -> 'Aug 2026')
     const monthKey = this.extractMonthKey(trip.date);
@@ -69,11 +94,13 @@ const CalculationEngine = {
       adv3,
       totalAdvances,
       cod,
+      pendingTobilled,
+      extraAmount,
       pm,
-      pmFinal,
       totalMamul,
       balc,
       finalBalc,
+      podAmountStatus,
       ruleText,
       isPodMissing,
       monthKey
@@ -108,6 +135,6 @@ const CalculationEngine = {
       maximumFractionDigits: 2,
       minimumFractionDigits: 0
     });
-    return showSymbol ? '₹' + formatted : formatted;
+    return showSymbol ? '\u20B9' + formatted : formatted;
   }
 };

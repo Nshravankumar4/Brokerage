@@ -1,6 +1,6 @@
 /**
  * dashboard.js - Executive Logistics Dashboard & Operational Alerts System
- * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger \u2022 Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * Features:
@@ -39,10 +39,10 @@ const DashboardModule = {
           level: 'danger',
           row: t.row,
           slNo: t.slNo || '',
-          lrNo: t.lrNo || '—',
-          truckNo: t.truckNo || '—',
+          lrNo: t.lrNo || '\u2014',
+          truckNo: t.truckNo || '\u2014',
           trspName: t.trspName || 'Unassigned Transporter',
-          date: t.date || '—',
+          date: t.date || '\u2014',
           from: t.from || 'Origin',
           to: t.to || 'Destination',
           fright: calc.fright,
@@ -56,12 +56,12 @@ const DashboardModule = {
           level: 'warning',
           row: t.row,
           slNo: t.slNo || '',
-          lrNo: t.lrNo || '—',
+          lrNo: t.lrNo || '\u2014',
           truckNo: t.truckNo || 'Missing Plate',
           trspName: t.trspName || 'Missing Transporter',
-          date: t.date || '—',
-          from: t.from || '—',
-          to: t.to || '—',
+          date: t.date || '\u2014',
+          from: t.from || '\u2014',
+          to: t.to || '\u2014',
           fright: calc.fright,
           message: 'Incomplete Shipment Details'
         });
@@ -90,7 +90,7 @@ const DashboardModule = {
     if (elFinalBalc) elFinalBalc.innerText = CalculationEngine.formatCurrency(totalFinalBalance);
 
     const drawerStatus = document.getElementById('drawerStatusText');
-    if (drawerStatus) drawerStatus.innerText = `Online • ${list.length} Active Trips`;
+    if (drawerStatus) drawerStatus.innerText = `Online \u2022 ${list.length} Active Trips`;
 
     // 2. Render Dedicated Operational Alerts Panel (Left Side of Main Grid)
     const alertHeadingEl = document.getElementById('alertPanelHeading');
@@ -105,9 +105,9 @@ const DashboardModule = {
       if (operationalAlerts.length === 0) {
         alertListEl.innerHTML = `
           <div class="alert-empty-state">
-            <span style="font-size: 1.5rem;">🎉</span>
+            <span style="font-size: 1.5rem;">\uD83C\uDF89</span>
             <div>
-              <strong style="color: #15803d; font-size: 0.9rem;">All caught up — no pending POD records!</strong>
+              <strong style="color: #15803d; font-size: 0.9rem;">All caught up \u2014 no pending POD records!</strong>
               <div style="font-size: 0.78rem; color: #475569; margin-top: 2px;">
                 All shipments have verified Proof of Delivery receipt dates confirmed.
               </div>
@@ -132,7 +132,7 @@ const DashboardModule = {
                 </div>
                 <div class="alert-card-subbar">
                   <span class="alert-trsp">${a.trspName}</span>
-                  <span class="alert-date">🏦 ${a.date}</span>
+                  <span class="alert-date">\uD83C\uDFE6 ${a.date}</span>
                   <span class="alert-val">${CalculationEngine.formatCurrency(a.fright)}</span>
                 </div>
               </div>
@@ -170,7 +170,7 @@ const DashboardModule = {
                onclick="AppModule.filterByMonth('${mKey}')" 
                title="Click to filter ledger by ${mKey}">
             <div class="month-card-header">
-              <span class="month-card-title">📅 ${mKey}</span>
+              <span class="month-card-title">\uD83D\uDCC5 ${mKey}</span>
               <span class="month-card-badge">${stat.count} Trips</span>
             </div>
             <div class="month-stat-row">

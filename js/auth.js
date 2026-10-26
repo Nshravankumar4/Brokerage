@@ -1,6 +1,6 @@
 /**
  * auth.js - Cryptographically Grounded RBAC Authentication System
- * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger \u2022 Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * 
@@ -10,7 +10,7 @@
  * 
  * Permissions:
  *  - ADMIN: Full CRUD Control (Add, Edit, Update POD, Delete Records, Restore Data)
- *  - RUDRA (Employee): Fleet Operations (Add, Edit, Update POD — Delete is Restricted)
+ *  - RUDRA (Employee): Fleet Operations (Add, Edit, Update POD \u2014 Delete is Restricted)
  * 
  * Auto-Logout:
  *  - 10-Minute Idle Inactivity Timeout (600,000 ms) automatically logs out to the auth portal.
@@ -141,10 +141,10 @@ const AuthModule = {
 
     if (pwdInput.type === 'password') {
       pwdInput.type = 'text';
-      if (toggleBtn) toggleBtn.innerText = '🙈';
+      if (toggleBtn) toggleBtn.innerText = '\uD83D\uDE48';
     } else {
       pwdInput.type = 'password';
-      if (toggleBtn) toggleBtn.innerText = '👁️';
+      if (toggleBtn) toggleBtn.innerText = '\uD83D\uDC41\uFE0F';
     }
   },
 
@@ -220,7 +220,7 @@ const AuthModule = {
       if (typeof AppModule !== 'undefined') {
         AppModule.switchView('dashboard');
         AppModule.refresh();
-        AppModule.showToast(`🚀 Welcome back, ${account.displayName}!`);
+        AppModule.showToast(`\uD83D\uDE80 Welcome back, ${account.displayName}!`);
       }
 
       if (pwdInput) pwdInput.value = '';
@@ -325,7 +325,7 @@ const AuthModule = {
 
     input.value = '';
     if (typeof AppModule !== 'undefined') {
-      AppModule.showToast('🔑 Password updated successfully!');
+      AppModule.showToast('\uD83D\uDD11 Password updated successfully!');
       AppModule.closeSettingsModal();
     } else {
       alert('Password updated successfully!');

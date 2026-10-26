@@ -1,200 +1,409 @@
 /**
- * 🚛 TRANSPORT BROKERAGE LEDGER PVT LTD - GOOGLE APPS SCRIPT BACKEND
- * Authoritative Cloud Database & Google Sheets Integration
- * Target Sheet: final (27 Columns A to AA)
- * Developed by Shravan Kumar for Transport Brokerage Ledger Pvt Ltd
- * 
- * Capabilities:
- *  1. Google Sheets live 27-column database (A to AA).
- *  2. Concurrency guard using LockService.getScriptLock().
- *  3. Dynamic calculation engine for BALC (Col W) and FINAL BALC (Col Y).
- *  4. Automated point-in-time backup snapshots in Google Drive folder "Brokerage_Backups".
- *  5. Role-based security for ADMIN and RUDRA (Employee).
- *  6. JSON API endpoints via doGet and doPost.
+ * TRANSPORT BROKERAGE LEDGER PVT LTD
+ * SR Brokerage Ledger - Google Apps Script Backend (Upgrade 1.2 - Physical Worksheets)
+ *
+ * Physical Worksheets Architecture:
+ * 1. TOBILLED  -> physical worksheet TOBILLED
+ * 2. A/TO-PAY  -> physical worksheet A/TO-PAY (or A-TO-PAY)
+ * 3. F/TO-PAY  -> physical worksheet F/TO-PAY (or F-TO-PAY)
+ * Master Backup: final
+ *
+ * Database: 28 columns, A:AB
+ * A:SL NO       B:TRSP NAME       C:DATE
+ * D:LR NO       E:TRUCK NO        F:FROM
+ * G:TO          H:ACCOUNT NO      I:IFSC CODE
+ * J:PAYMENT MADE K:FRIGHT         L:DATE
+ * M:ToPayStatus N:T/M             O:ADVANCE
+ * P:DATE 2      Q:ADVANCE2        R:DATE3
+ * S:ADVANCE3    T:POD RECD Date   U:COD
+ * V:Pending ToBilled              W:Extra Amount
+ * X:PM/PA Date  Y:P/M             Z:Pending Amount
+ * AA:POD Amount Status            AB:REMARKS / NOTE
  */
+
+'use strict';
 
 var SHEET_NAME = 'final';
 var BACKUP_FOLDER_NAME = 'Brokerage_Backups';
-
-/**
- * OPTIONAL: Set your Google Spreadsheet ID here if running as a standalone Apps Script.
- * How to get your ID:
- * In your Google Sheet, look at the URL:
- * https://docs.google.com/spreadsheets/d/1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg/edit
- * The ID is the string between '/d/' and '/edit': 1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg
- */
 var SPREADSHEET_ID = '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA';
 
+var PHYSICAL_SHEET_CANDIDATES = {
+  'TOBILLED': ['TOBILLED', 'TO-BILLED', 'TO_BILLED'],
+  'A/TO-PAY': ['A/TO-PAY', 'A-TO-PAY', 'A_TO_PAY', 'ATO-PAY'],
+  'F/TO-PAY': ['F/TO-PAY', 'F-TO-PAY', 'F_TO_PAY', 'FTO-PAY']
+};
+
 var HEADERS = [
-  'SL NO', 'TRSP NAME', 'DATE', 'LR NO', 'TRUCK NO', 'FROM', 'TO',
-  'ACCOUNT NO', 'IFSC CODE', 'PAYMENT MADE', 'FRIGHT', 'DATE', 'ToPayStatus',
-  'T/M', 'ADVANCE', 'DATE 2', 'ADVANCE2', 'DATE3', 'ADVANCE3',
-  'To-Billed (COD)', 'P/M', 'DATE', 'BALC', 'P/M', 'FINAL BALC', 'POD RECD', 'NOTE'
+  'SL NO',
+  'TRSP NAME',
+  'DATE',
+  'LR NO',
+  'TRUCK NO',
+  'FROM',
+  'TO',
+  'ACCOUNT NO',
+  'IFSC CODE',
+  'PAYMENT MADE',
+  'FRIGHT',
+  'DATE',
+  'ToPayStatus',
+  'T/M',
+  'ADVANCE',
+  'DATE 2',
+  'ADVANCE2',
+  'DATE3',
+  'ADVANCE3',
+  'POD RECD Date',
+  'Cash on Delivery (COD) :A/Topay&Ftopay',
+  'Pending Amount: Tobilled',
+  'Extra Amount',
+  'PM/PA Date',
+  'P/M',
+  'Pending Amount',
+  'POD Amount Status',
+  'REMARKS / NOTE'
 ];
 
-var INITIAL_DATA = [
-  [1, "ANTP SAINATH", "20-08-2026", "207", "AP39UD3564", "LUCKNOW", "MEDCHAL", "38216860303", "SBIN0010659", "SBI BANK", 65000, "02-09-2026", "TOBILLED", 0, 65000, "", 0, "", 0, 0, 0, "", 0, 0, 0, "29-08-2026", ""],
-  [2, "SARITHA TRSP", "03-09-2026", "208", "TG15T6666", "RAIPUR", "MEDCHAL", "0312035592", "KKBK0008406", "KKBK BANK", 110250, "15-10-2026", "TOBILLED", 0, 110250, "", 0, "", 0, 0, 0, "", 0, 0, 0, "07-09-2026", ""],
-  [3, "SARITHA TRSP", "10-09-2026", "190", "TG15T6666", "MEDCHAL", "COOCHBEHAR", "0312035592", "KKBK0008406", "KKBK BANK", 231000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 231000, 0, 231000, "25-09-2026", ""],
-  [4, "MISHRA PIWARAN", "12-09-2026", "191/192", "RJ14GN7169", "MEDCHAL", "RAIGUNJ&DALKOLA", "279805000462", "ICIC0002798", "ICICI BANK", 135000, "16-09-2026", "TOBILLED", 200, 124800, "", 0, "", 0, 0, 200, "", 10000, 0, 10000, "05-10-2026", ""],
-  [5, "ANDHRA GORKARPUR", "16-09-2026", "193/194", "UP38T6479", "MEDCHAL", "SABDHAN/KALIACHAK", "52641131001394", "PUNB0219910", "PNB BANK", 130000, "18-09-2026", "TOBILLED", 0, 100000, "21-09-2026", 20000, "", 0, 0, 0, "", 10000, 0, 10000, "10-10-2026", ""],
-  [6, "ABHISHEK TRSP", "19-09-2026", "209", "TS05UF1719", "MEDCHAL", "MURISIRABAD", "23405500018", "ICIC0002384", "ICICI BANK", 134750, "21-09-2026", "TOBILLED", 0, 100000, "", 0, "", 0, 0, 0, "", 34750, 0, 34750, "", "41BAGS WET CONDITION"],
-  [7, "SARITHA TRSP", "24-09-2026", "210/211", "TS15UE1122", "MEDCHAL", "ARRARIYA/PURNIA", "0312035592", "KKBK0008406", "KKBK BANK", 155000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 155000, 0, 155000, "05-10-2026", ""],
-  [8, "CG RANCHI R/WAYS", "29-09-2026", "195", "CG08AZ4714", "MEDCHAL", "PANKANJUR", "29122900001083", "DCBL0000291", "DCB BANK", 42000, "01-10-2026", "F/TO-PAY", 0, 0, "", 0, "", 0, 0, 0, "", 0, 0, 0, "", "F/TO-PAY Shipment"],
-  [9, "SARITHA TRSP", "01-10-2026", "196", "TG15T6666", "MEDCHAL", "MADHAPURA", "0312035592", "KKBK0008406", "KKBK BANK", 175000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 175000, 0, 175000, "19-10-2026", ""],
-  [10, "SARITHA TRSP", "06-10-2026", "212", "TS15UE1122", "MEDCHAL", "MUZUFFARPUR", "0312035592", "KKBK0008406", "KKBK BANK", 141000, "", "TOBILLED", 0, 0, "", 0, "", 0, 0, 0, "", 141000, 0, 141000, "19-10-2026", ""],
-  [11, "ANTP SAINATH", "08-10-2026", "213", "AP39UD3564", "MEDCHAL", "BEGUSARAI", "38216860303", "SBIN0010659", "SBI BANK", 136500, "17-10-2026", "TOBILLED", 0, 126000, "", 567, "", 667, 0, 500, "", 8766, 266, 8500, "19-10-2026", ""],
-  [12, "MISHRA PIWARAN", "09-10-2026", "214", "JH02BM3030", "MEDCHAL", "PURNIA", "279805000462", "ICIC0002798", "ICICI BANK", 154000, "15-10-2026", "TOBILLED", 500, 143750, "", 0, "", 0, 0, 300, "", 9950, 0, 9950, "", ""],
-  [13, "MISHRA PIWARAN", "10-10-2026", "215", "BR44GB0148", "MEDCHAL", "MOTHIHARI", "279805000462", "ICIC0002798", "ICICI BANK", 157500, "15-10-2026", "TOBILLED", 300, 147200, "", 0, "", 0, 0, 300, "", 10000, 0, 10000, "", ""],
-  [14, "MISHRA PIWARAN", "13-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 162750, "17-10-2026", "TOBILLED", 300, 152450, "", 0, "", 0, 0, 300, "", 10000, 0, 10000, "", ""],
-  [15, "MISHRA PIWARAN", "14-10-2026", "197/198", "UP60BT2385", "MEDCHAL", "ARRARIYA/KALIGUNJ", "279805000462", "ICIC0002798", "ICICI BANK", 171500, "", "TOBILLED", 300, 0, "", 0, "", 0, 0, 0, "", 171500, 0, 171500, "", ""],
-  [16, "ANTP SAINATH", "17-10-2026", "217/218", "AP02TH2345", "MEDCHAL", "BHAGALPUR/PURNIA", "38216860303", "SBIN0010659", "SBI BANK", 158000, "", "TOBILLED", 0, 50000, "", 0, "", 0, 108000, 0, "", 0, 0, 0, "", ""],
-  [17, "MISHRA PIWARAN", "18-10-2026", "219", "UP61BT7437", "MEDCHAL", "COOCHBEHAR", "279805000462", "ICIC0002798", "ICICIBANK", 200000, "", "A/TO-PAY", 0, 0, "", 0, "", 0, 0, 0, "", 200000, 0, 200000, "", ""],
-  [18, "MISHRA PIWARAN", "19-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 50000, "", "A/TO-PAY", 200, 19800, "", 0, "", 0, 30000, 0, "", 0, 0, 0, "", ""],
-  [19, "MISHRA PIWARAN", "20-10-2026", "2106", "HR56C4156", "MEDCHAL", "ARRARIYA", "279805000462", "ICIC0002798", "ICICI BANK", 60000, "", "A/TO-PAY", 300, 29700, "", 0, "", 0, 30000, 0, "", 0, 0, 0, "", ""]
-];
-
-function cleanSpreadsheetId(idOrUrl) {
-  if (!idOrUrl) return '';
-  var str = String(idOrUrl).trim();
-  var match = str.match(/\/d\/([a-zA-Z0-9-_]+)/);
-  if (match && match[1]) {
-    return match[1];
-  }
-  return str;
+function cleanSpreadsheetId(value) {
+  var str = String(value || '').trim();
+  var match = str.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : str;
 }
 
 function getSpreadsheet(optId) {
-  var cleanOptId = cleanSpreadsheetId(optId);
+  var id = cleanSpreadsheetId(
+    optId ||
+    PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') ||
+    SPREADSHEET_ID
+  );
 
-  // 1. Parameter sheetId if explicitly passed
-  if (cleanOptId) {
-    try {
-      var passedSs = SpreadsheetApp.openById(cleanOptId);
-      if (passedSs) {
-        PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', passedSs.getId());
-        return passedSs;
-      }
-    } catch (e) {}
+  if (!id) {
+    throw new Error('Configure SPREADSHEET_ID before using the API.');
   }
 
-  // 2. Container-bound active spreadsheet (when script is opened via Extensions > Apps Script)
-  try {
-    var activeSs = SpreadsheetApp.getActiveSpreadsheet();
-    if (activeSs) {
-      PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', activeSs.getId());
-      return activeSs;
-    }
-  } catch (e) {}
+  var ss = SpreadsheetApp.openById(id);
+  PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
+  return ss;
+}
 
-  // 3. Configured SPREADSHEET_ID variable at top of Code.gs
-  if (typeof SPREADSHEET_ID !== 'undefined' && SPREADSHEET_ID && SPREADSHEET_ID.trim()) {
-    try {
-      var hardcodedId = cleanSpreadsheetId(SPREADSHEET_ID);
-      var hardcodedSs = SpreadsheetApp.openById(hardcodedId);
-      if (hardcodedSs) {
-        PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', hardcodedSs.getId());
-        return hardcodedSs;
-      }
-    } catch (e) {}
+/**
+ * Resolves the physical destination worksheet for a given business status.
+ * Accepts 'TOBILLED', 'A/TO-PAY', or 'F/TO-PAY'.
+ */
+function resolveWorksheet(ss, status) {
+  var norm = normalizeToPayStatus(status);
+  var candidates = PHYSICAL_SHEET_CANDIDATES[norm] || ['TOBILLED'];
+
+  for (var i = 0; i < candidates.length; i++) {
+    var sh = ss.getSheetByName(candidates[i]);
+    if (sh) {
+      ensureHeaders(sh);
+      return sh;
+    }
   }
 
-  // 4. Persistent Script Properties
+  // Not found: Create physical sheet with Google Sheets-compliant name (no slashes)
+  var preferredName = (norm === 'A/TO-PAY') ? 'A-TO-PAY' : (norm === 'F/TO-PAY' ? 'F-TO-PAY' : 'TOBILLED');
   try {
-    var propId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
-    if (propId && propId.trim()) {
-      var propSs = SpreadsheetApp.openById(propId.trim());
-      if (propSs) return propSs;
+    var newSheet = ss.insertSheet(preferredName);
+    ensureHeaders(newSheet);
+    return newSheet;
+  } catch (e) {
+    // Fallback if Google Sheets blocks slash character
+    var safeName = preferredName.replace('/', '-');
+    var existingSafe = ss.getSheetByName(safeName);
+    if (existingSafe) {
+      ensureHeaders(existingSafe);
+      return existingSafe;
     }
-  } catch (e) {}
+    var fallbackSheet = ss.insertSheet(safeName);
+    ensureHeaders(fallbackSheet);
+    return fallbackSheet;
+  }
+}
 
-  // 5. Auto-discover existing sheet in user's Google Drive by common filenames
+function ensureHeaders(sheet) {
+  if (sheet.getLastRow() < 1) {
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    sheet.setFrozenRows(1);
+    try {
+      sheet.getRange(1, 1, 1, HEADERS.length)
+        .setFontWeight('bold')
+        .setBackground('#1e3a8a')
+        .setFontColor('#ffffff');
+    } catch (eStyle) {}
+  }
+  if (sheet.getMaxColumns() < HEADERS.length) {
+    sheet.insertColumnsAfter(
+      sheet.getMaxColumns(),
+      HEADERS.length - sheet.getMaxColumns()
+    );
+  }
+
+  // Remove unwanted/non-applicable column from display per physical worksheet
+  var sName = String(sheet.getName() || '').toUpperCase();
   try {
-    var candidateNames = [
-      'BROKER DETAILS ADVANCE BALC DETAILS',
-      'Transport Brokerage Ledger',
-      'Shinex Transport & Brokerage Ledger',
-      'BROKER DETAILS'
-    ];
-    for (var i = 0; i < candidateNames.length; i++) {
-      var files = DriveApp.getFilesByName(candidateNames[i]);
-      if (files.hasNext()) {
-        var file = files.next();
-        var discoveredSs = SpreadsheetApp.openById(file.getId());
-        PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', file.getId());
-        return discoveredSs;
-      }
+    if (sName.indexOf('TOBILLED') !== -1 || sName.indexOf('TO-BILLED') !== -1) {
+      // Column U (21): COD is not used in TOBILLED
+      sheet.hideColumns(21);
+    } else if (sName.indexOf('A-TO-PAY') !== -1 || sName.indexOf('A/TO-PAY') !== -1 || sName.indexOf('ATO-PAY') !== -1) {
+      // Column V (22): Pending ToBilled is not used in A/TO-PAY
+      sheet.hideColumns(22);
+    } else if (sName.indexOf('F-TO-PAY') !== -1 || sName.indexOf('F/TO-PAY') !== -1 || sName.indexOf('FTO-PAY') !== -1) {
+      // Column V (22): Pending ToBilled is not used in F/TO-PAY
+      sheet.hideColumns(22);
     }
-  } catch (e) {}
-
-  // 6. Auto-create a new Google Spreadsheet in Google Drive so it NEVER crashes
-  try {
-    var createdSs = SpreadsheetApp.create('Transport Brokerage Ledger');
-    PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', createdSs.getId());
-    return createdSs;
-  } catch (e) {}
-
-  throw new Error("Spreadsheet not found. Please bind this script to your sheet, set SPREADSHEET_ID in Code.gs, or pass ?sheetId=YOUR_ID.");
+  } catch (errHide) {
+    Logger.log('Column visibility note: ' + errHide);
+  }
 }
 
 function getOrCreateSheet(optId) {
   var ss = getSpreadsheet(optId);
   var sheet = ss.getSheetByName(SHEET_NAME);
+
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    // Write headers
-    sheet.appendRow(HEADERS);
-    // Write initial verified 19 records
-    for (var i = 0; i < INITIAL_DATA.length; i++) {
-      sheet.appendRow(INITIAL_DATA[i]);
-    }
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    sheet.setFrozenRows(1);
   }
+
+  ensureHeaders(sheet);
   return sheet;
 }
 
-// Helper to run manually in Apps Script Editor to set up sheet immediately
-function setupInitialSheet() {
-  var sheet = getOrCreateSheet();
-  Logger.log("Sheet verified & ready at: " + sheet.getParent().getUrl());
-  return sheet.getParent().getUrl();
+/**
+ * Migrate existing transactions from historical 'final' sheet
+ * to the three physical worksheets without data loss or duplication.
+ */
+function migrateHistoricalFinalRecords(ss) {
+  if (!ss) return 0;
+
+  // Safely remove unwanted empty default 'Sheet1' created by Google Sheets
+  try {
+    var defaultSheet1 = ss.getSheetByName('Sheet1');
+    if (defaultSheet1 && defaultSheet1.getLastRow() <= 1) {
+      ss.deleteSheet(defaultSheet1);
+    }
+  } catch (eSheet1) {
+    Logger.log('Sheet1 cleanup note: ' + eSheet1);
+  }
+
+  var finalSheet = ss.getSheetByName(SHEET_NAME);
+  if (!finalSheet) return 0;
+
+  var lastRow = finalSheet.getLastRow();
+  if (lastRow < 2) return 0;
+
+  var values = finalSheet.getRange(2, 1, lastRow - 1, 28).getValues();
+  var count = 0;
+
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    if (!row[0] && !row[1] && !row[3]) continue;
+
+    var status = normalizeToPayStatus(row[12]);
+    var targetSheet = resolveWorksheet(ss, status);
+    var lr = String(row[3] || '').trim().toUpperCase();
+
+    // Check if record already exists in destination
+    var targetLastRow = targetSheet.getLastRow();
+    var exists = false;
+    if (targetLastRow >= 2 && lr) {
+      var destValues = targetSheet.getRange(2, 4, targetLastRow - 1, 1).getValues();
+      for (var d = 0; d < destValues.length; d++) {
+        if (String(destValues[d][0] || '').trim().toUpperCase() === lr) {
+          exists = true;
+          break;
+        }
+      }
+    }
+
+    if (!exists) {
+      targetSheet.appendRow(row);
+      count++;
+    }
+  }
+
+  SpreadsheetApp.flush();
+  Logger.log('Migrated ' + count + ' records from final to physical worksheets.');
+  return count;
 }
 
-// ================= API DISPATCHERS =================
+function runMigrateToPhysicalSheets() {
+  var ss = getSpreadsheet();
+  resolveWorksheet(ss, 'TOBILLED');
+  resolveWorksheet(ss, 'A/TO-PAY');
+  resolveWorksheet(ss, 'F/TO-PAY');
+  var count = migrateHistoricalFinalRecords(ss);
+  return 'Success: Migrated ' + count + ' records to physical worksheets without duplicates.';
+}
+
+function initializeAndMigrateAllWorksheets() {
+  return runMigrateToPhysicalSheets();
+}
+
+function setupInitialSheet() {
+  var ss = getSpreadsheet();
+  resolveWorksheet(ss, 'TOBILLED');
+  resolveWorksheet(ss, 'A/TO-PAY');
+  resolveWorksheet(ss, 'F/TO-PAY');
+  migrateHistoricalFinalRecords(ss);
+  Logger.log('Ledger URL: ' + ss.getUrl());
+  return ss.getUrl();
+}
+
+// =====================================================
+// CALCULATION ENGINE
+// =====================================================
+
+function normalizeToPayStatus(value) {
+  var s = String(value || '').trim().toUpperCase();
+  if (s.indexOf('F') === 0 || s === 'FULL') return 'F/TO-PAY';
+  if (s.indexOf('A') === 0 || s === 'ADV') return 'A/TO-PAY';
+  return 'TOBILLED';
+}
+
+function amount(value) {
+  if (value === '' || value === null || value === undefined) return 0;
+  if (typeof value === 'string') {
+    value = value.replace(/,/g, '').trim();
+    if (value === '' || value.toUpperCase() === 'NA') return 0;
+  }
+  var n = Number(value);
+  if (!Number.isFinite(n)) throw new Error('Invalid numeric amount: ' + value);
+  return n;
+}
+
+function calculateLedgerAmounts(input) {
+  var freight = amount(input.freight);
+  var tm = amount(input.tm);
+  var adv1 = amount(input.advance1);
+  var adv2 = amount(input.advance2);
+  var adv3 = amount(input.advance3);
+  var extraAmount = amount(input.extraAmount);
+  var pm = amount(input.pm);
+
+  var status = normalizeToPayStatus(input.status);
+  var totalAdvances = adv1 + adv2 + adv3;
+
+  var cod = 0;
+  var pendingTobilled = 0;
+  var intermediateBalance = 0;
+  var finalPending = 0;
+  var finalBalc = 0;
+
+  if (status === 'F/TO-PAY') {
+    cod = input.codProvided ? amount(input.cod) : freight;
+    intermediateBalance = 0;
+    pendingTobilled = 0;
+    finalPending = 0;
+    finalBalc = 0;
+  } else if (status === 'A/TO-PAY') {
+    cod = input.codProvided ? amount(input.cod) : Math.max(0, freight - tm - totalAdvances);
+    intermediateBalance = 0;
+    pendingTobilled = 0;
+    finalPending = Math.max(0, freight - tm - adv1 - cod);
+    finalBalc = finalPending;
+  } else {
+    cod = 0;
+    // Formula requirement: pendingTobilled = fright - tm - totalAdvances
+    pendingTobilled = freight - tm - totalAdvances;
+    intermediateBalance = pendingTobilled;
+    finalPending = pendingTobilled + extraAmount - pm;
+    // Formula requirement: finalBalc = pendingTobilled + extraAmount - pm
+    finalBalc = pendingTobilled + extraAmount - pm;
+  }
+
+  // POD Amount Status resolution (Col AA)
+  var podAmountStatus = input.podAmountStatus || 0;
+  var rawPod = String(input.pod || '').trim();
+  var rawPayDate = String(input.payDate || '').trim();
+  if (String(podAmountStatus).toUpperCase() === 'DONE' || (rawPod && !/pending|na/i.test(rawPod)) || rawPayDate) {
+    podAmountStatus = 'DONE';
+  }
+
+  return {
+    status: status,
+    totalAdvances: totalAdvances,
+    cod: cod,
+    pendingTobilled: pendingTobilled,
+    intermediateBalance: intermediateBalance,
+    extraAmount: extraAmount,
+    pm: pm,
+    finalPending: finalPending,
+    finalBalc: finalBalc,
+    podAmountStatus: podAmountStatus
+  };
+}
+
+function calculateSheetRow(r) {
+  return calculateLedgerAmounts({
+    freight: r[10],
+    status: r[12],
+    tm: r[13],
+    advance1: r[14],
+    advance2: r[16],
+    advance3: r[18],
+    pod: r[19],
+    cod: r[20],
+    codProvided: r[20] !== '' && r[20] !== null && r[20] !== undefined && String(r[20]).toLowerCase() !== 'if tobilled na',
+    extraAmount: r[22],
+    payDate: r[23],
+    pm: r[24],
+    podAmountStatus: r[26]
+  });
+}
+
+// =====================================================
+// JSON API
+// =====================================================
+
+function jsonOutput(data, callback) {
+  var json = JSON.stringify(data);
+  if (callback) {
+    if (!/^[a-zA-Z_$][0-9a-zA-Z_$.]*$/.test(callback)) {
+      return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'Invalid JSONP callback.' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(callback + '(' + json + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}
 
 function doGet(e) {
-  var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'getAll';
-  var callback = (e && e.parameter && e.parameter.callback) ? e.parameter.callback : null;
-  var sheetId = (e && e.parameter && e.parameter.sheetId) ? e.parameter.sheetId : null;
+  var params = (e && e.parameter) || {};
+  var action = params.action || 'getAll';
+  var callback = params.callback || null;
+  var result;
 
-  var result = {};
   try {
     if (action === 'getAll') {
-      result = handleGetAll(sheetId);
+      result = handleGetAll(params.sheetId);
     } else if (action === 'getVersion') {
       result = { status: 'success', version: getVersion() };
+    } else if (action === 'migrate') {
+      result = { status: 'success', message: runMigrateToPhysicalSheets() };
     } else {
       result = { status: 'error', message: 'Unknown action: ' + action };
     }
   } catch (err) {
-    result = { status: 'error', message: err.toString() };
+    result = { status: 'error', message: String(err.message || err) };
   }
 
-  var jsonString = JSON.stringify(result);
-  if (callback) {
-    return ContentService.createTextOutput(callback + '(' + jsonString + ')')
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
-  }
-  return ContentService.createTextOutput(jsonString)
-    .setMimeType(ContentService.MimeType.JSON);
+  return jsonOutput(result, callback);
 }
 
 function doPost(e) {
-  var result = {};
   var lock = LockService.getScriptLock();
+  var acquired = false;
+  var result;
 
   try {
-    lock.waitLock(15000); // Wait up to 15 seconds for atomic lock
-    
+    lock.waitLock(15000);
+    acquired = true;
+
     var data = {};
     if (e && e.postData && e.postData.contents) {
       data = JSON.parse(e.postData.contents);
@@ -203,121 +412,142 @@ function doPost(e) {
     }
 
     var action = data.action || 'saveTrip';
-    var sheetId = data.sheetId || (e && e.parameter && e.parameter.sheetId) || null;
-
-    // Strict Server-Side RBAC Enforcement: Administrative actions require authenticated Admin token
+    var sheetId = data.sheetId || ((e && e.parameter && e.parameter.sheetId) || null);
     var adminActions = ['deleteTrip', 'restoreDatabase', 'backupDatabase'];
+
     if (adminActions.indexOf(action) !== -1) {
+      var props = PropertiesService.getScriptProperties();
+      var expectedToken = props.getProperty('ADMIN_TOKEN');
+      var suppliedToken = String(data.token || data.authHash || '');
       var role = String(data.role || (data.user && data.user.role) || '').toLowerCase();
-      var authHash = String(data.authHash || data.token || '');
-      var ADMIN_HASH = 'ded12726612993e58a7f6f1b0428300adcf13f6cabb7515436c5888b3de21c0b';
-      if (role !== 'admin' || authHash !== ADMIN_HASH) {
-        return ContentService.createTextOutput(JSON.stringify({
+
+      if (!expectedToken || role !== 'admin' || suppliedToken !== expectedToken) {
+        return jsonOutput({
           status: 'error',
           code: 'UNAUTHORIZED',
-          message: 'Server Access Denied: Administrator role is strictly required to perform ' + action
-        })).setMimeType(ContentService.MimeType.JSON);
+          message: 'Administrator authorization required.'
+        });
       }
     }
 
     if (action === 'saveTrip') {
       result = handleSaveTrip(data.trip || data, sheetId);
     } else if (action === 'deleteTrip') {
-      result = handleDeleteTrip(data.rowNum || data.slNo, sheetId);
+      result = handleDeleteTrip(data.rowNum, sheetId, data.sheetName || (data.trip && data.trip.sheetName));
     } else if (action === 'restoreDatabase') {
-      result = handleRestoreDatabase(sheetId);
+      result = { status: 'error', message: 'Destructive restore disabled. Use backups manually.' };
     } else if (action === 'backupDatabase') {
       result = handleBackupDatabase(sheetId);
     } else {
       result = { status: 'error', message: 'Unknown action: ' + action };
     }
   } catch (err) {
-    result = { status: 'error', message: err.toString() };
+    result = { status: 'error', message: String(err.message || err) };
   } finally {
-    lock.releaseLock();
+    if (acquired) lock.releaseLock();
   }
 
-  return ContentService.createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+  return jsonOutput(result);
 }
 
-// ================= HANDLERS =================
+// =====================================================
+// READ ALL RECORDS ACROSS THE THREE PHYSICAL WORKSHEETS
+// =====================================================
 
 function handleGetAll(optId) {
-  var sheet = getOrCreateSheet(optId);
-  var values = sheet.getDataRange().getValues();
+  var ss = getSpreadsheet(optId);
+
+  var targetCategories = ['TOBILLED', 'A/TO-PAY', 'F/TO-PAY'];
+  var sheetsToRead = [];
+
+  for (var c = 0; c < targetCategories.length; c++) {
+    var ws = resolveWorksheet(ss, targetCategories[c]);
+    if (ws) sheetsToRead.push(ws);
+  }
+
+  // Check if physical sheets are empty but 'final' has historical data
+  var totalRowsInPhysical = 0;
+  for (var s = 0; s < sheetsToRead.length; s++) {
+    if (sheetsToRead[s].getLastRow() >= 2) {
+      totalRowsInPhysical += (sheetsToRead[s].getLastRow() - 1);
+    }
+  }
+
+  if (totalRowsInPhysical === 0) {
+    // Perform safe automatic migration from 'final'
+    migrateHistoricalFinalRecords(ss);
+  }
 
   var trips = [];
-  var totFreight = 0;
-  var totAdvances = 0;
-  var totBalance = 0;
-  var pendingPodCount = 0;
+  var totalFreight = 0;
+  var totalAdvances = 0;
+  var totalBalance = 0;
+  var pendingPod = 0;
 
-  for (var i = 1; i < values.length; i++) {
-    var r = values[i];
-    if (!r[0] && !r[1] && !r[3]) continue; // Skip blank rows
+  for (var s = 0; s < sheetsToRead.length; s++) {
+    var sheet = sheetsToRead[s];
+    var sheetName = sheet.getName();
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) continue;
 
-    var fright = Number(r[10]) || 0;
-    var tm = Number(r[13]) || 0;
-    var adv1 = Number(r[14]) || 0;
-    var adv2 = Number(r[16]) || 0;
-    var adv3 = Number(r[18]) || 0;
-    var cod = Number(r[19]) || 0;
-    var pm = Number(r[20]) || 0;
-    var pmFinal = Number(r[23]) || 0;
-    var topay = String(r[12] || '').trim().toUpperCase();
+    var values = sheet.getRange(2, 1, lastRow - 1, 28).getValues();
 
-    // Calculate intermediate balance (BALC - Col W) based on To-Billed - ToPayStatus
-    var balc = 0;
-    if (topay.indexOf('F') === 0 || topay === 'FULL' || topay === 'FULL TO-BILLED' || topay === 'FULL TO-PAY') {
-      balc = 0;
-    } else if (topay.indexOf('A') === 0 || topay === 'ADV' || topay === 'ADV TO-BILLED' || topay === 'ADV TO-PAY') {
-      balc = fright - tm - adv1 - cod;
-    } else {
-      // TOBILLED or standard freight
-      balc = fright - (adv1 + adv2 + adv3 + pm + cod);
+    for (var i = 0; i < values.length; i++) {
+      var r = values[i];
+      if (!r[0] && !r[1] && !r[3]) continue;
+
+      var calc = calculateSheetRow(r);
+      var freight = amount(r[10]);
+      var advances = amount(r[14]) + amount(r[16]) + amount(r[18]);
+      var pendingTobilled = calc.pendingTobilled;
+      var finalBalc = calc.finalBalc;
+
+      var podText = String(r[19] || '').trim();
+      var missingPod = !podText || /^(pending|na|n\/a)$/i.test(podText) || /if date|if empty/i.test(podText);
+      if (missingPod) pendingPod++;
+
+      totalFreight += freight;
+      totalAdvances += advances;
+      totalBalance += calc.finalPending;
+
+      var actualRow = i + 2;
+      var stableId = sheetName + '_' + (r[3] ? String(r[3]).trim() : actualRow);
+
+      trips.push({
+        id: stableId,
+        sheetName: sheetName,
+        row: actualRow,
+        slNo: String(r[0] || ''),
+        trspName: String(r[1] || ''),
+        date: formatDate(r[2]),
+        lrNo: String(r[3] || ''),
+        truckNo: String(r[4] || ''),
+        from: String(r[5] || ''),
+        to: String(r[6] || ''),
+        accountNo: String(r[7] || ''),
+        ifsc: String(r[8] || ''),
+        paymentMade: String(r[9] || ''),
+        fright: freight,
+        date1: formatDate(r[11]),
+        topay: calc.status,
+        tm: amount(r[13]),
+        advance1: amount(r[14]),
+        date2: formatDate(r[15]),
+        advance2: amount(r[16]),
+        date3: formatDate(r[17]),
+        advance3: amount(r[18]),
+        pod: missingPod ? '' : formatDate(r[19]),
+        cod: calc.cod,
+        pendingTobilled: pendingTobilled,
+        balc: finalBalc,
+        extraAmount: amount(r[22]),
+        payDate: formatDate(r[23]),
+        pm: amount(r[24]),
+        finalBalc: finalBalc,
+        podAmountStatus: calc.podAmountStatus,
+        note: String(r[27] || '')
+      });
     }
-
-    var finalBalc = balc - pmFinal;
-    var podStr = String(r[25] || '').trim();
-    var isPodMissing = (!podStr || podStr.toLowerCase().indexOf('if date') !== -1 || podStr.toLowerCase().indexOf('empty') !== -1);
-
-    if (isPodMissing) pendingPodCount++;
-
-    totFreight += fright;
-    totAdvances += (adv1 + adv2 + adv3);
-    totBalance += finalBalc;
-
-    trips.push({
-      row: i + 1,
-      slNo: String(r[0]),
-      trspName: String(r[1] || ''),
-      date: formatDate(r[2]),
-      lrNo: String(r[3] || ''),
-      truckNo: String(r[4] || ''),
-      from: String(r[5] || ''),
-      to: String(r[6] || ''),
-      accountNo: String(r[7] || ''),
-      ifsc: String(r[8] || ''),
-      paymentMade: String(r[9] || ''),
-      fright: fright,
-      date1: formatDate(r[11]),
-      topay: String(r[12] || ''),
-      tm: tm,
-      advance1: adv1,
-      date2: formatDate(r[15]),
-      advance2: adv2,
-      date3: formatDate(r[17]),
-      advance3: adv3,
-      cod: cod,
-      pm: pm,
-      payDate: formatDate(r[21]),
-      balc: balc,
-      pmFinal: pmFinal,
-      finalBalc: finalBalc,
-      pod: isPodMissing ? '' : formatDate(r[25]),
-      note: String(r[26] || '')
-    });
   }
 
   return {
@@ -326,63 +556,76 @@ function handleGetAll(optId) {
     version: getVersion(),
     summary: {
       totalTrips: trips.length,
-      totalFreight: totFreight,
-      totalAdvances: totAdvances,
-      finalBalance: totBalance,
-      pendingPod: pendingPodCount
+      totalFreight: totalFreight,
+      totalAdvances: totalAdvances,
+      finalBalance: totalBalance,
+      pendingPod: pendingPod
     },
     trips: trips
   };
 }
 
+// =====================================================
+// SAVE TRIP TO EXACT PHYSICAL WORKSHEET & SAFE MOVE
+// =====================================================
+
 function handleSaveTrip(t, optId) {
-  var sheet = getOrCreateSheet(optId);
+  if (!t || typeof t !== 'object') throw new Error('Trip data is required.');
+
+  var ss = getSpreadsheet(optId);
+  var lr = String(t.lrNo || '').trim().toUpperCase();
+
+  var codProvided = t.cod !== undefined && t.cod !== null && t.cod !== '' && String(t.cod).toLowerCase() !== 'if tobilled na';
+  var pmValue = t.pm !== undefined && t.pm !== null && t.pm !== '' ? t.pm : t.pmFinal;
+
+  var record = {
+    freight: t.fright,
+    status: t.topay,
+    tm: t.tm,
+    advance1: t.advance1,
+    advance2: t.advance2,
+    advance3: t.advance3,
+    pod: t.pod,
+    cod: t.cod,
+    codProvided: codProvided,
+    extraAmount: t.extraAmount,
+    payDate: t.payDate,
+    pm: pmValue,
+    podAmountStatus: t.podAmountStatus
+  };
+
+  var calc = calculateLedgerAmounts(record);
+
+  // Authoritative physical worksheet destination derived from status
+  var targetSheet = resolveWorksheet(ss, calc.status);
+  var targetSheetName = targetSheet.getName();
+
+  var sourceSheetName = t.sourceSheet ? String(t.sourceSheet).trim() : null;
   var rowNum = parseInt(t.row, 10);
 
-  // Validate Unique LR NO: LR NO must not be duplicate across active trips
-  var targetLr = String(t.lrNo || '').trim().toUpperCase();
-  if (targetLr) {
-    var dataVals = sheet.getDataRange().getValues();
-    // Col D is index 3 (0-based)
-    for (var i = 1; i < dataVals.length; i++) {
-      var sheetRowIndex = i + 1; // 1-based row in sheet
-      var existingLr = String(dataVals[i][3] || '').trim().toUpperCase();
-      if (existingLr && existingLr === targetLr && (!rowNum || rowNum !== sheetRowIndex)) {
-        return {
-          status: 'error',
-          code: 'DUPLICATE_LR',
-          message: 'Duplicate LR NO Error: LR NO "' + t.lrNo + '" already exists in row ' + sheetRowIndex + ' (Trip #' + (dataVals[i][0] || i) + '). Duplicate LR NO is not allowed.'
-        };
+  // Global Duplicate LR NO Validation across all physical worksheets
+  if (lr) {
+    var checkCategories = ['TOBILLED', 'A/TO-PAY', 'F/TO-PAY'];
+    for (var c = 0; c < checkCategories.length; c++) {
+      var chSheet = resolveWorksheet(ss, checkCategories[c]);
+      var chLast = chSheet.getLastRow();
+      if (chLast >= 2) {
+        var chVals = chSheet.getRange(2, 4, chLast - 1, 1).getValues();
+        for (var j = 0; j < chVals.length; j++) {
+          var existLr = String(chVals[j][0] || '').trim().toUpperCase();
+          var actualRow = j + 2;
+          var isSameRecord = (sourceSheetName === chSheet.getName() && actualRow === rowNum);
+          if (existLr === lr && actualRow !== rowNum) {
+            return {
+              status: 'error',
+              code: 'DUPLICATE_LR',
+              message: 'LR NO already exists in ' + chSheet.getName() + ' (row ' + actualRow + ')'
+            };
+          }
+        }
       }
     }
   }
-
-  var fright = Number(t.fright) || 0;
-  var tm = Number(t.tm) || 0;
-  var adv1 = Number(t.advance1) || 0;
-  var adv2 = Number(t.advance2) || 0;
-  var adv3 = Number(t.advance3) || 0;
-  var cod = Number(t.cod) || 0;
-  var pm = Number(t.pm) || 0;
-  var pmFinal = Number(t.pmFinal) || 0;
-  var rawStatus = String(t.topay || '').trim().toUpperCase();
-  var topay = 'TOBILLED';
-  if (rawStatus.indexOf('F') === 0 || rawStatus === 'FULL') {
-    topay = 'F/TO-PAY';
-  } else if (rawStatus.indexOf('A') === 0 || rawStatus === 'ADV') {
-    topay = 'A/TO-PAY';
-  }
-
-  var balc = 0;
-  if (topay === 'F/TO-PAY') {
-    balc = 0;
-  } else if (topay === 'A/TO-PAY') {
-    balc = fright - tm - adv1 - cod;
-  } else {
-    // TOBILLED
-    balc = fright - (adv1 + adv2 + adv3 + pm + cod);
-  }
-  var finalBalc = balc - pmFinal;
 
   var rowData = [
     t.slNo || '',
@@ -395,85 +638,132 @@ function handleSaveTrip(t, optId) {
     t.accountNo || '',
     t.ifsc || '',
     t.paymentMade || '',
-    fright,
+    amount(t.fright),
     t.date1 || '',
-    topay,
-    tm,
-    adv1,
+    calc.status,
+    amount(t.tm),
+    amount(t.advance1),
     t.date2 || '',
-    adv2,
+    amount(t.advance2),
     t.date3 || '',
-    adv3,
-    cod,
-    pm,
-    t.payDate || '',
-    balc,
-    pmFinal,
-    finalBalc,
+    amount(t.advance3),
     t.pod || '',
+    calc.status === 'TOBILLED' ? 'if Tobilled NA' : calc.cod,
+    calc.status === 'TOBILLED' ? calc.pendingTobilled : 'if A/Topay&Ftopay Na',
+    calc.extraAmount,
+    t.payDate || '',
+    calc.pm,
+    calc.finalPending,
+    calc.podAmountStatus,
     t.note || ''
   ];
 
-  if (rowNum && rowNum >= 2 && rowNum <= sheet.getLastRow()) {
-    sheet.getRange(rowNum, 1, 1, 27).setValues([rowData]);
+  if (rowData.length !== 28) throw new Error('Internal error: expected 28 columns.');
+
+  var isStatusChangeMove = Boolean(sourceSheetName && sourceSheetName !== targetSheetName && rowNum);
+
+  if (isStatusChangeMove) {
+    // 1. Write to target physical worksheet
+    targetSheet.appendRow(rowData);
+    var newRowNum = targetSheet.getLastRow();
+    SpreadsheetApp.flush();
+
+    // 2. Delete from original source worksheet
+    var srcSheet = ss.getSheetByName(sourceSheetName);
+    if (srcSheet && rowNum >= 2 && rowNum <= srcSheet.getLastRow()) {
+      srcSheet.deleteRow(rowNum);
+      SpreadsheetApp.flush();
+    }
+
+    rowNum = newRowNum;
+  } else if (rowNum && rowNum >= 2 && rowNum <= targetSheet.getLastRow()) {
+    // Update existing record in same physical worksheet
+    targetSheet.getRange(rowNum, 1, 1, 28).setValues([rowData]);
+    SpreadsheetApp.flush();
   } else {
-    sheet.appendRow(rowData);
-    rowNum = sheet.getLastRow();
+    // New shipment appended to physical worksheet
+    targetSheet.appendRow(rowData);
+    rowNum = targetSheet.getLastRow();
+    SpreadsheetApp.flush();
   }
-
-  var currentVer = incrementVersion();
-  return { status: 'success', rowNum: rowNum, version: currentVer, trip: t };
-}
-
-function handleDeleteTrip(rowNum, optId) {
-  var sheet = getOrCreateSheet(optId);
-  var r = parseInt(rowNum, 10);
-  if (r >= 2 && r <= sheet.getLastRow()) {
-    sheet.deleteRow(r);
-    var currentVer = incrementVersion();
-    return { status: 'success', version: currentVer, message: 'Trip deleted' };
-  }
-  return { status: 'error', message: 'Invalid row number: ' + rowNum };
-}
-
-function handleRestoreDatabase(optId) {
-  var ss = getSpreadsheet(optId);
-  var sheet = ss.getSheetByName(SHEET_NAME);
-  if (sheet) {
-    ss.deleteSheet(sheet);
-  }
-  getOrCreateSheet(optId);
-  incrementVersion();
-  return { status: 'success', message: 'Database restored to original verified records.' };
-}
-
-function handleBackupDatabase(optId) {
-  var ss = getSpreadsheet(optId);
-  var folderIterator = DriveApp.getFoldersByName(BACKUP_FOLDER_NAME);
-  var folder = folderIterator.hasNext() ? folderIterator.next() : DriveApp.createFolder(BACKUP_FOLDER_NAME);
-
-  var timeStamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HH-mm-ss');
-  var backupName = 'Brokerage_Ledger_Backup_' + timeStamp;
-  var file = DriveApp.getFileById(ss.getId()).makeCopy(backupName, folder);
 
   return {
     status: 'success',
-    backupName: backupName,
-    url: file.getUrl()
+    sheetName: targetSheetName,
+    rowNum: rowNum,
+    version: incrementVersion(),
+    calculated: {
+      cod: calc.cod,
+      pendingTobilled: calc.pendingTobilled,
+      finalPending: calc.finalPending,
+      podAmountStatus: calc.podAmountStatus
+    }
   };
 }
 
-// ================= HELPERS =================
+// =====================================================
+// DELETE TRIP FROM SPECIFIC PHYSICAL WORKSHEET
+// =====================================================
 
-function formatDate(val) {
-  if (!val) return '';
-  if (Object.prototype.toString.call(val) === '[object Date]' && !isNaN(val.getTime())) {
-    var d = ('0' + val.getDate()).slice(-2);
-    var m = ('0' + (val.getMonth() + 1)).slice(-2);
-    var y = val.getFullYear();
-    return d + '-' + m + '-' + y;
+function handleDeleteTrip(rowNum, optId, optSheetName) {
+  var ss = getSpreadsheet(optId);
+  var r = parseInt(rowNum, 10);
+
+  var targetSheet = optSheetName ? ss.getSheetByName(optSheetName) : null;
+
+  if (!targetSheet) {
+    // Fallback: search across all physical sheets
+    var checkCats = ['TOBILLED', 'A/TO-PAY', 'F/TO-PAY'];
+    for (var c = 0; c < checkCats.length; c++) {
+      var sh = resolveWorksheet(ss, checkCats[c]);
+      if (sh && r >= 2 && r <= sh.getLastRow()) {
+        targetSheet = sh;
+        break;
+      }
+    }
   }
-  return String(val);
+
+  if (!targetSheet || !Number.isInteger(r) || r < 2 || r > targetSheet.getLastRow()) {
+    return { status: 'error', message: 'Invalid sheet or row number for deletion.' };
+  }
+
+  targetSheet.deleteRow(r);
+  SpreadsheetApp.flush();
+
+  return {
+    status: 'success',
+    sheetName: targetSheet.getName(),
+    version: incrementVersion(),
+    message: 'Trip deleted from ' + targetSheet.getName() + '.'
+  };
+}
+
+// =====================================================
+// BACKUP
+// =====================================================
+
+function handleBackupDatabase(optId) {
+  var ss = getSpreadsheet(optId);
+  var folders = DriveApp.getFoldersByName(BACKUP_FOLDER_NAME);
+  var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(BACKUP_FOLDER_NAME);
+
+  var timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HH-mm-ss');
+  var name = 'Brokerage_Ledger_Backup_' + timestamp;
+  var file = DriveApp.getFileById(ss.getId()).makeCopy(name, folder);
+
+  return { status: 'success', backupName: name, url: file.getUrl() };
+}
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+function formatDate(value) {
+  if (!value) return '';
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'dd-MM-yyyy');
+  }
+  return String(value);
 }
 
 function getVersion() {
@@ -481,8 +771,9 @@ function getVersion() {
 }
 
 function incrementVersion() {
-  var v = parseInt(getVersion(), 10) + 1;
-  PropertiesService.getScriptProperties().setProperty('DATA_VERSION', String(v));
-  return String(v);
+  var current = parseInt(getVersion(), 10);
+  if (!Number.isFinite(current)) current = 1;
+  var next = String(current + 1);
+  PropertiesService.getScriptProperties().setProperty('DATA_VERSION', next);
+  return next;
 }
-

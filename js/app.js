@@ -28,7 +28,7 @@ const AppModule = {
         if (res && res.source === 'cloud') {
           this.refresh();
           this.updateCloudSyncBadge(true);
-          console.log('✅ Live Google Sheets cloud ledger synchronized on startup.');
+          console.log('\u2705 Live Google Sheets cloud ledger synchronized on startup.');
         }
       }).catch(e => console.warn('Cloud startup fetch note:', e));
     }
@@ -83,7 +83,7 @@ const AppModule = {
       }
       window.brokerSyncChannel.onmessage = async (event) => {
         const type = event.data?.type || 'Data updated';
-        console.log("⚡ Real-time broadcast event received:", type);
+        console.log("\u26A1 Real-time broadcast event received:", type);
         this.refresh();
       };
     }
@@ -133,7 +133,7 @@ const AppModule = {
         if (res && res.trips) {
           this.refresh();
           this.updateCloudSyncBadge(true);
-          this.showToast(`⚡ Live sync: Updated to cloud version ${serverVersion}`);
+          this.showToast(`\u26A1 Live sync: Updated to cloud version ${serverVersion}`);
         }
       } else if (serverVersion) {
         this.updateCloudSyncBadge(true);
@@ -145,13 +145,13 @@ const AppModule = {
   },
 
   async syncNow(silent = false) {
-    if (!silent) this.showToast("🔄 Syncing latest cloud database...");
+    if (!silent) this.showToast("\uD83D\uDD04 Syncing latest cloud database...");
     this.updateCloudSyncBadge(false);
     if (typeof ApiService !== 'undefined') {
       const res = await ApiService.fetchAll();
       this.refresh();
       this.updateCloudSyncBadge(true);
-      if (!silent) this.showToast("✅ Synced with latest Google Sheets ledger!");
+      if (!silent) this.showToast("\u2705 Synced with latest Google Sheets ledger!");
     }
   },
 
@@ -162,16 +162,16 @@ const AppModule = {
 
     if (headerPill) {
       if (isLive) {
-        headerPill.innerHTML = `🟢 Cloud Synced (v${DataManager.getVersion()})`;
+        headerPill.innerHTML = `\uD83D\uDFE2 Cloud Synced (v${DataManager.getVersion()})`;
         headerPill.style.color = '#10b981';
       } else {
-        headerPill.innerHTML = `🔄 Syncing...`;
+        headerPill.innerHTML = `\uD83D\uDD04 Syncing...`;
         headerPill.style.color = '#38bdf8';
       }
     }
 
     if (drawerStatus) {
-      drawerStatus.innerText = `Online • ${count} Active Trips`;
+      drawerStatus.innerText = `Online \u2022 ${count} Active Trips`;
     }
   },
 
@@ -311,7 +311,7 @@ const AppModule = {
     if (typeof ApiService !== 'undefined') {
       if (apiUrlInput) ApiService.setApiUrl(apiUrlInput.value.trim());
       if (sheetIdInput) ApiService.setSheetId(sheetIdInput.value.trim());
-      this.showToast('☁️ Google Sheets API settings saved!');
+      this.showToast('\u2601\uFE0F Google Sheets API settings saved!');
       this.checkCloudVersionAndSync();
     }
   },
@@ -328,14 +328,14 @@ const AppModule = {
       alert('Access Restricted: Only Administrator can restore original database records!');
       return;
     }
-    if (confirm('Are you sure you want to restore the original 19 Excel records from BROKER DETAILS ADVANCE BALC DETAILS.xlsx? All unsaved manual edits will be reset.')) {
+    if (confirm('Are you sure you want to restore the current workbook records from BROKER DETAILS ADVANCE BALC DETAILS.xlsx? All unsaved manual edits will be reset.')) {
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
         await ApiService.triggerRestoreDatabase();
       } else {
         DataManager.reset();
       }
       this.refresh();
-      this.showToast('📋 Restored original Excel records successfully!');
+      this.showToast('\uD83D\uDCCB Restored current workbook records successfully!');
     }
   },
 
@@ -350,7 +350,7 @@ const AppModule = {
     this.applyFilterAndRender();
 
     if (filterType === 'missingPod') {
-      this.showToast('⚠️ Filtered: Showing shipments with Missing POD');
+      this.showToast('\u26A0\uFE0F Filtered: Showing shipments with Missing POD');
     } else if (filterType === 'A/TO-PAY') {
       this.showToast('Filtered: A/TO-PAY shipments');
     } else if (filterType === 'F/TO-PAY') {
