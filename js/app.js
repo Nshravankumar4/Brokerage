@@ -1,4 +1,4 @@
-/**
+﻿/**
  * app.js - Main Application Controller & Real-Time Sync Engine
  * Transport Brokerage Ledger Pvt Ltd
  * Connects Auth, Search, Date Filters, Dynamic Monthly Filters, Dashboard, Spreadsheet & Cloud Sync

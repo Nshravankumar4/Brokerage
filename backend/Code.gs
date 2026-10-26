@@ -116,6 +116,9 @@ function getOrCreateSheet(optId) {
 
 function setupInitialSheet() {
   var sheet = getOrCreateSheet();
+  try {
+    syncCategorySheets(sheet.getParent());
+  } catch (e) {}
   Logger.log('Ledger URL: ' + sheet.getParent().getUrl());
   return sheet.getParent().getUrl();
 }
@@ -590,16 +593,85 @@ function handleSaveTrip(t, optId) {
 
   SpreadsheetApp.flush();
 
+  // Maintain filtered category sheets (TOBILLED, A-TO-PAY, F-TO-PAY) without duplicating data
+  try {
+    syncCategorySheets(sheet.getParent());
+  } catch (errSync) {
+    Logger.log('Category sync note: ' + errSync);
+  }
+
   return {
     status: 'success',
     rowNum: rowNum,
     version: incrementVersion(),
     calculated: {
       cod: calc.cod,
-      pendingTobilled: calc.pendingToBilled,
+      pendingTobilled: calc.pendingTobilled,
       finalPending: calc.finalPending
     }
   };
+}
+
+// =====================================================
+// CATEGORY SHEETS SYNC (TOBILLED, A-TO-PAY, F-TO-PAY)
+// =====================================================
+
+function syncCategorySheets(ss) {
+  if (!ss) return;
+  var masterSheet = ss.getSheetByName(SHEET_NAME);
+  if (!masterSheet) return;
+
+  var lastRow = masterSheet.getLastRow();
+  var allValues = lastRow >= 2
+    ? masterSheet.getRange(2, 1, lastRow - 1, 28).getValues()
+    : [];
+
+  var categories = [
+    { name: 'TOBILLED', code: 'TOBILLED' },
+    { name: 'A-TO-PAY', code: 'A/TO-PAY' },
+    { name: 'F-TO-PAY', code: 'F/TO-PAY' }
+  ];
+
+  for (var c = 0; c < categories.length; c++) {
+    var cat = categories[c];
+    var catSheet = ss.getSheetByName(cat.name);
+    if (!catSheet) {
+      catSheet = ss.insertSheet(cat.name);
+      catSheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+      catSheet.setFrozenRows(1);
+    } else {
+      catSheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+      catSheet.setFrozenRows(1);
+    }
+
+    var matching = [];
+    for (var i = 0; i < allValues.length; i++) {
+      var row = allValues[i];
+      if (!row[0] && !row[1] && !row[3]) continue;
+      var status = normalizeToPayStatus(row[12]);
+      if (status === cat.code) {
+        matching.push(row);
+      }
+    }
+
+    var catLastRow = catSheet.getLastRow();
+    if (catLastRow >= 2) {
+      catSheet.getRange(2, 1, catLastRow - 1, 28).clearContent();
+    }
+
+    if (matching.length > 0) {
+      catSheet.getRange(2, 1, matching.length, 28).setValues(matching);
+    }
+  }
+}
+
+// Standalone runner to manually or initially trigger category sheet synchronization
+function runSyncAllSheets() {
+  var sheet = getOrCreateSheet();
+  var ss = sheet.getParent();
+  syncCategorySheets(ss);
+  Logger.log('Successfully synced category sheets: TOBILLED, A-TO-PAY, F-TO-PAY');
+  return 'Success: Category sheets synced';
 }
 
 // =====================================================
@@ -618,6 +690,13 @@ function handleDeleteTrip(rowNum, optId) {
   }
 
   sheet.deleteRow(r);
+  SpreadsheetApp.flush();
+
+  try {
+    syncCategorySheets(sheet.getParent());
+  } catch (errSync) {
+    Logger.log('Category sync note on delete: ' + errSync);
+  }
 
   return {
     status: 'success',

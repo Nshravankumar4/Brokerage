@@ -1,4 +1,4 @@
-/**
+﻿/**
  * auth.js - Cryptographically Grounded RBAC Authentication System
  * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management

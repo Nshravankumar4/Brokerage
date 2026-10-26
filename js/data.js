@@ -1,4 +1,4 @@
-/**
+﻿/**
  * data.js - Data Store & Local Persistence Manager
  * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management

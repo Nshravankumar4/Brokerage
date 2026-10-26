@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -575,19 +575,19 @@
             <div class="shipment-modal-grid">
               <div class="shipment-modal-field" id="field_fright">
                 <label for="m_fright">Freight Amount (K) ₹ <span class="shipment-modal-required">*</span></label>
-                <input type="number" id="m_fright" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0" required>
+                <input type="number" id="m_fright" class="form-control" onfocus="if (this.value==='0') this.value=''; this.select()" oninput="TableModule.handleNumberInput(this)" placeholder="0" required>
               </div>
 
               <!-- T/M Mamul: Shown for TOBILLED and A/TO-PAY -->
               <div class="shipment-modal-field" id="field_tm">
                 <label for="m_tm">T/M Mamul / Tapal (N) ₹</label>
-                <input type="number" id="m_tm" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
+                <input type="number" id="m_tm" class="form-control" onfocus="if (this.value==='0') this.value=''; this.select()" oninput="TableModule.handleNumberInput(this)" placeholder="0">
               </div>
 
               <!-- Advance 1 & Date: Shown for TOBILLED and A/TO-PAY -->
               <div class="shipment-modal-field" id="field_advance1">
                 <label for="m_advance1">Advance 1 (O) ₹</label>
-                <input type="number" id="m_advance1" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
+                <input type="number" id="m_advance1" class="form-control" onfocus="if (this.value==='0') this.value=''; this.select()" oninput="TableModule.handleNumberInput(this)" placeholder="0">
               </div>
               <div class="shipment-modal-field" id="field_date1">
                 <label for="m_date1">Advance 1 Date (L)</label>
@@ -597,7 +597,7 @@
               <!-- Advance 2 & Date: Shown for TOBILLED -->
               <div class="shipment-modal-field" id="field_advance2">
                 <label for="m_advance2">Advance 2 (Q) ₹</label>
-                <input type="number" id="m_advance2" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
+                <input type="number" id="m_advance2" class="form-control" onfocus="if (this.value==='0') this.value=''; this.select()" oninput="TableModule.handleNumberInput(this)" placeholder="0">
               </div>
               <div class="shipment-modal-field" id="field_date2">
                 <label for="m_date2">Advance 2 Date (P)</label>
@@ -607,7 +607,7 @@
               <!-- Advance 3 & Date: Shown for TOBILLED -->
               <div class="shipment-modal-field" id="field_advance3">
                 <label for="m_advance3">Advance 3 (S) ₹</label>
-                <input type="number" id="m_advance3" class="form-control" oninput="TableModule.liveCalcModal()" placeholder="0">
+                <input type="number" id="m_advance3" class="form-control" onfocus="if (this.value==='0') this.value=''; this.select()" oninput="TableModule.handleNumberInput(this)" placeholder="0">
               </div>
               <div class="shipment-modal-field" id="field_date3">
                 <label for="m_date3">Advance 3 Date (R)</label>
@@ -617,13 +617,13 @@
               <!-- Cash on Delivery (COD): Shown & Auto-calculated for A/TO-PAY and F/TO-PAY -->
               <div class="shipment-modal-field" id="field_cod" style="display: none;">
                 <label for="m_cod" style="color: #0284c7; font-weight: 800;">COD @ Unloading (U) ₹ (Auto-calculated)</label>
-                <input type="number" id="m_cod" class="form-control" style="background: #f0f9ff; border: 1.5px solid #38bdf8; font-weight: 800; color: #0369a1;" placeholder="0" oninput="this.dataset.autoFilled='false'; TableModule.liveCalcModal()">
+                <input type="number" id="m_cod" class="form-control" style="background: #f0f9ff; border: 1.5px solid #38bdf8; font-weight: 800; color: #0369a1;" placeholder="0" onfocus="if (this.value==='0') this.value=''; this.select()" oninput="this.dataset.autoFilled='false'; TableModule.handleNumberInput(this)">
               </div>
 
               <!-- Extra Amount / Halting: Shown for TOBILLED -->
               <div class="shipment-modal-field" id="field_extraAmount">
                 <label for="m_extraAmount" style="color: #0284c7; font-weight: 700;">➕ Extra Amount / Halting (W) ₹</label>
-                <input type="number" id="m_extraAmount" class="form-control" placeholder="e.g. 5000" oninput="TableModule.liveCalcModal()">
+                <input type="number" id="m_extraAmount" class="form-control" placeholder="e.g. 5000" onfocus="if (this.value==='0') this.value=''; this.select()" oninput="TableModule.handleNumberInput(this)">
               </div>
 
               <!-- Settlement Date & Payment Mamul: Shown for TOBILLED -->
@@ -633,7 +633,7 @@
               </div>
               <div class="shipment-modal-field" id="field_pm">
                 <label for="m_pm" style="color: #b91c1c; font-weight: 700;">➖ Payment Mamul / P/M (Y) ₹</label>
-                <input type="number" id="m_pm" class="form-control" placeholder="e.g. 200 or 300" oninput="TableModule.liveCalcModal()">
+                <input type="number" id="m_pm" class="form-control" placeholder="e.g. 200 or 300" onfocus="if (this.value==='0') this.value=''; this.select()" oninput="TableModule.handleNumberInput(this)">
               </div>
             </div>
           </div>

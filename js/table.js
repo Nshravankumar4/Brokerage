@@ -653,7 +653,8 @@ const TableModule = {
     document.getElementById('m_accountNo').value = trip.accountNo || '';
     document.getElementById('m_ifsc').value = trip.ifsc || '';
     document.getElementById('m_paymentMade').value = trip.paymentMade || '';
-    document.getElementById('m_fright').value = (trip.fright !== undefined && trip.fright !== null && trip.fright !== '') ? trip.fright : 0;
+    const numVal = (v) => (v !== undefined && v !== null && v !== '' && Number(v) !== 0) ? Number(v) : '';
+    document.getElementById('m_fright').value = numVal(trip.fright);
     
     // Normalize status into exactly one of the 3 supported options: A/TO-PAY, F/TO-PAY, TOBILLED
     let currentStatus = String(trip.topay || '').trim().toUpperCase();
@@ -666,22 +667,22 @@ const TableModule = {
     }
     document.getElementById('m_topay').value = currentStatus;
 
-    document.getElementById('m_tm').value = (trip.tm !== undefined && trip.tm !== null && trip.tm !== '') ? trip.tm : 0;
-    document.getElementById('m_advance1').value = (trip.advance1 !== undefined && trip.advance1 !== null && trip.advance1 !== '') ? trip.advance1 : 0;
+    document.getElementById('m_tm').value = numVal(trip.tm);
+    document.getElementById('m_advance1').value = numVal(trip.advance1);
     document.getElementById('m_date1').value = this.toInputDate(trip.date1);
-    document.getElementById('m_advance2').value = (trip.advance2 !== undefined && trip.advance2 !== null && trip.advance2 !== '') ? trip.advance2 : 0;
+    document.getElementById('m_advance2').value = numVal(trip.advance2);
     document.getElementById('m_date2').value = this.toInputDate(trip.date2);
-    document.getElementById('m_advance3').value = (trip.advance3 !== undefined && trip.advance3 !== null && trip.advance3 !== '') ? trip.advance3 : 0;
+    document.getElementById('m_advance3').value = numVal(trip.advance3);
     document.getElementById('m_date3').value = this.toInputDate(trip.date3);
     document.getElementById('m_pod').value = this.toInputDate(trip.pod);
     const codEl = document.getElementById('m_cod');
     if (codEl) {
-      codEl.value = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '') ? trip.cod : 0;
+      codEl.value = numVal(trip.cod);
       codEl.dataset.autoFilled = (trip.cod === undefined || trip.cod === null || Number(trip.cod) === 0) ? 'true' : 'false';
     }
-    document.getElementById('m_extraAmount').value = (trip.extraAmount !== undefined && trip.extraAmount !== null && trip.extraAmount !== '') ? trip.extraAmount : 0;
+    document.getElementById('m_extraAmount').value = numVal(trip.extraAmount);
     document.getElementById('m_payDate').value = this.toInputDate(trip.payDate);
-    document.getElementById('m_pm').value = (trip.pm !== undefined && trip.pm !== null && trip.pm !== '') ? trip.pm : (trip.pmFinal || 0);
+    document.getElementById('m_pm').value = numVal(trip.pm !== undefined && trip.pm !== null && trip.pm !== '' ? trip.pm : trip.pmFinal);
     document.getElementById('m_note').value = trip.note || '';
 
     // Apply strict field visibility & zero out any blocked/non-applicable fields for this mode
@@ -741,25 +742,25 @@ const TableModule = {
     document.getElementById('m_accountNo').value = '';
     document.getElementById('m_ifsc').value = '';
     document.getElementById('m_paymentMade').value = 'SBI BANK';
-    document.getElementById('m_fright').value = 0;
+    document.getElementById('m_fright').value = '';
     document.getElementById('m_topay').value = 'TOBILLED';
     this.updateFormFieldsVisibility('TOBILLED');
-    document.getElementById('m_tm').value = 0;
-    document.getElementById('m_advance1').value = 0;
+    document.getElementById('m_tm').value = '';
+    document.getElementById('m_advance1').value = '';
     document.getElementById('m_date1').value = '';
-    document.getElementById('m_advance2').value = 0;
+    document.getElementById('m_advance2').value = '';
     document.getElementById('m_date2').value = '';
-    document.getElementById('m_advance3').value = 0;
+    document.getElementById('m_advance3').value = '';
     document.getElementById('m_date3').value = '';
     document.getElementById('m_pod').value = '';
     const codIn = document.getElementById('m_cod');
     if (codIn) {
-      codIn.value = 0;
+      codIn.value = '';
       codIn.dataset.autoFilled = 'true';
     }
-    document.getElementById('m_extraAmount').value = 0;
+    document.getElementById('m_extraAmount').value = '';
     document.getElementById('m_payDate').value = '';
-    document.getElementById('m_pm').value = 0;
+    document.getElementById('m_pm').value = '';
     document.getElementById('m_note').value = '';
 
     this.populateAutofillDatalists();
@@ -825,6 +826,16 @@ const TableModule = {
       }
       return true;
     }
+  },
+
+  handleNumberInput(el) {
+    if (!el) return;
+    let val = el.value;
+    // Strip leading zero so "0120" automatically becomes "120"
+    if (val.length > 1 && val.startsWith('0') && !val.startsWith('0.')) {
+      el.value = val.replace(/^0+/, '');
+    }
+    this.liveCalcModal();
   },
 
   liveCalcModal() {

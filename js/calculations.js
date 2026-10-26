@@ -1,4 +1,4 @@
-/**
+﻿/**
  * calculations.js - Dynamic Mathematical Formula Engine & Aggregates
  * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
  * Authoritative Workbook: BROKER DETAILS ADVANCE BALC DETAILS.xlsx
