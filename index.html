@@ -171,13 +171,13 @@
 
       <!-- Navigation Tabs: Dashboard, Trip Edit, View Excel Type (Matching Image 1 Pill Design) -->
       <nav class="nav-tabs-group">
-        <button id="btnNavDashboard" class="nav-tab-btn active" onclick="AppModule.switchView('dashboard')">
+        <button id="btnNavDashboard" class="nav-tab-btn" onclick="AppModule.switchView('dashboard')">
           &#128202; Dashboard
         </button>
         <button id="btnNavTripEdit" class="nav-tab-btn" onclick="AppModule.switchView('tripEdit')">
           &#9999;&#65039; Trip Operations
         </button>
-        <button id="btnNavViewExcel" class="nav-tab-btn" onclick="AppModule.switchView('viewExcel')">
+        <button id="btnNavViewExcel" class="nav-tab-btn active" onclick="AppModule.switchView('viewExcel')">
           &#128209; Spreadsheet View
         </button>
       </nav>
@@ -199,7 +199,7 @@
     <!-- Main Content Viewport (Zero Dead Space Foundation) -->
     <div class="app-main-content">
       <!-- SHARED DATA TOOLBAR: Visible on Trip Edit & View Excel Type -->
-      <div id="dataToolbar" class="dashboard-toolbar" style="display: none;">
+      <div id="dataToolbar" class="dashboard-toolbar" style="display: flex;">
         <div class="toolbar-left-group">
           <!-- Global Search -->
           <div class="search-input-wrapper">
@@ -223,20 +223,12 @@
             <input type="date" id="filterDateTo" class="date-input">
           </div>
 
-          <!-- Status Filter Chips (All Trips, A/TO-PAY, F/TO-PAY, TOBILLED, POD Missing, Clear) -->
-          <div class="filter-chips-group">
-            <button id="chipAllTrips" class="chip-btn active" onclick="AppModule.setFilter('all', this)">All Trips</button>
-            <button id="chipAToPay" class="chip-btn" onclick="AppModule.setFilter('A/TO-PAY', this)">A/TO-PAY</button>
-            <button id="chipFToPay" class="chip-btn" onclick="AppModule.setFilter('F/TO-PAY', this)">F/TO-PAY</button>
-            <button id="chipToBilled" class="chip-btn" onclick="AppModule.setFilter('TOBILLED', this)">TOBILLED</button>
-            <button id="chipMissingPod" class="chip-btn chip-danger" onclick="AppModule.setFilter('missingPod', this)">&#9888;&#65039; POD Missing</button>
-            <button id="btnClearFilters" class="btn btn-clear-filters" onclick="AppModule.clearAllFilters()" title="Reset all search queries, dates &amp; filters">&#128260; Clear Filters</button>
-          </div>
+          
         </div>
 
         <div class="toolbar-right-group">
           <!-- Zoom Controls for Excel View -->
-          <div id="excelZoomGroup" class="excel-zoom-group" style="display: none;">
+          <div id="excelZoomGroup" class="excel-zoom-group" style="display: flex;">
             <span class="zoom-label">Zoom:</span>
             <button class="btn btn-sm btn-secondary" id="btnZoom80" onclick="TableModule.setZoom(80)" title="Fit all 27 columns on screen">80% Fit</button>
             <button class="btn btn-sm btn-secondary" id="btnZoom90" onclick="TableModule.setZoom(90)">90%</button>
@@ -259,7 +251,7 @@
       </div>
 
       <!-- VIEW 1: &#128202; DASHBOARD (Linear Vertical Hierarchy: Top KPI -> Middle POD Alerts -> Bottom Monthly Breakdown) -->
-      <main id="viewDashboard" class="view-container active">
+      <main id="viewDashboard" class="view-container">
         <div class="dashboard-wrapper">
           <!-- 1. TOP: 4 Primary KPI Metric Cards Across Top (Responsive Grid) -->
           <div class="kpi-cards-grid">
@@ -339,30 +331,123 @@
       </main>
 
       <!-- VIEW 3: &#128209; VIEW EXCEL TYPE (1:1 Clean Excel Replica A-AA) -->
-      <main id="viewExcel" class="view-container">
-        <!-- Physical Worksheets Tab Navigation Bar for Excel View -->
-        <div class="excel-sheets-tab-bar">
-          <div class="excel-sheets-tab-group">
-            <span class="worksheet-tabs-label" style="font-size: 0.78rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-right: 6px; display: inline-flex; align-items: center; gap: 4px;">&#128194; Worksheets:</span>
-            <button type="button" class="excel-sheet-tab-btn active" id="sheetTab_all" onclick="TableModule.switchExcelSheet('all', this)">
-              &#128209; Master Ledger (All)
-            </button>
-            <button type="button" class="excel-sheet-tab-btn" id="sheetTab_tobilled" onclick="TableModule.switchExcelSheet('TOBILLED', this)">
-              &#128196; TOBILLED
-            </button>
-            <button type="button" class="excel-sheet-tab-btn" id="sheetTab_atopay" onclick="TableModule.switchExcelSheet('A/TO-PAY', this)">
-              &#128179; A/TO-PAY
-            </button>
-            <button type="button" class="excel-sheet-tab-btn" id="sheetTab_ftopay" onclick="TableModule.switchExcelSheet('F/TO-PAY', this)">
-              &#128666; F/TO-PAY
-            </button>
+      <main id="viewExcel" class="view-container active">
+        <!-- Live Excel Spreadsheet View Toolbar (1:1 Replica from E:\TR\SR_T) -->
+        <div class="excel-view-toolbar" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div>
+              <h2 style="font-size: 1.22rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0; display: flex; align-items: center; gap: 8px;">
+                <span>&#128196;</span> Live Excel Spreadsheet View
+              </h2>
+              <p style="font-size: 0.84rem; color: #64748b; margin: 0;">
+                Exact 1:1 visual replica of your Transport Excel file with real-time rows, totals, and reconciliation boxes.
+              </p>
+            </div>
+
+            <!-- 3 Physical Worksheet Tabs -->
+            <div id="sheetViewTabGroup" style="display: flex; background: #e2e8f0; padding: 3px; border-radius: 6px; gap: 3px;">
+              <button type="button" class="excel-sheet-tab-btn active" id="sheetTab_tobilled" onclick="TableModule.switchExcelSheet('TOBILLED', this)">
+                &#128196; TOBILLED (Active)
+              </button>
+              <button type="button" class="excel-sheet-tab-btn" id="sheetTab_atopay" onclick="TableModule.switchExcelSheet('A/TO-PAY', this)">
+                &#128179; A/TO-PAY
+              </button>
+              <button type="button" class="excel-sheet-tab-btn" id="sheetTab_ftopay" onclick="TableModule.switchExcelSheet('F/TO-PAY', this)">
+                &#128666; F/TO-PAY
+              </button>
+            </div>
           </div>
-          <div class="excel-sheet-info-pill" id="excelSheetInfoPill">
-            <span>Showing all 28-column master records</span>
+
+          <!-- Secondary Toolbar: Actions, Zoom, Fullscreen, Download, Print -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid #f1f5f9; padding-top: 0.65rem;">
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-sm btn-primary" onclick="TableModule.openAddModal()" style="font-weight: 700;">
+                &#10133; Add Shipment
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="AppModule.syncNow()" style="background: #f0fdf4; color: #166534; border-color: #bbf7d0; font-weight: 600;">
+                &#128260; Sync Cloud
+              </button>
+            </div>
+
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <!-- Zoom Controls -->
+              <div class="zoom-controls" style="display: flex; align-items: center; background: #e2e8f0; padding: 2px; border-radius: 6px; gap: 2px;">
+                <span style="font-size: 0.78rem; font-weight: 700; padding: 0 6px; color: #475569;">Zoom:</span>
+                <button type="button" id="btnZoom80" class="btn btn-sm btn-secondary" onclick="TableModule.setZoom(80)" title="Fit all 28 columns on screen">80% Fit</button>
+                <button type="button" id="btnZoom90" class="btn btn-sm btn-secondary" onclick="TableModule.setZoom(90)">90%</button>
+                <button type="button" id="btnZoom100" class="btn btn-sm btn-primary" onclick="TableModule.setZoom(100)">100%</button>
+                <button type="button" id="btnZoom115" class="btn btn-sm btn-secondary" onclick="TableModule.setZoom(115)">115%</button>
+              </div>
+
+              <!-- Full Screen Toggle -->
+              <button type="button" id="btnToggleFullscreen" class="btn btn-sm btn-secondary" onclick="TableModule.toggleFullscreen()" style="font-weight: 600; background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">
+                &#9974; Full Screen
+              </button>
+
+              <!-- Download Excel -->
+              <button type="button" id="btnDownloadSheetView" class="btn btn-sm btn-primary" onclick="TableModule.exportToExcel()" style="background: #002060; border-color: #1a365d; font-weight: 700;">
+                &#128190; Download Excel (.xlsx)
+              </button>
+
+              <!-- Print -->
+              <button type="button" class="btn btn-sm btn-secondary" onclick="window.print()" style="font-weight: 600;">
+                &#128438; Print
+              </button>
+            </div>
           </div>
         </div>
-        <div class="excel-table-scroll">
-          <table class="excel-grid">
+
+        <!-- Section Banner directly above the grid -->
+        <div class="excel-section-banner" id="excelSectionBanner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-bottom: none; border-radius: 6px 6px 0 0; padding: 0.6rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.95rem; font-weight: 800; color: #1e40af;" id="excelSectionTitle">
+              &#128196; Section: TOBILLED (Active Physical Worksheet)
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div id="excelHeaderSummaryPill" style="background: #ffff00; color: #000000; font-weight: 800; font-family: monospace; font-size: 0.82rem; padding: 3px 10px; border-radius: 4px; border: 1px solid #eab308; box-shadow: 0 1px 2px rgba(0,0,0,0.06);">
+              Total Freight: &#8377;0
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="TableModule.openAddModal()" style="font-size: 0.75rem; padding: 2px 8px; font-weight: 700; background: #ffffff;">
+              &#9998; Edit
+            </button>
+          </div>
+        </div>
+
+        <!-- 1:1 Excel Sheet Wrapper -->
+        <div class="excel-sheet-wrapper" style="border-radius: 0 0 6px 6px; border: 1px solid #cbd5e1; background: #ffffff; overflow-x: auto; padding: 0;">
+          <table class="excel-table excel-grid">
+            <colgroup>
+              <col style="width: 50px;">
+              <col style="width: 140px;">
+              <col style="width: 90px;">
+              <col style="width: 75px;">
+              <col style="width: 110px;">
+              <col style="width: 100px;">
+              <col style="width: 105px;">
+              <col style="width: 110px;">
+              <col style="width: 100px;">
+              <col style="width: 115px;">
+              <col style="width: 95px;">
+              <col style="width: 85px;">
+              <col style="width: 105px;">
+              <col style="width: 65px;">
+              <col style="width: 90px;">
+              <col style="width: 85px;">
+              <col style="width: 85px;">
+              <col style="width: 85px;">
+              <col style="width: 85px;">
+              <col style="width: 105px;">
+              <col style="width: 105px;">
+              <col style="width: 115px;">
+              <col style="width: 95px;">
+              <col style="width: 90px;">
+              <col style="width: 65px;">
+              <col style="width: 110px;">
+              <col style="width: 95px;">
+              <col style="width: 150px;">
+              <col style="width: 85px;">
+            </colgroup>
             <thead>
               <!-- Excel Column Letters (A through AB) -->
               <tr class="excel-cols-row">

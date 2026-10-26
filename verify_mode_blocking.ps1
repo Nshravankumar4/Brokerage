@@ -52,9 +52,9 @@ Assert-Test ($tableJs -match 'codVal\s*=\s*frightVal') "handleSaveModal sets COD
 Assert-Test ($tableJs -match 'codVal\s*=\s*Math\.max\(0,\s*frightVal\s*-\s*tmVal\s*-\s*adv1Val\)') "handleSaveModal sets COD for A/TO-PAY"
 Assert-Test ($tableJs -match 'codVal\s*=\s*0') "handleSaveModal sets COD = 0 for TOBILLED"
 
-# 7. Verify Clear Filters button
-Assert-Test ($indexHtml -match 'id="btnClearFilters"') "index.html defines #btnClearFilters button"
-Assert-Test ($indexHtml -match 'AppModule\.clearAllFilters\(\)') "Clear Filters button invokes AppModule.clearAllFilters()"
+# 7. Verify Physical Worksheet Tabs & Removal of Redundant Filters
+Assert-Test ($indexHtml -match 'id="sheetTab_tobilled"') "index.html defines physical TOBILLED worksheet tab"
+Assert-Test (!($indexHtml -match 'id="sheetTab_all"')) "index.html removed Master Ledger (All) tab as requested"
 
 # 8. Verify UI Improvements in CSS
 Assert-Test ($cssStyles -match '\.field-blocked') "css/styles.css defines .field-blocked indicator"

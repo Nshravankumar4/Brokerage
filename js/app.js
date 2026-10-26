@@ -5,7 +5,7 @@
  */
 
 const AppModule = {
-  currentView: 'dashboard', // 'dashboard', 'tripEdit', or 'viewExcel'
+  currentView: 'viewExcel', // 'dashboard', 'tripEdit', or 'viewExcel'
   currentFilter: 'all',    // 'all', 'missingPod', 'topay'
   selectedMonth: 'all',    // 'all' or dynamic month key (e.g. 'Aug 2026', 'Sep 2026')
   searchQuery: '',
@@ -74,7 +74,7 @@ const AppModule = {
     }
   },
 
-  // ================= REAL-TIME MULTI-DEVICE AUTO-SYNC (MATCHING SR_T) =================
+  // ================= REAL-TIME MULTI-DEVICE AUTO-SYNC =================
   initRealtimeSync() {
     // 1. BroadcastChannel across all open tabs/windows
     if ('BroadcastChannel' in window) {
@@ -339,16 +339,9 @@ const AppModule = {
     }
   },
 
-  setFilter(filterType, element) {
+  setFilter(filterType) {
     this.currentFilter = filterType;
-
-    document.querySelectorAll('.chip-btn').forEach(btn => btn.classList.remove('active'));
-    if (element) {
-      element.classList.add('active');
-    }
-
     this.applyFilterAndRender();
-
     if (filterType === 'missingPod') {
       this.showToast('\u26A0\uFE0F Filtered: Showing shipments with Missing POD');
     } else if (filterType === 'A/TO-PAY') {
@@ -364,8 +357,7 @@ const AppModule = {
     if (this.currentView === 'dashboard') {
       this.switchView('tripEdit');
     }
-    const chipMissing = document.getElementById('chipMissingPod');
-    this.setFilter('missingPod', chipMissing);
+    this.setFilter('missingPod');
   },
 
   filterByMonth(mKey) {
@@ -397,10 +389,6 @@ const AppModule = {
 
     const dTo = document.getElementById('filterDateTo');
     if (dTo) dTo.value = '';
-
-    document.querySelectorAll('.chip-btn').forEach(btn => btn.classList.remove('active'));
-    const chipAll = document.getElementById('chipAllTrips');
-    if (chipAll) chipAll.classList.add('active');
 
     this.refresh();
     this.showToast('All filters cleared');

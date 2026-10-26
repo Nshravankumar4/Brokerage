@@ -1242,16 +1242,18 @@ html, body {
 }
 
 table.excel-grid {
-  width: 100%;
+  width: max-content;
   min-width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 9pt;
   white-space: nowrap;
 }
 
 table.excel-grid th, table.excel-grid td {
   border: 1px solid var(--border);
-  padding: 6px 9px;
+  padding: 4px 6px;
+  box-sizing: border-box;
 }
 
 /* Excel Letter Row (A to AA) */
@@ -1261,24 +1263,27 @@ tr.excel-cols-row th {
   font-size: 0.72rem;
   font-weight: 700;
   text-align: center;
-  padding: 3px 4px;
+  padding: 2px 4px;
   position: sticky;
   top: 0;
   z-index: 12;
   border-bottom: 1px solid var(--border);
+  height: 20px;
 }
 
 /* Sticky Excel Headers */
 tr.excel-header-row th {
-  background: #1e3a8a;
+  background: #002060;
   color: #ffffff;
   font-weight: 700;
+  font-size: 8.5pt;
   text-align: center;
   position: sticky;
-  top: 25px;
+  top: 20px;
   z-index: 11;
-  border-color: #3b82f6;
-  padding: 7px 9px;
+  border-color: #1a365d;
+  padding: 4px 6px;
+  height: 26px;
 }
 
 tr.excel-header-row th.th-green { background: #16a34a; }
@@ -1327,11 +1332,11 @@ table.excel-grid tbody tr:hover { background: #f0f7ff; }
 
 /* Sticky Sum Totals Row (Matching SR_T & Professional Accounting Style) */
 tr.excel-totals-row td {
-  background: #f8fafc !important;
+  background: #fffbe6 !important;
   color: #0f172a;
   font-weight: 800;
-  font-size: 0.82rem;
-  padding: 6px 8px;
+  font-size: 8.5pt;
+  padding: 4px 6px;
   border-top: 1.5px solid #334155 !important;
   border-bottom: 3px double #0f172a !important;
   position: sticky;
@@ -2874,4 +2879,133 @@ input[type=number] {
 .sheet-view-ftopay tr > th:nth-child(22),
 .sheet-view-ftopay tr > td:nth-child(22) {
   display: none !important;
+}
+
+/* ========================================================
+   EXCEL SHEET VIEW STYLING (1:1 Microsoft Excel Replica from SR_T)
+   ======================================================== */
+.excel-sheet-wrapper {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  font-family: Calibri, Aptos, 'Segoe UI', Arial, sans-serif;
+  overflow-x: auto;
+  min-width: 100%;
+}
+
+.excel-table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+  font-size: 9pt;
+  color: #000;
+  background: #fff;
+  font-family: Calibri, Aptos, 'Segoe UI', Arial, sans-serif;
+  white-space: nowrap;
+}
+
+.excel-table th {
+  background: #002060 !important;
+  color: #ffffff !important;
+  font-weight: bold;
+  font-size: 8.5pt;
+  border: 1px solid #1a365d !important;
+  padding: 4px 6px;
+  text-align: center;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+tr.excel-cols-row th {
+  background: #e2e8f0 !important;
+  color: #475569 !important;
+  font-size: 0.72rem !important;
+  font-weight: 700;
+  border: 1px solid #cbd5e1 !important;
+  padding: 2px 4px !important;
+  height: 20px !important;
+  box-sizing: border-box;
+}
+
+.excel-row-num {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-right: 2px solid #cbd5e1 !important;
+  user-select: none;
+  width: 38px;
+  text-align: center;
+}
+
+.excel-cell {
+  border: 1px solid #d4d4d4;
+  padding: 4px 6px;
+  white-space: nowrap;
+  line-height: 1.25;
+  font-size: 9pt;
+  font-family: Calibri, Aptos, 'Segoe UI', Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.excel-cell.center { text-align: center; }
+.excel-cell.left { text-align: left; }
+.excel-cell.right { text-align: right; }
+.excel-cell.bold { font-weight: bold; }
+
+.excel-yellow {
+  background: #ffff00 !important;
+  color: #000000 !important;
+}
+
+.excel-peach {
+  background: #f7c7ac !important;
+  color: #000000 !important;
+}
+
+.excel-cyan {
+  background: #94dcf8 !important;
+  color: #000000 !important;
+}
+
+.excel-red {
+  background: #ffc7ce !important;
+  color: #9c0006 !important;
+}
+
+.excel-green {
+  background: #c6efce !important;
+  color: #006100 !important;
+}
+
+.excel-total-row td {
+  border-top: 1px solid #000 !important;
+  border-bottom: 2px solid #000 !important;
+  font-weight: bold;
+  background: #fffbe6;
+}
+
+.sheet-fullscreen-mode {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 999999 !important;
+  background: #f1f5f9 !important;
+  padding: 1rem 1.5rem !important;
+  overflow: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+.sheet-fullscreen-mode .excel-view-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }

@@ -18,7 +18,7 @@ function Assert-Test($condition, $description) {
 
 # 1. Inspect Master Workbook XML
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$wbPath = "E:\TR\P1\Final Sheet Broker.xlsx"
+$wbPath = if (Test-Path "E:\TR\Final Sheet Broker.xlsx") { "E:\TR\Final Sheet Broker.xlsx" } else { "E:\TR\P1\backups\Final_Sheet_Broker_backup.xlsx" }
 Assert-Test (Test-Path $wbPath) "Master workbook 'Final Sheet Broker.xlsx' exists"
 
 $zip = [System.IO.Compression.ZipFile]::OpenRead($wbPath)

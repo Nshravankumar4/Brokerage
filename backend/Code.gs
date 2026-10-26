@@ -71,19 +71,75 @@ function cleanSpreadsheetId(value) {
 }
 
 function getSpreadsheet(optId) {
-  var id = cleanSpreadsheetId(
-    optId ||
-    PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') ||
-    SPREADSHEET_ID
-  );
-
-  if (!id) {
-    throw new Error('Configure SPREADSHEET_ID before using the API.');
+  var cleanId = cleanSpreadsheetId(optId);
+  if (cleanId) {
+    return SpreadsheetApp.openById(cleanId);
   }
 
-  var ss = SpreadsheetApp.openById(id);
-  PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
-  return ss;
+  try {
+    var activeSs = SpreadsheetApp.getActiveSpreadsheet();
+    if (activeSs) return activeSs;
+  } catch (eActive) {}
+
+  var propId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  var id = cleanSpreadsheetId(propId || SPREADSHEET_ID);
+  if (id) {
+    var ss = SpreadsheetApp.openById(id);
+    PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
+    return ss;
+  }
+
+  throw new Error('Configure SPREADSHEET_ID before using the API.');
+}
+
+/**
+ * Custom UI Menu for Google Sheets:
+ * Allows user to trigger split, migration, and sheet cleanup directly from Google Sheets.
+ */
+function onOpen() {
+  try {
+    var ui = SpreadsheetApp.getUi();
+    ui.createMenu('Transport Brokerage Ledger')
+      .addItem('1. Split & Migrate into 3 Physical Sheets (TOBILLED, A-TO-PAY, F-TO-PAY)', 'initializeAndMigrateAllWorksheets')
+      .addItem('2. Delete Empty Sheet1', 'deleteEmptySheet1')
+      .addItem('3. Format Headers & Set Styles', 'formatAllWorksheets')
+      .addToUi();
+  } catch (e) {
+    Logger.log('onOpen menu note: ' + e);
+  }
+}
+
+function deleteEmptySheet1() {
+  var ss = getSpreadsheet();
+  var sheet1 = ss.getSheetByName('Sheet1');
+  if (sheet1) {
+    if (sheet1.getLastRow() <= 1) {
+      ss.deleteSheet(sheet1);
+      return 'Deleted empty Sheet1 successfully.';
+    } else {
+      return 'Sheet1 contains data; kept for safety.';
+    }
+  }
+  return 'Sheet1 does not exist.';
+}
+
+function formatAllWorksheets() {
+  var ss = getSpreadsheet();
+  var targetCategories = ['TOBILLED', 'A/TO-PAY', 'F/TO-PAY'];
+  for (var c = 0; c < targetCategories.length; c++) {
+    var ws = resolveWorksheet(ss, targetCategories[c]);
+    if (ws) {
+      ensureHeaders(ws);
+      ws.setFrozenRows(1);
+      try {
+        ws.getRange(1, 1, 1, HEADERS.length)
+          .setFontWeight('bold')
+          .setBackground('#1e293b')
+          .setFontColor('#ffffff');
+      } catch (eStyle) {}
+    }
+  }
+  return 'Formatted all physical worksheets.';
 }
 
 /**
@@ -141,8 +197,9 @@ function ensureHeaders(sheet) {
   }
 
   // Remove unwanted/non-applicable column from display per physical worksheet
-  var sName = String(sheet.getName() || '').toUpperCase();
+    var sName = String(sheet.getName() || '').toUpperCase();
   try {
+    sheet.showColumns(1, HEADERS.length);
     if (sName.indexOf('TOBILLED') !== -1 || sName.indexOf('TO-BILLED') !== -1) {
       // Column U (21): COD is not used in TOBILLED
       sheet.hideColumns(21);
@@ -219,10 +276,30 @@ function migrateHistoricalFinalRecords(ss) {
       }
     }
 
-    if (!exists) {
+        if (!exists) {
       targetSheet.appendRow(row);
       count++;
     }
+  }
+
+  // Safely delete empty Sheet1
+  try {
+    var defaultSheet1 = ss.getSheetByName('Sheet1');
+    if (defaultSheet1 && ss.getSheets().length > 1) {
+      ss.deleteSheet(defaultSheet1);
+    }
+  } catch (eSheet1) {
+    Logger.log('Sheet1 cleanup note: ' + eSheet1);
+  }
+
+  // Safely remove legacy 'final' sheet so ONLY the 3 physical worksheets remain
+  try {
+    if (finalSheet && ss.getSheets().length > 1) {
+      ss.deleteSheet(finalSheet);
+      Logger.log('Legacy final sheet safely deleted after migration.');
+    }
+  } catch (eFinal) {
+    Logger.log('final sheet cleanup note: ' + eFinal);
   }
 
   SpreadsheetApp.flush();

@@ -8,26 +8,32 @@
 
 const TableModule = {
   // ================= 3-SHEET VIEW CONTROLLER =================
-  currentExcelSheet: 'all', // 'all', 'TOBILLED', 'A/TO-PAY', 'F/TO-PAY'
+  currentExcelSheet: 'TOBILLED', // 'all', 'TOBILLED', 'A/TO-PAY', 'F/TO-PAY'
 
   switchExcelSheet(sheetType, element) {
     this.currentExcelSheet = sheetType;
     document.querySelectorAll('.excel-sheet-tab-btn').forEach(btn => btn.classList.remove('active'));
     if (element) {
       element.classList.add('active');
+    } else {
+      const activeBtn = document.getElementById(`sheetTab_${sheetType.toLowerCase().replace(/[^a-z0-9]/g, '')}`);
+      if (activeBtn) activeBtn.classList.add('active');
     }
 
     const pill = document.getElementById('excelSheetInfoPill');
     if (pill) {
       if (sheetType === 'TOBILLED') {
-        pill.innerHTML = '<span>\uD83D\uDCC4 Physical Worksheet: TOBILLED (Pending = Freight \u2212 TM \u2212 Advances + Extra \u2212 PM)</span>';
+        pill.innerHTML = '<span>\uD83D\uDCC4 Physical Worksheet: TOBILLED</span>';
       } else if (sheetType === 'A/TO-PAY') {
-        pill.innerHTML = '<span>\uD83D\uDCB3 Physical Worksheet: A/TO-PAY (COD = Freight \u2212 TM \u2212 Advance 1)</span>';
+        pill.innerHTML = '<span>\uD83D\uDCB3 Physical Worksheet: A/TO-PAY</span>';
       } else if (sheetType === 'F/TO-PAY') {
-        pill.innerHTML = '<span>\uD83D\uDE9A Physical Worksheet: F/TO-PAY (COD = Full Freight)</span>';
-      } else {
-        pill.innerHTML = '<span>\uD83D\uDCD1 Master Ledger (All): Showing all 28-column master records</span>';
+        pill.innerHTML = '<span>\uD83D\uDE9A Physical Worksheet: F/TO-PAY</span>';
       }
+    }
+
+    const secTitle = document.getElementById('excelSectionTitle');
+    if (secTitle) {
+      secTitle.innerHTML = `<span>\uD83D\uDCC4</span> Section: ${sheetType} (Active Physical Worksheet)`;
     }
 
     const grid = document.querySelector('.excel-grid');
@@ -40,6 +46,41 @@ const TableModule = {
     }
 
     this.renderExcelView();
+  },
+
+  isFullscreen: false,
+  toggleFullscreen() {
+    this.isFullscreen = !this.isFullscreen;
+    const tab = document.getElementById('viewExcel');
+    const btn = document.getElementById('btnToggleFullscreen');
+    
+    if (this.isFullscreen) {
+      tab?.classList.add('sheet-fullscreen-mode');
+      document.body.classList.add('in-sheet-fullscreen');
+      if (btn) {
+        btn.innerHTML = '&#10006; Exit Full Screen';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-danger');
+      }
+      try {
+        if (!document.fullscreenElement && tab?.requestFullscreen) {
+          tab.requestFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    } else {
+      tab?.classList.remove('sheet-fullscreen-mode');
+      document.body.classList.remove('in-sheet-fullscreen');
+      if (btn) {
+        btn.innerHTML = '&#9974; Full Screen';
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-secondary');
+      }
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    }
   },
 
   // ================= DYNAMIC FORM MODE CONTROLLER =================
@@ -301,7 +342,12 @@ const TableModule = {
     setFooterVal('totPendingTobilled', totPendingTobilled);
     setFooterVal('totExtra', totExtra);
     setFooterVal('totPM', totPM);
-    setFooterVal('totFinalBalc', totFB);
+        setFooterVal('totFinalBalc', totFB);
+
+    const sumPill = document.getElementById('excelHeaderSummaryPill');
+    if (sumPill) {
+      sumPill.innerText = `Total Freight: ${CalculationEngine.formatCurrency(totF, false)} (${displayedTrips.length} Shipments)`;
+    }
   },
 
   // ================= ENTERPRISE TRIP EDIT VIEW =================
