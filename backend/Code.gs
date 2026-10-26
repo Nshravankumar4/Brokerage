@@ -25,7 +25,7 @@
 
 var SHEET_NAME = 'final';
 var BACKUP_FOLDER_NAME = 'Brokerage_Backups';
-var SPREADSHEET_ID = '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA';
+var SPREADSHEET_ID = '1PLUsbBM2BDbb-WdwScnaZX4C64T7c9gZyxuVqVRtgAg';
 
 var PHYSICAL_SHEET_CANDIDATES = {
   'TOBILLED': ['TOBILLED', 'TO-BILLED', 'TO_BILLED'],
@@ -73,7 +73,11 @@ function cleanSpreadsheetId(value) {
 function getSpreadsheet(optId) {
   var cleanId = cleanSpreadsheetId(optId);
   if (cleanId) {
-    return SpreadsheetApp.openById(cleanId);
+    try {
+      return SpreadsheetApp.openById(cleanId);
+    } catch (eClean) {
+      Logger.log('Could not open optId ' + cleanId + ': ' + eClean);
+    }
   }
 
   try {
@@ -82,7 +86,7 @@ function getSpreadsheet(optId) {
   } catch (eActive) {}
 
   var propId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
-  var id = cleanSpreadsheetId(propId || SPREADSHEET_ID);
+  var id = cleanSpreadsheetId(SPREADSHEET_ID || propId);
   if (id) {
     var ss = SpreadsheetApp.openById(id);
     PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', ss.getId());
@@ -100,9 +104,10 @@ function onOpen() {
   try {
     var ui = SpreadsheetApp.getUi();
     ui.createMenu('Transport Brokerage Ledger')
-      .addItem('1. Split & Migrate into 3 Physical Sheets (TOBILLED, A-TO-PAY, F-TO-PAY)', 'initializeAndMigrateAllWorksheets')
-      .addItem('2. Delete Empty Sheet1', 'deleteEmptySheet1')
-      .addItem('3. Format Headers & Set Styles', 'formatAllWorksheets')
+      .addItem('1. Seed Initial Data (TOBILLED, A-TO-PAY, F-TO-PAY)', 'seedInitialData')
+      .addItem('2. Split & Migrate into 3 Physical Sheets', 'initializeAndMigrateAllWorksheets')
+      .addItem('3. Delete Empty Sheet1', 'deleteEmptySheet1')
+      .addItem('4. Format Headers & Set Styles', 'formatAllWorksheets')
       .addToUi();
   } catch (e) {
     Logger.log('onOpen menu note: ' + e);
@@ -325,9 +330,197 @@ function setupInitialSheet() {
   resolveWorksheet(ss, 'TOBILLED');
   resolveWorksheet(ss, 'A/TO-PAY');
   resolveWorksheet(ss, 'F/TO-PAY');
-  migrateHistoricalFinalRecords(ss);
+  var count = migrateHistoricalFinalRecords(ss);
+  if (count === 0) {
+    seedInitialData();
+  }
   Logger.log('Ledger URL: ' + ss.getUrl());
   return ss.getUrl();
+}
+
+var SEED_TRIPS = [
+  {
+    slNo: "1",
+    trspName: "ANTP SAINATH",
+    date: "20-08-2026",
+    lrNo: "207",
+    truckNo: "AP39UD3564",
+    from: "LUCKNOW",
+    to: "MEDCHAL",
+    accountNo: "38216860303",
+    ifsc: "SBIN0010659",
+    paymentMade: "SBI BANK",
+    fright: 60000,
+    date1: "02-09-2026",
+    topay: "TOBILLED",
+    tm: 300,
+    advance1: 49700,
+    date2: "na",
+    advance2: 0,
+    date3: "na",
+    advance3: 0,
+    pod: "20-08-2026",
+    cod: "if Tobilled NA",
+    pendingTobilled: 10000,
+    extraAmount: 0,
+    payDate: "28-08-2026",
+    pm: 200,
+    finalBalc: 9800,
+    podAmountStatus: "DONE",
+    note: ""
+  },
+  {
+    slNo: "2",
+    trspName: "SARITHA TRSP",
+    date: "03-09-2026",
+    lrNo: "208",
+    truckNo: "TG15T6666",
+    from: "RAIPUR",
+    to: "MEDCHAL",
+    accountNo: "0312035592",
+    ifsc: "KKBK0008406",
+    paymentMade: "KKBK BANK",
+    fright: 60000,
+    date1: "15-10-2026",
+    topay: "TOBILLED",
+    tm: 300,
+    advance1: 49700,
+    date2: "na",
+    advance2: 0,
+    date3: "na",
+    advance3: 0,
+    pod: "07-09-2026",
+    cod: "if Tobilled NA",
+    pendingTobilled: 10000,
+    extraAmount: 5000,
+    payDate: "29-08-2026",
+    pm: 300,
+    finalBalc: 14700,
+    podAmountStatus: "DONE",
+    note: "Halted"
+  },
+  {
+    slNo: "3",
+    trspName: "CG RANCHI R/WAYS",
+    date: "29-09-2026",
+    lrNo: "195",
+    truckNo: "CG08AZ4714",
+    from: "MEDCHAL",
+    to: "PANKANJUR",
+    accountNo: "29122900001083",
+    ifsc: "DCBL0000291",
+    paymentMade: "DCB BANK",
+    fright: 42000,
+    date1: "01-10-2026",
+    topay: "F/TO-PAY",
+    tm: 0,
+    advance1: 0,
+    date2: "na",
+    advance2: 0,
+    date3: "na",
+    advance3: 0,
+    pod: "Pending",
+    cod: 42000,
+    pendingTobilled: "if A/Topay&Ftopay Na",
+    extraAmount: 0,
+    payDate: "30-08-2026",
+    pm: 0,
+    finalBalc: 0,
+    podAmountStatus: 0,
+    note: "F/TO-PAY Shipment"
+  },
+  {
+    slNo: "4",
+    trspName: "SARITHA TRSP",
+    date: "01-10-2026",
+    lrNo: "196",
+    truckNo: "TG15T6666",
+    from: "MEDCHAL",
+    to: "MADHAPURA",
+    accountNo: "0312035592",
+    ifsc: "KKBK0008406",
+    paymentMade: "KKBK BANK",
+    fright: 90000,
+    date1: "17-10-2026",
+    topay: "A/TO-PAY",
+    tm: 200,
+    advance1: 49800,
+    date2: "na",
+    advance2: 0,
+    date3: "na",
+    advance3: 0,
+    pod: "19-10-2026",
+    cod: 40000,
+    pendingTobilled: "if A/Topay&Ftopay Na",
+    extraAmount: 0,
+    payDate: "31-08-2026",
+    pm: 0,
+    finalBalc: 0,
+    podAmountStatus: "DONE",
+    note: ""
+  }
+];
+
+function seedInitialData(optId) {
+  var ss = getSpreadsheet(optId);
+  var inserted = 0;
+
+  for (var i = 0; i < SEED_TRIPS.length; i++) {
+    var t = SEED_TRIPS[i];
+    var targetSheet = resolveWorksheet(ss, t.topay);
+    var lr = String(t.lrNo).trim().toUpperCase();
+
+    var lastRow = targetSheet.getLastRow();
+    var exists = false;
+    if (lastRow >= 2) {
+      var vals = targetSheet.getRange(2, 4, lastRow - 1, 1).getValues();
+      for (var j = 0; j < vals.length; j++) {
+        if (String(vals[j][0] || '').trim().toUpperCase() === lr) {
+          exists = true;
+          break;
+        }
+      }
+    }
+
+    if (!exists) {
+      var rowData = [
+        t.slNo,
+        t.trspName,
+        t.date,
+        t.lrNo,
+        t.truckNo,
+        t.from,
+        t.to,
+        t.accountNo,
+        t.ifsc,
+        t.paymentMade,
+        t.fright,
+        t.date1,
+        t.topay,
+        t.tm,
+        t.advance1,
+        t.date2,
+        t.advance2,
+        t.date3,
+        t.advance3,
+        t.pod,
+        t.cod,
+        t.pendingTobilled,
+        t.extraAmount,
+        t.payDate,
+        t.pm,
+        t.finalBalc,
+        t.podAmountStatus,
+        t.note
+      ];
+      targetSheet.appendRow(rowData);
+      inserted++;
+    }
+  }
+
+  SpreadsheetApp.flush();
+  Logger.log('Seeded ' + inserted + ' initial records into physical worksheets.');
+  return 'Seeded ' + inserted + ' initial records into physical worksheets.';
 }
 
 // =====================================================
@@ -462,6 +655,8 @@ function doGet(e) {
       result = { status: 'success', version: getVersion() };
     } else if (action === 'migrate') {
       result = { status: 'success', message: runMigrateToPhysicalSheets() };
+    } else if (action === 'seed') {
+      result = { status: 'success', message: seedInitialData(params.sheetId) };
     } else {
       result = { status: 'error', message: 'Unknown action: ' + action };
     }
@@ -551,8 +746,18 @@ function handleGetAll(optId) {
   }
 
   if (totalRowsInPhysical === 0) {
-    // Perform safe automatic migration from 'final'
-    migrateHistoricalFinalRecords(ss);
+    // 1. Perform safe automatic migration from 'final' if it exists
+    var count = migrateHistoricalFinalRecords(ss);
+    // 2. If no historical 'final' sheet exists or was empty, seed authoritative records
+    if (count === 0) {
+      seedInitialData(optId);
+      // Re-read sheetsToRead after seeding
+      sheetsToRead = [];
+      for (var c = 0; c < targetCategories.length; c++) {
+        var ws = resolveWorksheet(ss, targetCategories[c]);
+        if (ws) sheetsToRead.push(ws);
+      }
+    }
   }
 
   var trips = [];
@@ -753,12 +958,12 @@ function handleSaveTrip(t, optId) {
     }
 
     rowNum = newRowNum;
-  } else if (rowNum && rowNum >= 2 && rowNum <= targetSheet.getLastRow()) {
-    // Update existing record in same physical worksheet
+  } else if (!t.isAdd && rowNum && rowNum >= 2 && rowNum <= targetSheet.getLastRow()) {
+    // Update existing record in same physical worksheet (isAdd must be false for update)
     targetSheet.getRange(rowNum, 1, 1, 28).setValues([rowData]);
     SpreadsheetApp.flush();
   } else {
-    // New shipment appended to physical worksheet
+    // New shipment appended to physical worksheet (isAdd=true always appends, or fallback for unknown row)
     targetSheet.appendRow(rowData);
     rowNum = targetSheet.getLastRow();
     SpreadsheetApp.flush();

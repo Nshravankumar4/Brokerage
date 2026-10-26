@@ -9,10 +9,10 @@
 >   * `E:\TR\New\Final Sheet Broker.xlsx` (Authoritative 3-Sheet Physical Split, Created 26-Oct-2026)  
 >   * `E:\TR\P1\Final Sheet Broker.xlsx`  
 >   * `E:\TR\P1\BROKER DETAILS ADVANCE BALC DETAILS.xlsx`  
-> **Cloud Backend:** Google Apps Script Web App Deployment Version 2 (26 Oct 2026, 20:47)  
-> **Deployment ID:** `AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8`  
-> **Live API URL:** `https://script.google.com/macros/s/AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8/exec`  
-> **Target Spreadsheet ID:** `1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA` (`BrokerAgeSheet`)  
+> **Cloud Backend:** Google Apps Script Web App Deployment Version 3 (26 Oct 2026, 22:08)  
+> **Deployment ID:** `AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-`  
+> **Live API URL:** `https://script.google.com/macros/s/AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-/exec`  
+> **Target Spreadsheet ID:** `1PLUsbBM2BDbb-WdwScnaZX4C64T7c9gZyxuVqVRtgAg`  
 
 **Primary Requirement:** Maintain one existing web application, one existing main HTML page (`index.html`), the existing Google Apps Script backend (`backend/Code.gs`), and three independent payment-status views. Do not create a separate frontend application or merge the three statuses.
 

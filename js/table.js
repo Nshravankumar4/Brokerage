@@ -782,7 +782,7 @@ const TableModule = {
     const today = new Date().toISOString().split('T')[0];
 
     document.getElementById('modalTitle').innerText = '\u2795 Add New Shipment';
-    document.getElementById('m_editRow').value = nextRowNum;
+    document.getElementById('m_editRow').value = 0;
     document.getElementById('m_isAdd').value = 'true';
     document.getElementById('m_sourceSheet').value = '';
     const podStatusAddEl = document.getElementById('m_podAmountStatus');
@@ -980,20 +980,23 @@ const TableModule = {
 
   },
 
-  handleSaveModal(e) {
+  async handleSaveModal(e) {
     if (e) e.preventDefault();
 
-    const rowNum = parseInt(document.getElementById('m_editRow').value);
+    const rowNum = parseInt(document.getElementById('m_editRow').value) || 0;
     const isAdd = document.getElementById('m_isAdd').value === 'true';
     const lrNo = document.getElementById('m_lrNo').value.trim();
 
+    // Inline LR NO required validation (no alert)
     if (!lrNo) {
-      alert('\u26A0\uFE0F LR NO is required. Please enter an LR NO.');
-      document.getElementById('m_lrNo').focus();
+      const lrInput = document.getElementById('m_lrNo');
+      if (lrInput) { lrInput.style.borderColor = '#ef4444'; lrInput.focus(); }
+      const errSpan = document.getElementById('m_lrNoError');
+      if (errSpan) { errSpan.innerText = '\u26A0\uFE0F LR NO is required.'; errSpan.style.color = '#ef4444'; errSpan.style.display = 'inline'; }
       return;
     }
 
-    // Strict Duplicate LR NO Enforcement: LR NO must be unique across all trips
+    // Strict Duplicate LR NO Enforcement (inline, no alert)
     const duplicate = (typeof DataManager !== 'undefined') ? DataManager.isDuplicateLr(lrNo, isAdd ? null : rowNum) : null;
 
     if (duplicate) {
@@ -1005,11 +1008,11 @@ const TableModule = {
       }
       const errSpan = document.getElementById('m_lrNoError');
       if (errSpan) {
-        errSpan.innerText = `\u26A0\uFE0F Duplicate of Trip #${duplicate.slNo}`;
+        // Duplicate LR NO Error: LR is already in use
+        errSpan.innerText = `\u26A0\uFE0F Duplicate LR NO Error: already used by Trip #${duplicate.slNo} (${duplicate.trspName})`;
         errSpan.style.color = '#ef4444';
         errSpan.style.display = 'inline';
       }
-      alert(`\u274C Duplicate LR NO Error:\n\nLR NO "${lrNo}" is already in use by Trip #${duplicate.slNo} (${duplicate.truckNo} - ${duplicate.trspName})!\n\nEach shipment must have a unique LR NO. Duplicate LR numbers are not allowed.`);
       return;
     }
 
@@ -1098,35 +1101,71 @@ const TableModule = {
     tripData.pendingTobilled = calc.pendingTobilled;
     tripData.balc = calc.pendingTobilled;
     tripData.finalBalc = calc.finalBalc;
+    tripData.isAdd = isAdd;
     tripData.podAmountStatus = (podStatusSelected === 'DONE' || tripData.pod || calc.podAmountStatus === 'DONE') ? 'DONE' : 'PENDING';
 
-    DataManager.saveTrip(tripData);
-    this.closeModal();
+    // Lock submit button during save
+    const submitBtn = document.getElementById('m_submitBtn');
+    const origBtnText = submitBtn ? submitBtn.innerText : '';
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Saving...'; }
 
-    if (typeof AppModule !== 'undefined') {
-      AppModule.refresh();
-      AppModule.showToast(isAdd ? '\u2795 New shipment submitted!' : '\uD83D\uDCBE Changes saved!');
-    }
+    const doSave = async () => {
+      // 1. Optimistic local save for instant UI
+      DataManager.saveTrip(tripData);
+      this.closeModal();
+      if (typeof AppModule !== 'undefined') {
+        AppModule.refresh();
+      }
 
-    // Authoritative Cloud Sync to Google Sheets
-    if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
-      ApiService.saveTrip(tripData).then(async (res) => {
-        console.log('\u2705 Cloud mutation synced to Google Sheets:', res);
-        if (res && res.version) {
-          DataManager.setVersion(String(res.version));
+      // 2. Cloud sync - wait for confirmation
+      if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
+        try {
+          const res = await ApiService.saveTrip(tripData);
+          if (res && res.status === 'error') {
+            // Cloud rejected - show error toast but keep local save
+            if (typeof AppModule !== 'undefined') {
+              if (res.code === 'DUPLICATE_LR') {
+                AppModule.showToast('\u26A0\uFE0F Cloud rejected: Duplicate LR NO on server. Check Google Sheets.');
+              } else {
+                AppModule.showToast('\u26A0\uFE0F Cloud save error: ' + (res.message || 'Unknown error'));
+              }
+            }
+          } else {
+            if (res && res.version) { DataManager.setVersion(String(res.version)); }
+            // Update local record with cloud-authoritative row/sheetName
+            if (res && res.rowNum && res.sheetName) {
+              const saved = DataManager.getAll().find(t => t.lrNo === tripData.lrNo && t.sheetName === res.sheetName);
+              if (saved) { saved.row = res.rowNum; DataManager.saveAll(DataManager.getAll()); }
+            }
+            if (typeof AppModule !== 'undefined') {
+              AppModule.showToast(isAdd ? '\u2795 New shipment saved to Google Sheets!' : '\uD83D\uDCBE Changes saved to Google Sheets!');
+              await AppModule.syncNow(true);
+            }
+          }
+        } catch (err) {
+          if (typeof AppModule !== 'undefined') {
+            AppModule.showToast('\u26A0\uFE0F Cloud unavailable - saved locally only. Sync when online.');
+          }
+          console.warn('Cloud sync note for saveTrip:', err);
         }
+      } else {
+        // Offline - local only
         if (typeof AppModule !== 'undefined') {
-          await AppModule.syncNow(true);
+          AppModule.showToast(isAdd ? '\u2795 New shipment saved (offline).' : '\uD83D\uDCBE Changes saved (offline).');
         }
-      }).catch(err => {
-        console.warn('Cloud sync note for saveTrip:', err);
-      });
-    }
+      }
+
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = origBtnText; }
+    };
+
+    doSave();
   },
 
   deleteTripRecord(rowNum) {
     if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
-      alert('Access Restricted: Only Administrator has permission to delete trips!');
+      if (typeof AppModule !== 'undefined') {
+        AppModule.showToast('\uD83D\uDEAB Access Restricted: Only Administrator can delete trips.');
+      }
       return;
     }
 
@@ -1158,6 +1197,18 @@ const TableModule = {
     if (typeof ExcelJS === 'undefined') {
       console.warn('ExcelJS not loaded, falling back to CSV export.');
       return this.exportToCSV();
+    }
+
+    // Fetch latest cloud data before export so newly added records are included
+    if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
+      try {
+        if (typeof AppModule !== 'undefined') {
+          AppModule.showToast('\u2601\uFE0F Fetching latest data before export...');
+        }
+        await ApiService.fetchAll();
+      } catch (err) {
+        console.warn('Export pre-fetch note:', err);
+      }
     }
 
     try {

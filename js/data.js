@@ -274,7 +274,6 @@ const DataManager = {
 
   deleteTrip(rowNum) {
     if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
-      alert('Access Denied: Only Administrator has permission to delete trips!');
       return false;
     }
     const list = this.getAll().filter(t => t.row !== rowNum);
