@@ -1,6 +1,6 @@
-﻿/**
+/**
  * data.js - Data Store & Local Persistence Manager
- * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger - Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * Pre-seeded directly with the exact records from BROKER DETAILS ADVANCE BALC DETAILS.xlsx

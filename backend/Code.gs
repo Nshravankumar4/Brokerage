@@ -1,6 +1,6 @@
 /**
  * TRANSPORT BROKERAGE LEDGER PVT LTD
- * SR Brokerage Ledger — Google Apps Script Backend (Upgrade 1.2 — Physical Worksheets)
+ * SR Brokerage Ledger - Google Apps Script Backend (Upgrade 1.2 - Physical Worksheets)
  *
  * Physical Worksheets Architecture:
  * 1. TOBILLED  -> physical worksheet TOBILLED

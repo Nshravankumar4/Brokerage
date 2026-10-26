@@ -1,6 +1,6 @@
 /**
  * api.js - Authoritative Cloud API & Synchronization Service
- * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger - Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * Interfaces with Google Apps Script backend (backend/Code.gs)

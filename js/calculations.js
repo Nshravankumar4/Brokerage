@@ -1,16 +1,16 @@
-﻿/**
+/**
  * calculations.js - Dynamic Mathematical Formula Engine & Aggregates
- * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger - Transport Brokerage Ledger Pvt Ltd
  * Authoritative Workbook: BROKER DETAILS ADVANCE BALC DETAILS.xlsx
  * Master 28-Column Formula Architecture (Columns A through AB)
  * 
  * Formula Rules Grounded in Master Excel:
- *   1. Column U (COD: A/Topay & F/Topay): =K - N - O - Q - S (Freight − TM − Advances)
- *   2. Column V (Pending Amount: Tobilled): =K - N - O - Q - S (Freight − TM − Advances)
+ *   1. Column U (COD: A/Topay & F/Topay): =K - N - O - Q - S (Freight - TM - Advances)
+ *   2. Column V (Pending Amount: Tobilled): =K - N - O - Q - S (Freight - TM - Advances)
  *   3. Column W (Extra Amount): Halting / Extra Hamali addition
  *   4. Column Y (P/M): Payment Mamul deduction
  *   5. Column Z (Pending Amount / Final Net Balance):
- *        - TOBILLED: =V + W - Y  [(Freight − TM − Advances) + Extra Amount − P/M]
+ *        - TOBILLED: =V + W - Y  [(Freight - TM - Advances) + Extra Amount - P/M]
  *        - A/TO-PAY: =K - N - O - U = 0 (Destination party pays COD)
  *        - F/TO-PAY: =0 (Destination party pays full freight via COD)
  *   6. Column AA (POD Amount Status): =IF(M="TOBILLED", V + W - Y - Z, 0)
@@ -59,19 +59,19 @@ const CalculationEngine = {
       finalBalc = Math.max(0, fright - tm - adv1 - cod);
       balc = finalBalc;
       podAmountStatus = 0;
-      ruleText = 'A/TO-PAY: COD = Freight − TM − Adv (Col U); Pending Amount = 0';
+      ruleText = 'A/TO-PAY: COD = Freight \u2212 TM \u2212 Adv (Col U); Pending Amount = 0';
     }
     // Condition 3: TOBILLED (To-Billed Master Formula)
     else {
       cod = 0;
-      // Master Formula V: K - N - O - Q - S (Freight − TM − Advances)
+      // Master Formula V: K - N - O - Q - S (Freight \u2212 TM \u2212 Advances)
       pendingTobilled = fright - tm - totalAdvances;
       balc = pendingTobilled;
-      // Master Formula Z: V + W - Y (Pending Tobilled + Extra Amount − PM)
+      // Master Formula Z: V + W - Y (Pending Tobilled + Extra Amount \u2212 PM)
       finalBalc = pendingTobilled + extraAmount - pm;
       // Master Formula AA: V + W - Y - Z = 0 (when settled)
       podAmountStatus = pendingTobilled + extraAmount - pm - finalBalc;
-      ruleText = 'TOBILLED: Pending = (Freight − TM − Advances) + Extra − PM';
+      ruleText = 'TOBILLED: Pending = (Freight \u2212 TM \u2212 Advances) + Extra \u2212 PM';
     }
 
     if (isNaN(balc)) balc = 0;
@@ -135,6 +135,6 @@ const CalculationEngine = {
       maximumFractionDigits: 2,
       minimumFractionDigits: 0
     });
-    return showSymbol ? '₹' + formatted : formatted;
+    return showSymbol ? '\u20B9' + formatted : formatted;
   }
 };

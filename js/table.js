@@ -1,6 +1,6 @@
 /**
  * table.js - Spreadsheet Grid & Enterprise Trip Editor Renderer
- * SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd
+ * SR Brokerage Ledger \u2022 Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management
  * Authoritative 28-Column Architecture (Columns A through AB)
  * Developed by Shravan Kumar
@@ -20,13 +20,13 @@ const TableModule = {
     const pill = document.getElementById('excelSheetInfoPill');
     if (pill) {
       if (sheetType === 'TOBILLED') {
-        pill.innerHTML = '<span>📄 Physical Worksheet: TOBILLED (Pending = Freight − TM − Advances + Extra − PM)</span>';
+        pill.innerHTML = '<span>\uD83D\uDCC4 Physical Worksheet: TOBILLED (Pending = Freight \u2212 TM \u2212 Advances + Extra \u2212 PM)</span>';
       } else if (sheetType === 'A/TO-PAY') {
-        pill.innerHTML = '<span>💳 Physical Worksheet: A/TO-PAY (COD = Freight − TM − Advance 1)</span>';
+        pill.innerHTML = '<span>\uD83D\uDCB3 Physical Worksheet: A/TO-PAY (COD = Freight \u2212 TM \u2212 Advance 1)</span>';
       } else if (sheetType === 'F/TO-PAY') {
-        pill.innerHTML = '<span>🚚 Physical Worksheet: F/TO-PAY (COD = Full Freight)</span>';
+        pill.innerHTML = '<span>\uD83D\uDE9A Physical Worksheet: F/TO-PAY (COD = Full Freight)</span>';
       } else {
-        pill.innerHTML = '<span>📑 Master Ledger (All): Showing all 28-column master records</span>';
+        pill.innerHTML = '<span>\uD83D\uDCD1 Master Ledger (All): Showing all 28-column master records</span>';
       }
     }
 
@@ -78,15 +78,15 @@ const TableModule = {
 
     if (badge) {
       if (s === 'F/TO-PAY') {
-        badge.innerText = '🚚 F/TO-PAY Mode (Full To-Pay)';
+        badge.innerText = '\uD83D\uDE9A F/TO-PAY Mode (Full To-Pay)';
         badge.style.background = '#fef3c7';
         badge.style.color = '#92400e';
       } else if (s === 'A/TO-PAY') {
-        badge.innerText = '💳 A/TO-PAY Mode (Adv To-Pay)';
+        badge.innerText = '\uD83D\uDCB3 A/TO-PAY Mode (Adv To-Pay)';
         badge.style.background = '#d1fae5';
         badge.style.color = '#065f46';
       } else {
-        badge.innerText = '📋 TOBILLED Mode';
+        badge.innerText = '\uD83D\uDCCB TOBILLED Mode';
         badge.style.background = '#dbeafe';
         badge.style.color = '#1e40af';
       }
@@ -233,24 +233,24 @@ const TableModule = {
 
       // POD cell styling: RED badge ONLY on the POD cell if date is missing
       const podCellHtml = calc.isPodMissing
-        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true)" style="cursor:pointer;" title="Click to enter POD date">⚠️ Missing</span>`
+        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true)" style="cursor:pointer;" title="Click to enter POD date">\u26A0\uFE0F Missing</span>`
         : `<span class="pod-received-text">${escapeHtml(t.pod)}</span>`;
 
       // Role-based delete action
       const deleteBtnHtml = canDel
-        ? `<button class="btn-action-del" onclick="TableModule.deleteTripRecord(${t.row})" title="Delete Trip (Admin Only)">🗑️</button>`
-        : `<button class="btn-action-del disabled" title="Delete restricted to Admin" disabled>🔒</button>`;
+        ? `<button class="btn-action-del" onclick="TableModule.deleteTripRecord(${t.row})" title="Delete Trip (Admin Only)">\uD83D\uDDD1\uFE0F</button>`
+        : `<button class="btn-action-del disabled" title="Delete restricted to Admin" disabled>\uD83D\uDD12</button>`;
 
       const rawPodStatus = String(t.podAmountStatus || calc.podAmountStatus || '').trim().toUpperCase();
       const isPodDone = rawPodStatus === 'DONE' || (!calc.isPodMissing && (t.podAmountStatus === 0 || t.podAmountStatus === '0' || rawPodStatus === 'DONE'));
       const podStatusHtml = isPodDone
-        ? `<span class="badge-pod-done" style="background:#dcfce7; color:#15803d; font-weight:700; padding:2px 8px; border-radius:12px; font-size:0.75rem;">✅ DONE</span>`
-        : `<span class="badge-pod-pending" style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 8px; border-radius:12px; font-size:0.75rem;">⏳ PENDING</span>`;
+        ? `<span class="badge-pod-done" style="background:#dcfce7; color:#15803d; font-weight:700; padding:2px 8px; border-radius:12px; font-size:0.75rem;">\u2705 DONE</span>`
+        : `<span class="badge-pod-pending" style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 8px; border-radius:12px; font-size:0.75rem;">\u23F3 PENDING</span>`;
 
       tr.innerHTML = `
         <td class="col-center" style="font-weight:700; color:#475569;">${t.slNo || ''}</td>
         <td style="font-weight:600; color:#0f172a;">${escapeHtml(t.trspName || '')}</td>
-        <td class="col-center">${t.date || '—'}</td>
+        <td class="col-center">${t.date || '\u2014'}</td>
         <td class="col-center" style="font-weight:700; color:#1e40af;">${escapeHtml(t.lrNo || '')}</td>
         <td class="col-center" style="font-family:monospace; font-weight:700; letter-spacing:0.3px;">${escapeHtml(t.truckNo || '')}</td>
         <td>${escapeHtml(t.from || '')}</td>
@@ -279,7 +279,7 @@ const TableModule = {
         <td class="col-center">${podStatusHtml}</td>
         <td style="font-size:0.78rem;">${escapeHtml(t.note || '')}</td>
         <td class="col-center" style="white-space:nowrap;">
-          <button class="btn btn-secondary btn-sm" onclick="TableModule.openEditModal(${t.row})" title="Edit Details">✏️ Edit</button>
+          <button class="btn btn-secondary btn-sm" onclick="TableModule.openEditModal(${t.row})" title="Edit Details">\u270F\uFE0F Edit</button>
           ${deleteBtnHtml}
         </td>
       `;
@@ -312,7 +312,7 @@ const TableModule = {
 
     const canDel = (typeof AuthModule !== 'undefined') ? AuthModule.canDelete() : true;
 
-    // Direct Cards Grid — Single Add Trip button in shared toolbar
+    // Direct Cards Grid \u2014 Single Add Trip button in shared toolbar
     const cardsGrid = document.createElement('div');
     cardsGrid.className = 'trip-cards-grid';
 
@@ -340,12 +340,12 @@ const TableModule = {
       card.className = `trip-card ${calc.isPodMissing ? 'card-pod-missing' : ''}`;
 
       const podBadge = calc.isPodMissing
-        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true)" style="cursor:pointer;" title="Click to Enter POD Date">⚠️ POD Missing (Click to Enter)</span>`
-        : `<span class="pod-ok-badge">✅ Received: ${escapeHtml(t.pod)}</span>`;
+        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true)" style="cursor:pointer;" title="Click to Enter POD Date">\u26A0\uFE0F POD Missing (Click to Enter)</span>`
+        : `<span class="pod-ok-badge">\u2705 Received: ${escapeHtml(t.pod)}</span>`;
 
       const deleteBtn = canDel
-        ? `<button class="btn btn-danger-soft btn-sm" onclick="TableModule.deleteTripRecord(${t.row})">🗑️ Delete</button>`
-        : `<span class="role-restricted-tag" title="Only Admin can delete">🔒 Admin Delete</span>`;
+        ? `<button class="btn btn-danger-soft btn-sm" onclick="TableModule.deleteTripRecord(${t.row})">\uD83D\uDDD1\uFE0F Delete</button>`
+        : `<span class="role-restricted-tag" title="Only Admin can delete">\uD83D\uDD12 Admin Delete</span>`;
 
       card.innerHTML = `
         <!-- Card Top Bar -->
@@ -353,10 +353,10 @@ const TableModule = {
           <div class="trip-card-sl-tag">#${t.slNo || ''}</div>
           <div style="flex: 1; margin-left: 8px;">
             <div class="trip-card-transporter">${escapeHtml(t.trspName || 'Unassigned Transporter')}</div>
-            <div class="trip-card-date">Trip Date: <strong>${t.date || '—'}</strong></div>
+            <div class="trip-card-date">Trip Date: <strong>${t.date || '\u2014'}</strong></div>
           </div>
           <div class="trip-card-lr-badge">
-            LR: ${escapeHtml(t.lrNo || '—')}
+            LR: ${escapeHtml(t.lrNo || '\u2014')}
           </div>
         </div>
 
@@ -367,7 +367,7 @@ const TableModule = {
           </div>
           <div class="route-connector">
             <div class="route-line-bar"></div>
-            <span class="route-truck-icon">🚛</span>
+            <span class="route-truck-icon">\uD83D\uDE9B</span>
           </div>
           <div class="route-point dest-point">
             <span class="route-city-text">${escapeHtml(t.to || 'Destination')}</span>
@@ -380,7 +380,7 @@ const TableModule = {
             <span class="truck-plate-label">TRUCK:</span>
             <div class="truck-plate">
               <span class="truck-plate-ind">IND</span>
-              <span class="truck-plate-num">${escapeHtml(t.truckNo || '—')}</span>
+              <span class="truck-plate-num">${escapeHtml(t.truckNo || '\u2014')}</span>
             </div>
           </div>
           <div style="text-align: right;">
@@ -413,7 +413,7 @@ const TableModule = {
         ${calc.extraAmount > 0 ? `
           <div style="margin:6px 0; font-size:0.75rem;">
             <span style="font-weight:700; color:#0284c7;">Extra/Halting:</span>
-            <strong style="color:#0369a1;">₹${Number(calc.extraAmount).toLocaleString('en-IN')}</strong>
+            <strong style="color:#0369a1;">\u20B9${Number(calc.extraAmount).toLocaleString('en-IN')}</strong>
           </div>
         ` : ''}
 
@@ -421,7 +421,7 @@ const TableModule = {
         <div class="trip-card-footer">
           <div>${deleteBtn}</div>
           <button class="btn btn-primary btn-sm" onclick="TableModule.openEditModal(${t.row})">
-            ✏️ Edit Details
+            \u270F\uFE0F Edit Details
           </button>
         </div>
       `;
@@ -550,11 +550,11 @@ const TableModule = {
     dropdown.innerHTML = matches.map((p, idx) => `
       <div class="autofill-item" onclick="TableModule.applyAutofillProfile(${idx})">
         <div class="autofill-item-title">
-          <span>🚛 ${escapeHtml(p.trspName)} <strong style="color: #0284c7; font-family: monospace;">(${escapeHtml(p.truckNo || '—')})</strong></span>
+          <span>\uD83D\uDE9B ${escapeHtml(p.trspName)} <strong style="color: #0284c7; font-family: monospace;">(${escapeHtml(p.truckNo || '\u2014')})</strong></span>
           <span style="font-size: 0.72rem; color: #16a34a; font-weight: 700;">Trip #${p.slNo || ''}</span>
         </div>
         <div class="autofill-item-sub">
-📍 Route: <strong>${escapeHtml(p.from)} ➔ ${escapeHtml(p.to || 'Any')}</strong> | 🏦 Bank: ${escapeHtml(p.paymentMade)} (A/C: ${escapeHtml(p.accountNo || '—')} | IFSC: ${escapeHtml(p.ifsc || '—')})
+\uD83D\uDCCD Route: <strong>${escapeHtml(p.from)} \u2794 ${escapeHtml(p.to || 'Any')}</strong> | \uD83C\uDFE6 Bank: ${escapeHtml(p.paymentMade)} (A/C: ${escapeHtml(p.accountNo || '\u2014')} | IFSC: ${escapeHtml(p.ifsc || '\u2014')})
         </div>
       </div>
     `).join('');
@@ -584,7 +584,7 @@ const TableModule = {
     }
 
     if (typeof AppModule !== 'undefined') {
-      AppModule.showToast(`⚡ Autofilled Bank & Route details for ${p.trspName}!`);
+      AppModule.showToast(`\u26A1 Autofilled Bank & Route details for ${p.trspName}!`);
     }
   },
 
@@ -643,14 +643,14 @@ const TableModule = {
     const trip = DataManager.getTrip(rowNum);
     if (!trip) return;
 
-    document.getElementById('modalTitle').innerText = `✏️ Edit Trip (SL NO: ${trip.slNo || trip.row})`;
+    document.getElementById('modalTitle').innerText = `\u270F\uFE0F Edit Trip (SL NO: ${trip.slNo || trip.row})`;
     document.getElementById('m_editRow').value = trip.row;
     document.getElementById('m_isAdd').value = 'false';
     document.getElementById('m_sourceSheet').value = trip.sheetName || '';
 
     // Dedicated button: "Save Changes" for Edit
     const submitBtn = document.getElementById('m_submitBtn');
-    if (submitBtn) submitBtn.innerText = '💾 Save Changes';
+    if (submitBtn) submitBtn.innerText = '\uD83D\uDCBE Save Changes';
 
     document.getElementById('m_slNo').value = trip.slNo || '';
     document.getElementById('m_trspName').value = trip.trspName || '';
@@ -735,7 +735,7 @@ const TableModule = {
     const nextSlNo = list.length > 0 ? (Math.max(...list.map(t => parseInt(t.slNo, 10) || 0)) + 1) : 1;
     const today = new Date().toISOString().split('T')[0];
 
-    document.getElementById('modalTitle').innerText = '➕ Add New Shipment';
+    document.getElementById('modalTitle').innerText = '\u2795 Add New Shipment';
     document.getElementById('m_editRow').value = nextRowNum;
     document.getElementById('m_isAdd').value = 'true';
     document.getElementById('m_sourceSheet').value = '';
@@ -744,7 +744,7 @@ const TableModule = {
 
     // Dedicated button: "Submit / Add Shipment" for Add
     const submitBtn = document.getElementById('m_submitBtn');
-    if (submitBtn) submitBtn.innerText = '➕ Submit / Add Shipment';
+    if (submitBtn) submitBtn.innerText = '\u2795 Submit / Add Shipment';
 
     // Sequential Starting SL NO starting at 1
     document.getElementById('m_slNo').value = nextSlNo;
@@ -838,7 +838,7 @@ const TableModule = {
       lrInput.style.borderColor = '#ef4444';
       lrInput.style.backgroundColor = '#fef2f2';
       if (errSpan) {
-        errSpan.innerText = `⚠️ Duplicate (Trip #${duplicate.slNo})`;
+        errSpan.innerText = `\u26A0\uFE0F Duplicate (Trip #${duplicate.slNo})`;
         errSpan.style.color = '#ef4444';
         errSpan.style.display = 'inline';
       }
@@ -847,7 +847,7 @@ const TableModule = {
       lrInput.style.borderColor = '#22c55e';
       lrInput.style.backgroundColor = '';
       if (errSpan) {
-        errSpan.innerText = '✅ Unique LR';
+        errSpan.innerText = '\u2705 Unique LR';
         errSpan.style.color = '#15803d';
         errSpan.style.display = 'inline';
       }
@@ -942,7 +942,7 @@ const TableModule = {
     const lrNo = document.getElementById('m_lrNo').value.trim();
 
     if (!lrNo) {
-      alert('⚠️ LR NO is required. Please enter an LR NO.');
+      alert('\u26A0\uFE0F LR NO is required. Please enter an LR NO.');
       document.getElementById('m_lrNo').focus();
       return;
     }
@@ -959,11 +959,11 @@ const TableModule = {
       }
       const errSpan = document.getElementById('m_lrNoError');
       if (errSpan) {
-        errSpan.innerText = `⚠️ Duplicate of Trip #${duplicate.slNo}`;
+        errSpan.innerText = `\u26A0\uFE0F Duplicate of Trip #${duplicate.slNo}`;
         errSpan.style.color = '#ef4444';
         errSpan.style.display = 'inline';
       }
-      alert(`❌ Duplicate LR NO Error:\n\nLR NO "${lrNo}" is already in use by Trip #${duplicate.slNo} (${duplicate.truckNo} - ${duplicate.trspName})!\n\nEach shipment must have a unique LR NO. Duplicate LR numbers are not allowed.`);
+      alert(`\u274C Duplicate LR NO Error:\n\nLR NO "${lrNo}" is already in use by Trip #${duplicate.slNo} (${duplicate.truckNo} - ${duplicate.trspName})!\n\nEach shipment must have a unique LR NO. Duplicate LR numbers are not allowed.`);
       return;
     }
 
@@ -1059,13 +1059,13 @@ const TableModule = {
 
     if (typeof AppModule !== 'undefined') {
       AppModule.refresh();
-      AppModule.showToast(isAdd ? '➕ New shipment submitted!' : '💾 Changes saved!');
+      AppModule.showToast(isAdd ? '\u2795 New shipment submitted!' : '\uD83D\uDCBE Changes saved!');
     }
 
     // Authoritative Cloud Sync to Google Sheets
     if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
       ApiService.saveTrip(tripData).then(async (res) => {
-        console.log('✅ Cloud mutation synced to Google Sheets:', res);
+        console.log('\u2705 Cloud mutation synced to Google Sheets:', res);
         if (res && res.version) {
           DataManager.setVersion(String(res.version));
         }
@@ -1090,13 +1090,13 @@ const TableModule = {
       DataManager.deleteTrip(rowNum);
       if (typeof AppModule !== 'undefined') {
         AppModule.refresh();
-        AppModule.showToast('🗑️ Trip deleted successfully.');
+        AppModule.showToast('\uD83D\uDDD1\uFE0F Trip deleted successfully.');
       }
 
       // Authoritative Cloud Sync to Google Sheets
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
         ApiService.deleteTrip(rowNum, targetSheetName).then(async (res) => {
-          console.log('✅ Cloud delete synced to Google Sheets:', res);
+          console.log('\u2705 Cloud delete synced to Google Sheets:', res);
           if (typeof AppModule !== 'undefined') {
             await AppModule.syncNow(true);
           }
@@ -1357,7 +1357,7 @@ const TableModule = {
       saveAs(blob, `SR_Brokerage_Ledger_${nowStr}.xlsx`);
 
       if (typeof AppModule !== 'undefined') {
-        AppModule.showToast('📊 Genuine 3-Sheet Excel (.xlsx) downloaded with TOBILLED, A_TOPAY & F_TOPAY sheets!');
+        AppModule.showToast('\uD83D\uDCCA Genuine 3-Sheet Excel (.xlsx) downloaded with TOBILLED, A_TOPAY & F_TOPAY sheets!');
       }
     } catch (err) {
       console.error('exportToExcel error:', err);
@@ -1385,7 +1385,7 @@ const TableModule = {
       return [
         `"${t.slNo || ''}"`,
         `"${(t.trspName || '').replace(/"/g, '""')}"`,
-        `"${t.date || '—'}"`,
+        `"${t.date || '\u2014'}"`,
         `"${t.lrNo || ''}"`,
         `"${t.truckNo || ''}"`,
         `"${(t.from || '').replace(/"/g, '""')}"`,
@@ -1424,7 +1424,7 @@ const TableModule = {
     document.body.removeChild(link);
 
     if (typeof AppModule !== 'undefined') {
-      AppModule.showToast('📊 Ledger exported to CSV/Excel successfully!');
+      AppModule.showToast('\uD83D\uDCCA Ledger exported to CSV/Excel successfully!');
     }
   }
 };
