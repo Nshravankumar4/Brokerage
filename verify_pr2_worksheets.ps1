@@ -38,7 +38,7 @@ Assert-Test ($codeGs -match 'srcSheet\.deleteRow\(rowNum\)') "handleSaveTrip saf
 Assert-Test ($codeGs -match 'handleDeleteTrip\(rowNum,\s*optId,\s*optSheetName\)') "handleDeleteTrip targets the record's specific physical worksheet"
 
 # 4. Active API Endpoint
-Assert-Test ($apiJs -match 'AKfycbwqykkt53iglV7FrceyixlDjUSe5ry4JIG_jlLPwbBukqrRF1lagM49Hem7jYcHm7HK4A') "js/api.js connects to active Version 5 Google Apps Script deployment URL"
+Assert-Test ($apiJs -match 'AKfycbxHwxcs9iEPhSqRbNmtiGpEAxKdGL7A50Bg_hn3DHQuQMu-dPhaLcxc1GXeKX8nrVmuIQ') "js/api.js connects to active Version 6 Google Apps Script deployment URL"
 Assert-Test ($apiJs -match 'sourceSheet:\s*trip\.sourceSheet') "js/api.js transmits sourceSheet in saveTrip payload"
 Assert-Test ($apiJs -match 'deleteTrip\(rowNum,\s*sheetName\s*=\s*''''\)') "js/api.js deleteTrip transmits target physical sheetName"
 
@@ -53,3 +53,4 @@ Write-Host "  TEST RESULTS: Passed: $passed, Failed: $failed" -ForegroundColor C
 Write-Host "========================================================" -ForegroundColor Cyan
 
 if ($failed -gt 0) { exit 1 } else { exit 0 }
+

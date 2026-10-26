@@ -20,13 +20,14 @@ $tableJs = [System.IO.File]::ReadAllText("E:\TR\P1\js\table.js", [System.Text.En
 $indexHtml = [System.IO.File]::ReadAllText("E:\TR\P1\index.html", [System.Text.Encoding]::UTF8)
 $cssStyles = [System.IO.File]::ReadAllText("E:\TR\P1\css\styles.css", [System.Text.Encoding]::UTF8)
 
-# 1. Verify setFieldState implements input.disabled and value reset
+# 1. Verify setFieldState controls disabled state without destroying user input
 Assert-Test ($tableJs -match 'setFieldState\s*=\s*\([^)]+\)\s*=>') "updateFormFieldsVisibility defines setFieldState helper"
 Assert-Test ($tableJs -match 'input\.disabled\s*=\s*!isVisible') "setFieldState disables non-applicable inputs"
-Assert-Test ($tableJs -match 'input\.value\s*=\s*isNumeric\s*\?\s*0\s*:\s*''''') "setFieldState zeroes out blocked numeric values and clears dates"
+Assert-Test ($tableJs -match 'input\.classList\.(add|remove)\(''field-blocked''\)') "setFieldState manages field-blocked style without wiping entered amounts"
 
-# 2. Verify F/TO-PAY strict blocking
+# 2. Verify F/TO-PAY field visibility & T/M availability
 Assert-Test ($tableJs -match "setFieldState\('field_fright',\s*'m_fright',\s*true,\s*true\)") "F/TO-PAY enables Freight input"
+Assert-Test ($tableJs -match "setFieldState\('field_tm',\s*'m_tm',\s*true,\s*true\)") "F/TO-PAY keeps T/M input available"
 Assert-Test ($tableJs -match "setFieldState\('field_cod',\s*'m_cod',\s*true,\s*true\)") "F/TO-PAY enables COD input"
 Assert-Test ($tableJs -match "setFieldState\('field_advance1',\s*'m_advance1',\s*false,\s*true\)") "F/TO-PAY blocks Advance 1"
 Assert-Test ($tableJs -match "setFieldState\('field_advance2',\s*'m_advance2',\s*false,\s*true\)") "F/TO-PAY blocks Advance 2"

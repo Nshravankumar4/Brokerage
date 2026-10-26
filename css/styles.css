@@ -1,4 +1,4 @@
-﻿/**
+/**
  * styles.css - SR Brokerage Ledger • Transport Brokerage Ledger Pvt Ltd Theme
  * Fleet Logistics & Financial Accounts Management
  * Professional Fleet Logistics, Accounting & Spreadsheet Design System
@@ -2860,4 +2860,17 @@ input[type=number] {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* Dynamic Column Visibility: Remove unwanted columns in specific physical worksheet tab views */
+.sheet-view-tobilled tr > th:nth-child(21),
+.sheet-view-tobilled tr > td:nth-child(21) {
+  display: none !important;
+}
+
+.sheet-view-atopay tr > th:nth-child(22),
+.sheet-view-atopay tr > td:nth-child(22),
+.sheet-view-ftopay tr > th:nth-child(22),
+.sheet-view-ftopay tr > td:nth-child(22) {
+  display: none !important;
 }

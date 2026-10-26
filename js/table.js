@@ -20,14 +20,23 @@ const TableModule = {
     const pill = document.getElementById('excelSheetInfoPill');
     if (pill) {
       if (sheetType === 'TOBILLED') {
-        pill.innerHTML = '<span>📄 Sheet 1: Showing TOBILLED trips (Freight - TM - Advances + Extra - PM)</span>';
+        pill.innerHTML = '<span>📄 Physical Worksheet: TOBILLED (Pending = Freight − TM − Advances + Extra − PM)</span>';
       } else if (sheetType === 'A/TO-PAY') {
-        pill.innerHTML = '<span>💳 Sheet 2: Showing A/TO-PAY trips (COD = Freight - TM - Advance 1)</span>';
+        pill.innerHTML = '<span>💳 Physical Worksheet: A/TO-PAY (COD = Freight − TM − Advance 1)</span>';
       } else if (sheetType === 'F/TO-PAY') {
-        pill.innerHTML = '<span>🚛 Sheet 3: Showing F/TO-PAY trips (COD = Full Freight)</span>';
+        pill.innerHTML = '<span>🚚 Physical Worksheet: F/TO-PAY (COD = Full Freight)</span>';
       } else {
-        pill.innerHTML = '<span>📑 Master Ledger: Showing all 28-column master records</span>';
+        pill.innerHTML = '<span>📑 Master Ledger (All): Showing all 28-column master records</span>';
       }
+    }
+
+    const grid = document.querySelector('.excel-grid');
+    if (grid) {
+      grid.classList.remove('sheet-view-all', 'sheet-view-tobilled', 'sheet-view-atopay', 'sheet-view-ftopay');
+      if (sheetType === 'TOBILLED') grid.classList.add('sheet-view-tobilled');
+      else if (sheetType === 'A/TO-PAY') grid.classList.add('sheet-view-atopay');
+      else if (sheetType === 'F/TO-PAY') grid.classList.add('sheet-view-ftopay');
+      else grid.classList.add('sheet-view-all');
     }
 
     this.renderExcelView();
@@ -83,7 +92,7 @@ const TableModule = {
       }
     }
 
-    // Helper: Enable & show active fields, strictly block, disable & clear non-applicable fields
+    // Helper: Enable & show active fields without clearing user-entered values
     const setFieldState = (containerId, inputId, isVisible, isNumeric = true) => {
       const container = document.getElementById(containerId);
       const input = document.getElementById(inputId);
@@ -93,7 +102,6 @@ const TableModule = {
       if (input) {
         input.disabled = !isVisible;
         if (!isVisible) {
-          input.value = isNumeric ? 0 : '';
           input.classList.add('field-blocked');
         } else {
           input.classList.remove('field-blocked');
@@ -102,9 +110,9 @@ const TableModule = {
     };
 
     if (s === 'F/TO-PAY') {
-      // Full To-Pay: Only Freight & COD apply. All advances, T/M, Extra, P/M are strictly blocked & zeroed.
+      // Full To-Pay: Freight, T/M & COD apply.
       setFieldState('field_fright', 'm_fright', true, true);
-      setFieldState('field_tm', 'm_tm', false, true);
+      setFieldState('field_tm', 'm_tm', true, true);
       setFieldState('field_advance1', 'm_advance1', false, true);
       setFieldState('field_date1', 'm_date1', false, false);
       setFieldState('field_advance2', 'm_advance2', false, true);
@@ -116,7 +124,7 @@ const TableModule = {
       setFieldState('field_payDate', 'm_payDate', false, false);
       setFieldState('field_pm', 'm_pm', false, true);
     } else if (s === 'A/TO-PAY') {
-      // Advance To-Pay: Freight, T/M, Advance 1 & Date, COD. Advances 2-3, Extra, P/M are strictly blocked & zeroed.
+      // Advance To-Pay: Freight, T/M, Advance 1 & Date, COD apply.
       setFieldState('field_fright', 'm_fright', true, true);
       setFieldState('field_tm', 'm_tm', true, true);
       setFieldState('field_advance1', 'm_advance1', true, true);
@@ -130,7 +138,7 @@ const TableModule = {
       setFieldState('field_payDate', 'm_payDate', false, false);
       setFieldState('field_pm', 'm_pm', false, true);
     } else {
-      // TOBILLED: Freight, T/M, Advances 1-3 & Dates, Extra Amount, PM/PA Date, P/M Mamul. COD is strictly blocked & zeroed.
+      // TOBILLED: Freight, T/M, Advances 1-3 & Dates, Extra Amount, PM/PA Date, P/M apply. COD is disabled & hidden.
       setFieldState('field_fright', 'm_fright', true, true);
       setFieldState('field_tm', 'm_tm', true, true);
       setFieldState('field_advance1', 'm_advance1', true, true);
@@ -869,7 +877,7 @@ const TableModule = {
       return Number(el.value) || 0;
     };
 
-    const tm = (topayVal.startsWith('F')) ? 0 : getVal('m_tm');
+    const tm = getVal('m_tm');
     const advance1 = (topayVal.startsWith('F')) ? 0 : getVal('m_advance1');
     const advance2 = (topayVal === 'TOBILLED') ? getVal('m_advance2') : 0;
     const advance3 = (topayVal === 'TOBILLED') ? getVal('m_advance3') : 0;

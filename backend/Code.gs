@@ -102,8 +102,8 @@ function resolveWorksheet(ss, status) {
     }
   }
 
-  // Not found: Create physical sheet with preferred name
-  var preferredName = (norm === 'A/TO-PAY') ? 'A/TO-PAY' : (norm === 'F/TO-PAY' ? 'F/TO-PAY' : 'TOBILLED');
+  // Not found: Create physical sheet with Google Sheets-compliant name (no slashes)
+  var preferredName = (norm === 'A/TO-PAY') ? 'A-TO-PAY' : (norm === 'F/TO-PAY' ? 'F-TO-PAY' : 'TOBILLED');
   try {
     var newSheet = ss.insertSheet(preferredName);
     ensureHeaders(newSheet);
@@ -126,12 +126,35 @@ function ensureHeaders(sheet) {
   if (sheet.getLastRow() < 1) {
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
     sheet.setFrozenRows(1);
+    try {
+      sheet.getRange(1, 1, 1, HEADERS.length)
+        .setFontWeight('bold')
+        .setBackground('#1e3a8a')
+        .setFontColor('#ffffff');
+    } catch (eStyle) {}
   }
   if (sheet.getMaxColumns() < HEADERS.length) {
     sheet.insertColumnsAfter(
       sheet.getMaxColumns(),
       HEADERS.length - sheet.getMaxColumns()
     );
+  }
+
+  // Remove unwanted/non-applicable column from display per physical worksheet
+  var sName = String(sheet.getName() || '').toUpperCase();
+  try {
+    if (sName.indexOf('TOBILLED') !== -1 || sName.indexOf('TO-BILLED') !== -1) {
+      // Column U (21): COD is not used in TOBILLED
+      sheet.hideColumns(21);
+    } else if (sName.indexOf('A-TO-PAY') !== -1 || sName.indexOf('A/TO-PAY') !== -1 || sName.indexOf('ATO-PAY') !== -1) {
+      // Column V (22): Pending ToBilled is not used in A/TO-PAY
+      sheet.hideColumns(22);
+    } else if (sName.indexOf('F-TO-PAY') !== -1 || sName.indexOf('F/TO-PAY') !== -1 || sName.indexOf('FTO-PAY') !== -1) {
+      // Column V (22): Pending ToBilled is not used in F/TO-PAY
+      sheet.hideColumns(22);
+    }
+  } catch (errHide) {
+    Logger.log('Column visibility note: ' + errHide);
   }
 }
 
@@ -155,6 +178,17 @@ function getOrCreateSheet(optId) {
  */
 function migrateHistoricalFinalRecords(ss) {
   if (!ss) return 0;
+
+  // Safely remove unwanted empty default 'Sheet1' created by Google Sheets
+  try {
+    var defaultSheet1 = ss.getSheetByName('Sheet1');
+    if (defaultSheet1 && defaultSheet1.getLastRow() <= 1) {
+      ss.deleteSheet(defaultSheet1);
+    }
+  } catch (eSheet1) {
+    Logger.log('Sheet1 cleanup note: ' + eSheet1);
+  }
+
   var finalSheet = ss.getSheetByName(SHEET_NAME);
   if (!finalSheet) return 0;
 
@@ -198,8 +232,15 @@ function migrateHistoricalFinalRecords(ss) {
 
 function runMigrateToPhysicalSheets() {
   var ss = getSpreadsheet();
+  resolveWorksheet(ss, 'TOBILLED');
+  resolveWorksheet(ss, 'A/TO-PAY');
+  resolveWorksheet(ss, 'F/TO-PAY');
   var count = migrateHistoricalFinalRecords(ss);
-  return 'Success: Migrated ' + count + ' records to physical worksheets.';
+  return 'Success: Migrated ' + count + ' records to physical worksheets without duplicates.';
+}
+
+function initializeAndMigrateAllWorksheets() {
+  return runMigrateToPhysicalSheets();
 }
 
 function setupInitialSheet() {

@@ -9,9 +9,9 @@
 
 const ApiService = {
   config: {
-    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbwqykkt53iglV7FrceyixlDjUSe5ry4JIG_jlLPwbBukqrRF1lagM49Hem7jYcHm7HK4A/exec',
+    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbxHwxcs9iEPhSqRbNmtiGpEAxKdGL7A50Bg_hn3DHQuQMu-dPhaLcxc1GXeKX8nrVmuIQ/exec',
     defaultSheetId: '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
-    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbwqykkt53iglV7FrceyixlDjUSe5ry4JIG_jlLPwbBukqrRF1lagM49Hem7jYcHm7HK4A/exec',
+    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbxHwxcs9iEPhSqRbNmtiGpEAxKdGL7A50Bg_hn3DHQuQMu-dPhaLcxc1GXeKX8nrVmuIQ/exec',
     sheetId: localStorage.getItem('broker_sheet_id') || '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
     timeoutMs: 12000
   },
@@ -19,7 +19,7 @@ const ApiService = {
   getApiUrl() {
     const stored = localStorage.getItem('broker_api_url');
     // Auto-migrate legacy deployment endpoints to active Version 3 endpoint
-    if (!stored || stored.includes('AKfycbwVgbDsDazKLlwR2Bh') || stored.includes('AKfycbxhwvJi8UDsJd2yFo') || stored.includes('AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow') || stored.includes('AKfycbzjzIDLeIpl63TC5RPrSPmusBktgCqILD6EemOKVwHUQj41gqYtYdJwQoufJYgHvZSoBQ')) {
+    if (!stored || stored.includes('AKfycbwVgbDsDazKLlwR2Bh') || stored.includes('AKfycbxhwvJi8UDsJd2yFo') || stored.includes('AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow') || stored.includes('AKfycbzjzIDLeIpl63TC5RPrSPmusBktgCqILD6EemOKVwHUQj41gqYtYdJwQoufJYgHvZSoBQ') || stored.includes('AKfycbwqykkt53iglV7FrceyixlDjUSe5ry4JIG_jlLPwbBukqrRF1lagM49Hem7jYcHm7HK4A')) {
       return this.config.defaultApiUrl;
     }
     return this.config.apiUrl || this.config.defaultApiUrl;
