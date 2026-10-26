@@ -233,6 +233,12 @@ const TableModule = {
         ? `<button class="btn-action-del" onclick="TableModule.deleteTripRecord(${t.row})" title="Delete Trip (Admin Only)">🗑️</button>`
         : `<button class="btn-action-del disabled" title="Delete restricted to Admin" disabled>🔒</button>`;
 
+      const rawPodStatus = String(t.podAmountStatus || calc.podAmountStatus || '').trim().toUpperCase();
+      const isPodDone = rawPodStatus === 'DONE' || (!calc.isPodMissing && (t.podAmountStatus === 0 || t.podAmountStatus === '0' || rawPodStatus === 'DONE'));
+      const podStatusHtml = isPodDone
+        ? `<span class="badge-pod-done" style="background:#dcfce7; color:#15803d; font-weight:700; padding:2px 8px; border-radius:12px; font-size:0.75rem;">✅ DONE</span>`
+        : `<span class="badge-pod-pending" style="background:#fef3c7; color:#92400e; font-weight:700; padding:2px 8px; border-radius:12px; font-size:0.75rem;">⏳ PENDING</span>`;
+
       tr.innerHTML = `
         <td class="col-center" style="font-weight:700; color:#475569;">${t.slNo || ''}</td>
         <td style="font-weight:600; color:#0f172a;">${escapeHtml(t.trspName || '')}</td>
@@ -262,7 +268,7 @@ const TableModule = {
         <td class="col-right col-bold" style="background:#fee2e2; color:${calc.finalBalc > 0 ? '#b91c1c' : '#15803d'};">
           ${CalculationEngine.formatCurrency(calc.finalBalc, false)}
         </td>
-        <td class="col-center">${calc.podAmountStatus || 0}</td>
+        <td class="col-center">${podStatusHtml}</td>
         <td style="font-size:0.78rem;">${escapeHtml(t.note || '')}</td>
         <td class="col-center" style="white-space:nowrap;">
           <button class="btn btn-secondary btn-sm" onclick="TableModule.openEditModal(${t.row})" title="Edit Details">✏️ Edit</button>
@@ -617,7 +623,11 @@ const TableModule = {
   },
 
   handlePodDateChange() {
-    // When POD Date changes, re-trigger live calculation
+    const podVal = document.getElementById('m_pod')?.value;
+    const statusEl = document.getElementById('m_podAmountStatus');
+    if (statusEl && podVal && podVal.trim() !== '') {
+      statusEl.value = 'DONE';
+    }
     this.liveCalcModal();
   },
 
@@ -628,6 +638,7 @@ const TableModule = {
     document.getElementById('modalTitle').innerText = `✏️ Edit Trip (SL NO: ${trip.slNo || trip.row})`;
     document.getElementById('m_editRow').value = trip.row;
     document.getElementById('m_isAdd').value = 'false';
+    document.getElementById('m_sourceSheet').value = trip.sheetName || '';
 
     // Dedicated button: "Save Changes" for Edit
     const submitBtn = document.getElementById('m_submitBtn');
@@ -684,6 +695,11 @@ const TableModule = {
     document.getElementById('m_payDate').value = this.toInputDate(trip.payDate);
     document.getElementById('m_pm').value = numVal(trip.pm !== undefined && trip.pm !== null && trip.pm !== '' ? trip.pm : trip.pmFinal);
     document.getElementById('m_note').value = trip.note || '';
+    const podStatusEl = document.getElementById('m_podAmountStatus');
+    if (podStatusEl) {
+      const curStatus = String(trip.podAmountStatus || '').trim().toUpperCase();
+      podStatusEl.value = (curStatus === 'DONE' || trip.pod) ? 'DONE' : 'PENDING';
+    }
 
     // Apply strict field visibility & zero out any blocked/non-applicable fields for this mode
     this.updateFormFieldsVisibility(currentStatus);
@@ -714,6 +730,9 @@ const TableModule = {
     document.getElementById('modalTitle').innerText = '➕ Add New Shipment';
     document.getElementById('m_editRow').value = nextRowNum;
     document.getElementById('m_isAdd').value = 'true';
+    document.getElementById('m_sourceSheet').value = '';
+    const podStatusAddEl = document.getElementById('m_podAmountStatus');
+    if (podStatusAddEl) podStatusAddEl.value = 'PENDING';
 
     // Dedicated button: "Submit / Add Shipment" for Add
     const submitBtn = document.getElementById('m_submitBtn');
@@ -985,8 +1004,13 @@ const TableModule = {
       pmVal = Number(document.getElementById('m_pm').value) || 0;
     }
 
+    const sourceSheet = document.getElementById('m_sourceSheet')?.value || '';
+    const podStatusSelected = document.getElementById('m_podAmountStatus')?.value || 'PENDING';
+
     const tripData = {
       row: rowNum,
+      sourceSheet: sourceSheet,
+      sheetName: sourceSheet || normalizedTopay,
       slNo: document.getElementById('m_slNo').value || String(DataManager.getAll().length + 1),
       trspName: document.getElementById('m_trspName').value.trim(),
       date: this.toDisplayDate(document.getElementById('m_date').value),
@@ -1020,7 +1044,7 @@ const TableModule = {
     tripData.pendingTobilled = calc.pendingTobilled;
     tripData.balc = calc.pendingTobilled;
     tripData.finalBalc = calc.finalBalc;
-    tripData.podAmountStatus = calc.podAmountStatus;
+    tripData.podAmountStatus = (podStatusSelected === 'DONE' || tripData.pod || calc.podAmountStatus === 'DONE') ? 'DONE' : 'PENDING';
 
     DataManager.saveTrip(tripData);
     this.closeModal();
@@ -1053,6 +1077,8 @@ const TableModule = {
     }
 
     if (confirm(`Are you sure you want to delete this trip record? This action cannot be undone.`)) {
+      const targetTrip = (typeof DataManager !== 'undefined') ? DataManager.getTrip(rowNum) : null;
+      const targetSheetName = targetTrip?.sheetName || '';
       DataManager.deleteTrip(rowNum);
       if (typeof AppModule !== 'undefined') {
         AppModule.refresh();
@@ -1061,7 +1087,7 @@ const TableModule = {
 
       // Authoritative Cloud Sync to Google Sheets
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
-        ApiService.deleteTrip(rowNum).then(async (res) => {
+        ApiService.deleteTrip(rowNum, targetSheetName).then(async (res) => {
           console.log('✅ Cloud delete synced to Google Sheets:', res);
           if (typeof AppModule !== 'undefined') {
             await AppModule.syncNow(true);

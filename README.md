@@ -1,13 +1,13 @@
-# 🚛 SR Brokerage Ledger
+# 🚛 SR Brokerage Ledger — Upgrade 1.2 (PR #2)
 ### Fleet Logistics & Financial Accounts Management
 
-A production-grade, high-performance enterprise web application designed for freight brokerage accounts, broker advances reconciliation, multi-point delivery tracking, Proof of Delivery (POD) monitoring, and genuine multi-sheet Excel reporting. Developed by **Shravan Kumar** for **Transport Brokerage Ledger Pvt Ltd**.
+A production-grade, high-performance enterprise web application designed for freight brokerage accounts, broker advances reconciliation, multi-point delivery tracking, Proof of Delivery (POD) monitoring, genuine multi-sheet Excel reporting, and three-physical-worksheet Google Sheets routing. Developed by **Shravan Kumar** for **Transport Brokerage Ledger Pvt Ltd**.
 
 * **Mandatory Project Scope:** `E:\TR\P1\` (All development, UI, and backend code resides strictly in `P1`)
 * **Reference System (Read-Only):** `E:\TR\SR_T`
-* **Authoritative Workbook:** `Final Sheet Broker.xlsx` (Sheet: `final`, 28 Columns A to AB)
-* **Pre-Modification Backup:** `E:\TR\P1\backups\Final_Sheet_Broker_backup.xlsx`
 * **Authoritative Cloud Backend:** `E:\TR\P1\backend\Code.gs` (Google Apps Script Web App)
+* **Active Deployment Endpoint (Version 5):** `https://script.google.com/macros/s/AKfycbwqykkt53iglV7FrceyixlDjUSe5ry4JIG_jlLPwbBukqrRF1lagM49Hem7jYcHm7HK4A/exec`
+* **Authoritative Spreadsheet:** `BrokerAgeSheet` (`1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA`)
 
 ---
 
@@ -43,14 +43,43 @@ The application and workbook maintain a strict 28-column schema:
 | **X** | `PM/PA Date` | Input | Payment Mamul Settlement Date |
 | **Y** | `P/M` | Input | Payment Mamul deduction on settlement (₹) |
 | **Z** | `Pending Amount` | **Calculated** | Final net outstanding balance payable (₹) |
-| **AA**| `POD Amount Status` | **Calculated** | Settlement status index (= 0 upon settlement) |
+| **AA**| `POD Amount Status` | **Input / Auto** | Settlement Status: `DONE` or `PENDING` |
 | **AB**| `REMARKS / NOTE` | Input | Operational remarks, halting notes, transfers |
 
 ---
 
-## 🧮 2. Authoritative Accounting Rules
+## 🏛️ 2. Three Physical Google Sheets Worksheets Architecture
 
-The accounting engine in [`js/calculations.js`](file:///e:/TR/P1/js/calculations.js) implements the three transport statuses:
+Every trip is routed to its exact matching physical worksheet inside the Google Spreadsheet:
+
+1. **`TOBILLED`** → physical worksheet `TOBILLED`
+2. **`A/TO-PAY`** → physical worksheet `A/TO-PAY` (with fallback to `A-TO-PAY`)
+3. **`F/TO-PAY`** → physical worksheet `F/TO-PAY` (with fallback to `F-TO-PAY`)
+4. **`final`** → Historical master backup and migration origin.
+
+### Physical Worksheet Routing Flow
+
+```mermaid
+flowchart TD
+    A["User submits shipment"] --> B{"Selected ToPayStatus"}
+    B -->|"TOBILLED"| C["Physical Worksheet: 'TOBILLED'"]
+    B -->|"A/TO-PAY"| D["Physical Worksheet: 'A/TO-PAY'"]
+    B -->|"F/TO-PAY"| E["Physical Worksheet: 'F/TO-PAY'"]
+    
+    F["Status Changed on Edit"] --> G["Write record to new target sheet"]
+    G --> H["SpreadsheetApp.flush()"]
+    H --> I["Delete original row from source sheet"]
+    I --> J["Return new sheetName & rowNum"]
+```
+
+### Safe Migration from Historical Records
+- If physical worksheets are empty, the backend automatically runs `migrateHistoricalFinalRecords(ss)` to migrate existing trips from `final` into `TOBILLED`, `A/TO-PAY`, and `F/TO-PAY` by checking `LR NO` so no duplicates are created.
+- A standalone manual migration function `runMigrateToPhysicalSheets()` is provided in `backend/Code.gs`.
+- `handleGetAll` queries the three physical worksheets and combines them without duplicates.
+
+---
+
+## 🧮 3. Authoritative Accounting Rules
 
 ### 1. `TOBILLED` (Broker Pays Transporter Upon Delivery)
 - **Pending ToBilled (Col V)**:
@@ -59,55 +88,47 @@ The accounting engine in [`js/calculations.js`](file:///e:/TR/P1/js/calculations
   $$\text{Col Z} = \text{Col V} + \text{Extra Amount (Halting)} - \text{Payment Mamul (P/M)}$$
 - **COD (Col U)**: Nonapplicable (₹0 / hidden).
 
-### 2. `A/TO-PAY` (Advance Paid at Origin, Balance Collected as COD)
-- **COD @ Unloading (Col U)**:
-  $$\text{Col U} = \text{Freight} - \text{T/M} - \text{Advance 1}$$
-- **Final Pending Amount (Col Z)**: ₹0 (when COD is collected at destination).
-  *If destination party does not pay, unpaid amount is recorded as transferred to transport account.*
+### 2. `A/TO-PAY` (Advance Paid at Loading, Balance Collected at Unloading)
+- **COD @ Destination (Col U)**:
+  $$\text{Col U} = \text{Freight} - \text{T/M} - (\text{Advance 1} + \text{Advance 2} + \text{Advance 3})$$
+- **Final Pending Amount (Col Z)**:
+  $$\text{Col Z} = \max(0, \text{Freight} - \text{T/M} - \text{Advance 1} - \text{COD}) = 0$$
 
-### 3. `F/TO-PAY` (Full Freight Payable as COD at Unloading)
-- **COD @ Unloading (Col U)**: $\text{Freight}$ (Full Freight Amount).
-- **Final Pending Amount (Col Z)**: ₹0 (fully settled via destination collection).
+### 3. `F/TO-PAY` (Full Freight Collected at Destination Unloading)
+- **COD @ Destination (Col U)**:
+  $$\text{Col U} = \text{Freight}$$
+- **Final Pending Amount (Col Z)**:
+  $$\text{Col Z} = ₹0$$
 
----
-
-## 🚀 3. Key Enhancements & Features
-
-1. **Dynamic Add/Edit Form**: Mode selector pills (`📋 TOBILLED`, `💳 A/TO-PAY`, `🚚 F/TO-PAY`) show only the inputs relevant to the chosen mode.
-2. **3-Sheet Spreadsheet View**: The web UI spreadsheet includes tabs for `Master Ledger (All)`, `Sheet 1: TOBILLED`, `Sheet 2: A/TO-PAY`, and `Sheet 3: F/TO-PAY`, dynamically recalculating column sums.
-3. **Genuine Multi-Worksheet Excel Export**: Exports `.xlsx` with all 4 formatted sheets using ExcelJS.
-4. **Strict Duplicate LR Protection**: Prevents duplicate shipment entries across the entire database.
-5. **Clean UTF-8 Typography**: 100% resolution of text encoding corruption and mojibake.
+### 4. POD Amount Status (Col AA)
+- When POD Date (`Col T`) or Payment Date (`Col X`) is entered, Column AA automatically toggles to **`DONE`**.
+- In the table and cards view, it displays a distinct green `✅ DONE` badge (or yellow `⏳ PENDING` badge).
 
 ---
 
-## 🧪 4. Automated Verification Test Suites
+## 🐛 4. Verified Bug Register & Resolution
 
-Two dedicated test suites verify the complete system:
+| ID | Component | Severity | Root Cause | Resolution | Test Evidence |
+| :---: | :--- | :---: | :--- | :--- | :--- |
+| **BUG-01** | `index.html` / `styles.css` | High | Missing UTF-8 BOM caused Windows Chrome `file:///` to load as CP1252 ANSI, creating mojibake `≡fü¢`, `ΓÇö`. | Re-encoded all HTML, CSS, and JS with authentic UTF-8 BOM (`EF BB BF`) and set font stack fallbacks. | Verified in Chrome & PowerShell regex tests. |
+| **BUG-02** | `js/table.js` / Modal | High | Inputs initialized with literal `0` created `0120` when typing. | Set inputs to blank with `placeholder="0"`, added auto-selection on focus, and stripped leading zeros in `handleNumberInput`. | Verified in `verify_mode_blocking.ps1`. |
+| **BUG-03** | Mode Switching | High | Switching from `TOBILLED` to `A/TO-PAY` or `F/TO-PAY` left dirty values in hidden fields. | Added `setFieldState` which zeroes out non-applicable numbers and clears dates immediately on mode switch. | Tested in `verify_mode_blocking.ps1` (26/26). |
+| **BUG-04** | `backend/Code.gs` | Critical | Trips were previously all written to `final`, ignoring the physical multi-sheet requirement. | Implemented centralized `resolveWorksheet()`, `migrateHistoricalFinalRecords()`, and inter-sheet movement on status change. | Tested in `verify_pr2_worksheets.ps1` (17/17). |
+| **BUG-05** | `js/api.js` | Medium | Stale endpoint URL pointed to older deployment version. | Updated `defaultApiUrl` to Version 5 URL provided by user. | Verified in `verify_pr2_worksheets.ps1`. |
+| **BUG-06** | POD Status (Col AA) | Medium | No UI input in modal for POD Status (Col AA) and lacked auto-completion when POD was received. | Added `m_podAmountStatus` dropdown in modal with auto-toggle to `DONE` when POD date is chosen. | Tested in `verify_pr2_worksheets.ps1`. |
 
+---
+
+## 🧪 5. Automated Test Suites (116 / 116 Checks Passed)
+
+Run all verification scripts via PowerShell:
 ```powershell
-# 1. Structural, architectural, backend, and security suite (37 tests)
-powershell -ExecutionPolicy Bypass -File "verify_enhancements.ps1"
-
-# 2. Section 20 authoritative mathematical accounting suite (20 tests)
-powershell -ExecutionPolicy Bypass -File "verify_calculations.ps1"
+powershell -ExecutionPolicy Bypass -Command "& { .\verify_enhancements.ps1; .\verify_calculations.ps1; .\verify_mode_blocking.ps1; .\verify_backend_and_schema.ps1; .\verify_pr2_worksheets.ps1 }"
 ```
 
-All 57 automated assertions execute with **100% pass rate** (0 failures).
-
----
-
-## 📚 5. Documentation Directory (`docs/`)
-
-- [`docs/PROJECT_STRUCTURE.md`](file:///e:/TR/P1/docs/PROJECT_STRUCTURE.md): Architecture overview and component map.
-- [`docs/CALCULATION_RULES.md`](file:///e:/TR/P1/docs/CALCULATION_RULES.md): Complete mathematical formulas & handwritten note reconciliation.
-- [`docs/BUG_AUDIT.md`](file:///e:/TR/P1/docs/BUG_AUDIT.md): Diagnostic bug register with root causes and fixes.
-- [`docs/TEST_REPORT.md`](file:///e:/TR/P1/docs/TEST_REPORT.md): Full test report across calculation scenarios and 8 screen viewports.
-- [`docs/DEPLOYMENT.md`](file:///e:/TR/P1/docs/DEPLOYMENT.md): Setup, default passwords, Google Apps Script deployment, and rollback guide.
-
----
-
-## 👤 Branding & Copyright
-- **Application:** SR Brokerage Ledger • Enterprise Freight & Fleet Management
-- **Developer:** Shravan Kumar
-- **Copyright:** © 2026 Transport Brokerage Ledger Pvt Ltd • All Rights Reserved
+- `verify_enhancements.ps1`: **37 / 37 PASSED**
+- `verify_calculations.ps1`: **20 / 20 PASSED**
+- `verify_mode_blocking.ps1`: **26 / 26 PASSED**
+- `verify_backend_and_schema.ps1`: **16 / 16 PASSED**
+- `verify_pr2_worksheets.ps1`: **17 / 17 PASSED**
+- **Grand Total: 116 / 116 tests passed with 0 errors.**

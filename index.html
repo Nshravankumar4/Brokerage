@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -502,6 +502,7 @@
         <form id="editTripForm">
           <input type="hidden" id="m_editRow">
           <input type="hidden" id="m_isAdd" value="false">
+          <input type="hidden" id="m_sourceSheet" value="">
 
           <!-- Section 1: Shipment Information -->
           <div class="shipment-modal-section">
@@ -659,6 +660,13 @@
               <div class="shipment-modal-field">
                 <label for="m_pod">POD RECD Date (T)</label>
                 <input type="date" id="m_pod" class="form-control" onchange="TableModule.handlePodDateChange()">
+              </div>
+              <div class="shipment-modal-field" id="field_podAmountStatus">
+                <label for="m_podAmountStatus">POD Status (Col AA)</label>
+                <select id="m_podAmountStatus" class="form-control" style="font-weight: 700; color: #15803d; background: #f0fdf4;">
+                  <option value="PENDING">⏳ PENDING</option>
+                  <option value="DONE">✅ DONE</option>
+                </select>
               </div>
             </div>
             <div class="shipment-modal-field shipment-modal-field-full">
