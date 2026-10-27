@@ -37,7 +37,7 @@ const DashboardModule = {
         operationalAlerts.push({
           type: 'missing_pod',
           level: 'danger',
-          row: t.row,
+          id: t.id || '',
           slNo: t.slNo || '',
           lrNo: t.lrNo || '\u2014',
           truckNo: t.truckNo || '\u2014',
@@ -54,7 +54,7 @@ const DashboardModule = {
         operationalAlerts.push({
           type: 'incomplete_info',
           level: 'warning',
-          row: t.row,
+          id: t.id || '',
           slNo: t.slNo || '',
           lrNo: t.lrNo || '\u2014',
           truckNo: t.truckNo || 'Missing Plate',
@@ -122,7 +122,7 @@ const DashboardModule = {
 
           return `
             <div class="operational-alert-card ${isDanger ? 'alert-border-danger' : 'alert-border-warning'}" 
-                 onclick="TableModule.openEditModal(${a.row}, true)" 
+                 onclick="TableModule.openEditModal('${a.id}', true)"
                  title="Click to resolve alert for LR ${a.lrNo}">
               <div class="alert-card-content">
                 <div class="alert-card-topbar">
@@ -136,7 +136,7 @@ const DashboardModule = {
                   <span class="alert-val">${CalculationEngine.formatCurrency(a.fright)}</span>
                 </div>
               </div>
-              <button class="${btnClass}" onclick="event.stopPropagation(); TableModule.openEditModal(${a.row}, true);">${actionText}</button>
+              <button class="${btnClass}" onclick="event.stopPropagation(); TableModule.openEditModal('${a.id}', true);">${actionText}</button>
             </div>
           `;
         }).join('');

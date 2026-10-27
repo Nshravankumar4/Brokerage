@@ -299,7 +299,7 @@ The canonical application data model consists of 28 fields (A through AB):
 
 ## 12. Verification and Regression Tests
 
-All six PowerShell verification scripts currently pass 144 assertions. They are primarily source/workbook assertions, not deployed Apps Script integration tests; passing them does not verify a live deployment or spreadsheet migration.
+All six PowerShell verification scripts currently pass 145 assertions. They are primarily source/workbook assertions, not deployed Apps Script integration tests; passing them does not verify a live deployment or spreadsheet migration.
 
 ---
 

@@ -100,6 +100,7 @@ Assert-Test "CalculationEngine implements Col AA POD Amount Status = 0" `
 
 # 4. SPREADSHEET VIEW & EXCEL EXPORT IN js/table.js
 $tableJs = Get-Content -Raw "js\table.js"
+$dashboardJs = Get-Content -Raw "js\dashboard.js"
 
 Assert-Test "js/table.js renderExcelView outputs all 28 columns (A-AB)" `
     ($tableJs -match 'calc\.pendingTobilled' -and $tableJs -match 'calc\.extraAmount' -and $tableJs -match 'calc\.podAmountStatus')
@@ -116,6 +117,9 @@ Assert-Test "Exports require a verified cloud ledger before generating files" `
 Assert-Test "CSV export neutralizes formula-like text cells" `
     ($tableJs -match 'const csvText = value =>' -and $tableJs.Contains('[=+\-@]') -and
      $tableJs.Contains(([string][char]96) + [char]39 + '$' + '{text}'))
+
+Assert-Test "Dashboard alerts open records by stable shipment ID" `
+    ($dashboardJs -match 'id:\s*t\.id\s*\|\|\s*''''[\s\S]*?openEditModal\(''\$\{a\.id\}'',\s*true\)')
 
 Assert-Test "js/table.js liveCalcModal handles extraAmount, COD, and pending balances" `
     ($tableJs -match 'm_extraAmount' -and $tableJs -match 'mCalcBalc' -and $tableJs -match 'mCalcFinalBalc')
