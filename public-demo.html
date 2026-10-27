@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Public Synthetic Ledger Demo</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, sans-serif; color: #0f172a; background: #f1f5f9; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { background: #0f2d55; color: white; padding: 1.25rem max(1rem, calc((100% - 1200px) / 2)); }
+    header h1 { margin: 0 0 .4rem; font-size: 1.4rem; }
+    header p { margin: 0; line-height: 1.5; color: #dbeafe; }
+    main { max-width: 1200px; margin: 1.25rem auto; padding: 0 1rem 2rem; }
+    .warning { border: 1px solid #f59e0b; background: #fffbeb; color: #78350f; padding: .8rem 1rem; border-radius: .6rem; line-height: 1.5; margin-bottom: 1rem; }
+    .toolbar, .panel { background: white; border: 1px solid #dbe3ee; border-radius: .65rem; padding: 1rem; margin-bottom: 1rem; }
+    .toolbar { display: flex; justify-content: space-between; gap: .75rem; align-items: center; flex-wrap: wrap; }
+    .layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(270px, 1fr); gap: 1rem; align-items: start; }
+    h2 { font-size: 1.05rem; margin: 0 0 .8rem; }
+    .status { min-height: 1.4rem; color: #475569; font-size: .9rem; }
+    .status.error { color: #b91c1c; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: .87rem; }
+    th, td { padding: .65rem .5rem; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    th { background: #eff6ff; white-space: nowrap; }
+    td.numeric { text-align: right; white-space: nowrap; }
+    .actions { white-space: nowrap; }
+    button, .button-link { border: 0; border-radius: .4rem; padding: .55rem .8rem; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; }
+    button.primary { background: #1d4ed8; color: white; }
+    button.secondary, .button-link { background: #e2e8f0; color: #0f172a; }
+    button.danger { background: #fee2e2; color: #991b1b; margin-left: .25rem; }
+    button:disabled { opacity: .6; cursor: wait; }
+    form { display: grid; gap: .65rem; }
+    label { display: grid; gap: .3rem; font-size: .83rem; font-weight: 600; color: #334155; }
+    input, select, textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: .4rem; padding: .55rem; font: inherit; }
+    textarea { min-height: 70px; resize: vertical; }
+    .form-actions { display: flex; gap: .5rem; }
+    .form-actions button { flex: 1; }
+    @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Public Synthetic Ledger Demo</h1>
+    <p>Shared example records only. This page is not connected to the live brokerage ledger.</p>
+  </header>
+  <main>
+    <div class="warning"><strong>Public sandbox:</strong> anyone can read, add, edit, or delete these sample rows. Do not enter real names, account details, shipment identifiers, or financial information.</div>
+    <div class="toolbar">
+      <div>
+        <strong id="tripCount">Loading demo rows...</strong>
+        <div id="statusMessage" class="status" role="status" aria-live="polite">Connecting to the synthetic demo service.</div>
+      </div>
+      <div>
+        <button id="refreshButton" class="secondary" type="button">Refresh</button>
+        <a class="button-link" href="index.html">Protected ledger sign-in</a>
+      </div>
+    </div>
+    <div class="layout">
+      <section class="panel" aria-labelledby="recordsHeading">
+        <h2 id="recordsHeading">Shared demo shipments</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Date</th><th>LR No.</th><th>Transporter</th><th>Truck</th><th>Route</th><th>Status</th><th>Freight</th><th>Advance</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="tripRows"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel" aria-labelledby="formHeading">
+        <h2 id="formHeading">Add a synthetic shipment</h2>
+        <form id="tripForm">
+          <input type="hidden" name="id">
+          <label>Date<input name="date" type="date"></label>
+          <label>Transporter<input name="transporter" maxlength="120" required></label>
+          <label>LR number<input name="lrNo" maxlength="120" required></label>
+          <label>Truck number<input name="truckNo" maxlength="120"></label>
+          <label>From<input name="from" maxlength="120"></label>
+          <label>To<input name="to" maxlength="120"></label>
+          <label>Status
+            <select name="status" required>
+              <option value="TOBILLED">TOBILLED</option>
+              <option value="A/TO-PAY">A/TO-PAY</option>
+              <option value="F/TO-PAY">F/TO-PAY</option>
+            </select>
+          </label>
+          <label>Freight<input name="freight" type="number" min="0" max="1000000000" step="0.01" value="0" required></label>
+          <label>Advance<input name="advance" type="number" min="0" max="1000000000" step="0.01" value="0" required></label>
+          <label>Note<textarea name="note" maxlength="120"></textarea></label>
+          <div class="form-actions">
+            <button id="saveButton" class="primary" type="submit">Add demo row</button>
+            <button id="cancelEditButton" class="secondary" type="button" hidden>Cancel edit</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+  <script src="js/public-demo.js?v=1"></script>
+</body>
+</html>

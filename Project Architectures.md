@@ -299,7 +299,7 @@ The canonical application data model consists of 28 fields (A through AB):
 
 ## 12. Verification and Regression Tests
 
-All six PowerShell verification scripts currently pass 145 assertions. They are primarily source/workbook assertions, not deployed Apps Script integration tests; passing them does not verify a live deployment or spreadsheet migration.
+All six existing PowerShell verification scripts pass their regression checks, and `verify_public_demo.ps1` adds 11 passing assertions for the isolated public demo. These are primarily source/workbook assertions, not deployed Apps Script integration tests; passing them does not verify a live deployment or spreadsheet migration.
 
 ---
 
@@ -368,3 +368,23 @@ All six PowerShell verification scripts currently pass 145 assertions. They are 
 - [ ] Run the reviewed shipment-ID and historical worksheet migrations only after a production backup and owner approval.
 - [ ] Verify the Version 3 backend and spreadsheet using a controlled test account before production use.
 - [x] Pure 7-bit ASCII representation throughout (0 non-ASCII bytes).
+
+---
+
+## 17. Optional Public Synthetic-Data Demo
+
+The public demo is deliberately isolated from the protected production ledger. Its separate UI is `public-demo.html`, its client is `js/public-demo.js`, and its Apps Script source is `backend/PublicDemo.gs`. Do not add `PublicDemo.gs` to the production Apps Script project: it defines its own `doGet()` and `doPost()` entry points.
+
+The source is not live until an owner creates and configures the isolated demo service:
+
+1. Create a new, blank Google spreadsheet for demo data. Do not copy production records into it.
+2. Create a **new standalone Apps Script project** (not the production project) and add the contents of `backend/PublicDemo.gs`.
+3. In the standalone project's **Project Settings → Script Properties**, set:
+   - `PUBLIC_DEMO_SPREADSHEET_ID` to the new demo spreadsheet ID.
+   - `LIVE_SPREADSHEET_ID` to the real ledger spreadsheet ID as a comparison guard. If the standalone project instead has the production `SPREADSHEET_ID` property, that value is also checked.
+4. Run `setupPublicDemo()` as the spreadsheet owner and authorize the script. It seeds only synthetic examples and refuses to initialize a non-empty, unmarked `PUBLIC_DEMO` tab.
+5. Deploy the standalone project as a Web App executing as the owner, with access set to **Anyone**. This makes the demo's limited actions public; it does not make the production API public.
+6. Copy the new deployment URL into `apiUrl` in `js/public-demo.js`. The placeholder is intentionally invalid until the separate deployment exists.
+7. Host `public-demo.html` and `js/public-demo.js` alongside the existing static site. The demo page loads no production API or authentication modules.
+
+The public API allowlist is limited to listing, saving, and deleting rows in the configured `PUBLIC_DEMO` tab. It enforces field/amount validation, formula-like text rejection, a 500-row cap, and stable demo IDs. All changes are shared and visitors can modify or delete them. Never put real names, shipment identifiers, bank details, credentials, or financial data in the demo. This repository change does not create the spreadsheet, configure Script Properties, or deploy the service.
