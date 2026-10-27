@@ -12,6 +12,7 @@ const AppModule = {
   dateFrom: '',
   dateTo: '',
   isSyncing: false,
+  _isCheckingCloud: false,
   _pollerInterval: null,
 
   init() {
@@ -29,6 +30,8 @@ const AppModule = {
           this.refresh();
           this.updateCloudSyncBadge(true);
           console.log('\u2705 Live Google Sheets cloud ledger synchronized on startup.');
+        } else if (res && res.status === 'error') {
+          this.updateCloudSyncBadge(false, true, false);
         }
       }).catch(e => console.warn('Cloud startup fetch note:', e));
     }
@@ -105,19 +108,20 @@ const AppModule = {
       this.checkCloudVersionAndSync();
     });
 
-    // 5. Background lightweight DATA_VERSION poller every 3.5 seconds
+    // 5. Background lightweight DATA_VERSION poller
     if (this._pollerInterval) clearInterval(this._pollerInterval);
     this._pollerInterval = setInterval(() => {
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
         this.checkCloudVersionAndSync();
       }
-    }, 3500);
+    }, 15000);
   },
 
   async checkCloudVersionAndSync() {
-    if (this.isSyncing) return;
+    if (this.isSyncing || this._isCheckingCloud) return;
     if (typeof ApiService === 'undefined' || !ApiService.isCloudConnected()) return;
 
+    this._isCheckingCloud = true;
     try {
       const serverVersion = await ApiService.getDataVersion();
       const localVersion = DataManager.getVersion();
@@ -128,18 +132,20 @@ const AppModule = {
         this.updateCloudSyncBadge(false);
 
         const res = await ApiService.fetchAll();
-        this.isSyncing = false;
-
-        if (res && res.trips) {
+        if (res && res.status === 'success' && res.source === 'cloud') {
           this.refresh();
           this.updateCloudSyncBadge(true);
+        } else {
+          this.updateCloudSyncBadge(false, true, false);
         }
       } else if (serverVersion) {
         this.updateCloudSyncBadge(true);
       }
     } catch (e) {
-      this.isSyncing = false;
       console.warn("[Sync] Background poll note:", e);
+    } finally {
+      this.isSyncing = false;
+      this._isCheckingCloud = false;
     }
   },
 
@@ -335,7 +341,11 @@ const AppModule = {
     }
     if (confirm('Are you sure you want to restore the current workbook records from BROKER DETAILS ADVANCE BALC DETAILS.xlsx? All unsaved manual edits will be reset.')) {
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
-        await ApiService.triggerRestoreDatabase();
+        const result = await ApiService.triggerRestoreDatabase();
+        if (!result || result.status !== 'success') {
+          this.showToast('\u26A0\uFE0F Cloud restore failed: ' + (result?.message || 'Unknown error'));
+          return;
+        }
       } else {
         DataManager.reset();
       }

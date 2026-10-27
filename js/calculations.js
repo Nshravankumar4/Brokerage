@@ -17,15 +17,30 @@
  */
 
 const CalculationEngine = {
+  parseAmount(value) {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const raw = String(value ?? '').trim();
+    if (!raw || /^(?:N\/?A|NA|NONE|NULL|-)$/i.test(raw)) return 0;
+
+    const normalized = raw
+      .replace(/[\s,\u20B9]/g, '')
+      .replace(/^(?:INR|RS\.?)/i, '')
+      .replace(/\/-$/, '');
+    const amount = Number(normalized);
+    return Number.isFinite(amount) ? amount : 0;
+  },
+
   calculate(trip) {
-    const fright = Number(trip.fright) || 0;
-    const tm = Number(trip.tm) || 0;
-    const adv1 = Number(trip.advance1) || 0;
-    const adv2 = Number(trip.advance2) || 0;
-    const adv3 = Number(trip.advance3) || 0;
+    const fright = this.parseAmount(trip.fright);
+    const tm = this.parseAmount(trip.tm);
+    const adv1 = this.parseAmount(trip.advance1);
+    const adv2 = this.parseAmount(trip.advance2);
+    const adv3 = this.parseAmount(trip.advance3);
     const totalAdvances = adv1 + adv2 + adv3;
-    const extraAmount = Number(trip.extraAmount) || 0;
-    const pm = (trip.pm !== undefined && trip.pm !== null && trip.pm !== '') ? Number(trip.pm) : (Number(trip.pmFinal) || 0);
+    const extraAmount = this.parseAmount(trip.extraAmount);
+    const pm = (trip.pm !== undefined && trip.pm !== null && trip.pm !== '')
+      ? this.parseAmount(trip.pm)
+      : this.parseAmount(trip.pmFinal);
     const topay = String(trip.topay || '').trim().toUpperCase();
 
     let cod = 0;
@@ -38,8 +53,8 @@ const CalculationEngine = {
     // Condition 1: F/TO-PAY (Full ToPay)
     if (topay.startsWith('F') || topay === 'FULL' || topay === 'FULL TO-BILLED' || topay === 'FULL TO-PAY') {
       // Master Formula: U = K - N - O - Q - S = Freight
-      cod = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '' && Number(trip.cod) > 0)
-        ? Number(trip.cod)
+      cod = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '' && this.parseAmount(trip.cod) > 0)
+        ? this.parseAmount(trip.cod)
         : fright;
       pendingTobilled = 0;
       balc = 0;
@@ -51,8 +66,8 @@ const CalculationEngine = {
     else if (topay.startsWith('A') || topay === 'ADV' || topay === 'ADV TO-BILLED' || topay === 'ADV TO-PAY') {
       // Master Formula: U = K - N - O - Q - S (Consignee pays balance as COD)
       const autoCod = Math.max(0, fright - tm - totalAdvances);
-      cod = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '' && Number(trip.cod) > 0)
-        ? Number(trip.cod)
+      cod = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '' && this.parseAmount(trip.cod) > 0)
+        ? this.parseAmount(trip.cod)
         : autoCod;
       pendingTobilled = 0;
       // Formula Z: K - N - O - U (Evaluates to 0 when COD collected)
@@ -130,7 +145,7 @@ const CalculationEngine = {
   },
 
   formatCurrency(num, showSymbol = true) {
-    const val = Number(num) || 0;
+    const val = this.parseAmount(num);
     const formatted = val.toLocaleString('en-IN', {
       maximumFractionDigits: 2,
       minimumFractionDigits: 0

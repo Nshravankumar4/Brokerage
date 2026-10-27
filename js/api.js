@@ -13,25 +13,26 @@ const ApiService = {
     defaultSheetId: '1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU',
     apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec',
     sheetId: localStorage.getItem('broker_sheet_id') || '1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU',
-    timeoutMs: 12000
+    timeoutMs: 12000,
+    fetchPromise: null
   },
 
   getApiUrl() {
-    return this.config.defaultApiUrl;
+    return String(this.config.apiUrl || '').trim();
   },
 
   setApiUrl(url) {
-    this.config.apiUrl = this.config.defaultApiUrl;
-    localStorage.setItem('broker_api_url', this.config.defaultApiUrl);
+    this.config.apiUrl = String(url || '').trim();
+    localStorage.setItem('broker_api_url', this.config.apiUrl);
   },
 
   getSheetId() {
-    return this.config.defaultSheetId;
+    return String(this.config.sheetId || '').trim();
   },
 
   setSheetId(id) {
-    this.config.sheetId = this.config.defaultSheetId;
-    localStorage.setItem('broker_sheet_id', this.config.defaultSheetId);
+    this.config.sheetId = String(id || '').trim();
+    localStorage.setItem('broker_sheet_id', this.config.sheetId);
   },
 
   isCloudConnected() {
@@ -53,10 +54,18 @@ const ApiService = {
 
     try {
       const targetUrl = this.buildUrl('getVersion');
-      const res = await fetch(targetUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.config.timeoutMs);
+      let res;
+      try {
+        res = await fetch(targetUrl, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
       if (!res.ok) return null;
       const data = await res.json();
       if (data && data.status === 'success' && data.version !== undefined) {
@@ -68,7 +77,15 @@ const ApiService = {
     return null;
   },
 
-  async fetchAll() {
+  fetchAll() {
+    if (this.config.fetchPromise) return this.config.fetchPromise;
+    this.config.fetchPromise = this._fetchAll().finally(() => {
+      this.config.fetchPromise = null;
+    });
+    return this.config.fetchPromise;
+  },
+
+  async _fetchAll() {
     const url = this.getApiUrl();
 
     if (url && window.navigator.onLine) {
@@ -77,8 +94,12 @@ const ApiService = {
         const timeoutId = setTimeout(() => controller.abort(), this.config.timeoutMs);
 
         const targetUrl = this.buildUrl('getAll');
-        const res = await fetch(targetUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
+        let res;
+        try {
+          res = await fetch(targetUrl, { signal: controller.signal });
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         if (res.ok) {
           const data = await res.json();
@@ -163,11 +184,12 @@ const ApiService = {
         });
         if (res.ok) {
           const result = await res.json();
-          if (result && result.version) {
+          if (result && result.status === 'success' && result.version !== undefined) {
             DataManager.setVersion(String(result.version));
           }
           return result;
         }
+        return { status: 'error', code: 'HTTP_ERROR', message: `Server returned HTTP ${res.status}` };
       } catch (err) {
         console.warn('Cloud sync note for saveTrip:', err.message);
         return { status: 'error', code: 'NETWORK_ERROR', message: err.message };
@@ -177,7 +199,7 @@ const ApiService = {
     return { status: 'success', source: 'local', trip: trip };
   },
 
-  async deleteTrip(rowNum, sheetName = '') {
+  async deleteTrip(rowNum, sheetName = '', lrNo = '') {
     if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
       return { status: 'error', message: 'Unauthorized: Admin role required' };
     }
@@ -194,6 +216,7 @@ const ApiService = {
             action: 'deleteTrip',
             rowNum: rowNum,
             sheetName: sheetName || '',
+            lrNo: lrNo || '',
             role: session?.role || '',
             authHash: session?.authHash || '',
             sheetId: this.getSheetId()
@@ -255,11 +278,16 @@ const ApiService = {
         });
         if (res.ok) {
           const result = await res.json();
+          if (!result || result.status !== 'success') {
+            return result || { status: 'error', message: 'Cloud restore was rejected.' };
+          }
           await this.fetchAll();
           return result;
         }
+        return { status: 'error', code: 'HTTP_ERROR', message: `Server returned HTTP ${res.status}` };
       } catch (err) {
         console.warn('Cloud restore note:', err);
+        return { status: 'error', code: 'NETWORK_ERROR', message: err.message };
       }
     }
     DataManager.restoreDefault();

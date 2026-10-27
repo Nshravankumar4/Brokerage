@@ -361,7 +361,7 @@ const TableModule = {
 
       // POD cell styling: RED badge ONLY on the POD cell if date is missing
       const podCellHtml = calc.isPodMissing
-        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true)" style="cursor:pointer;" title="Click to enter POD date">\u26A0\uFE0F Missing</span>`
+        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true, '${escapeHtml(t.sheetName || '')}')" style="cursor:pointer;" title="Click to enter POD date">\u26A0\uFE0F Missing</span>`
         : `<span class="pod-received-text">${escapeHtml(t.pod)}</span>`;
 
       // Role-based delete action
@@ -407,7 +407,7 @@ const TableModule = {
         <td class="col-center">${podStatusHtml}</td>
         <td>${escapeHtml(t.note || '')}</td>
         <td class="col-center" style="white-space:nowrap;">
-          <button class="btn btn-secondary btn-sm" onclick="TableModule.openEditModal(${t.row})" title="Edit Details">\u270F\uFE0F Edit</button>
+          <button class="btn btn-secondary btn-sm" onclick="TableModule.openEditModal(${t.row}, false, '${escapeHtml(t.sheetName || '')}')" title="Edit Details">\u270F\uFE0F Edit</button>
           ${deleteBtnHtml}
         </td>
       `;
@@ -473,7 +473,7 @@ const TableModule = {
       card.className = `trip-card ${calc.isPodMissing ? 'card-pod-missing' : ''}`;
 
       const podBadge = calc.isPodMissing
-        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true)" style="cursor:pointer;" title="Click to Enter POD Date">\u26A0\uFE0F POD Missing (Click to Enter)</span>`
+        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true, '${escapeHtml(t.sheetName || '')}')" style="cursor:pointer;" title="Click to Enter POD Date">\u26A0\uFE0F POD Missing (Click to Enter)</span>`
         : `<span class="pod-ok-badge">\u2705 Received: ${escapeHtml(t.pod)}</span>`;
 
       const deleteBtn = canDel
@@ -553,7 +553,7 @@ const TableModule = {
         <!-- Card Action Footer -->
         <div class="trip-card-footer">
           <div>${deleteBtn}</div>
-          <button class="btn btn-primary btn-sm" onclick="TableModule.openEditModal(${t.row})">
+          <button class="btn btn-primary btn-sm" onclick="TableModule.openEditModal(${t.row}, false, '${escapeHtml(t.sheetName || '')}')">
             \u270F\uFE0F Edit Details
           </button>
         </div>
@@ -798,8 +798,8 @@ const TableModule = {
     }
   },
 
-  openEditModal(rowNum, focusPod = false) {
-    const trip = DataManager.getTrip(rowNum);
+  openEditModal(rowNum, focusPod = false, sheetName = null) {
+    const trip = DataManager.getTrip(rowNum, sheetName);
     if (!trip) return;
 
     document.getElementById('modalTitle').innerText = `\u270F\uFE0F Edit Trip (SL NO: ${trip.slNo || trip.row})`;
@@ -817,6 +817,7 @@ const TableModule = {
     const lrInput = document.getElementById('m_lrNo');
     if (lrInput) {
       lrInput.value = trip.lrNo || '';
+      lrInput.dataset.originalLrNo = trip.lrNo || '';
       lrInput.style.borderColor = '';
       lrInput.style.backgroundColor = '';
     }
@@ -831,7 +832,7 @@ const TableModule = {
     document.getElementById('m_accountNo').value = trip.accountNo || '';
     document.getElementById('m_ifsc').value = trip.ifsc || '';
     document.getElementById('m_paymentMade').value = trip.paymentMade || '';
-    const numVal = (v) => (v !== undefined && v !== null && v !== '' && Number(v) !== 0) ? Number(v) : '';
+    const numVal = (v) => CalculationEngine.parseAmount(v) !== 0 ? CalculationEngine.parseAmount(v) : '';
     document.getElementById('m_fright').value = numVal(trip.fright);
     
     // Normalize status into exactly one of the 3 supported options: A/TO-PAY, F/TO-PAY, TOBILLED
@@ -856,7 +857,7 @@ const TableModule = {
     const codEl = document.getElementById('m_cod');
     if (codEl) {
       codEl.value = numVal(trip.cod);
-      codEl.dataset.autoFilled = (trip.cod === undefined || trip.cod === null || Number(trip.cod) === 0) ? 'true' : 'false';
+      codEl.dataset.autoFilled = (trip.cod === undefined || trip.cod === null || CalculationEngine.parseAmount(trip.cod) === 0) ? 'true' : 'false';
     }
     document.getElementById('m_extraAmount').value = numVal(trip.extraAmount);
     document.getElementById('m_payDate').value = this.toInputDate(trip.payDate);
@@ -898,7 +899,7 @@ const TableModule = {
     const today = new Date().toISOString().split('T')[0];
 
     document.getElementById('modalTitle').innerText = '\u2795 Add New Shipment';
-    document.getElementById('m_editRow').value = 0;
+    document.getElementById('m_editRow').value = nextRowNum;
     document.getElementById('m_isAdd').value = 'true';
     document.getElementById('m_sourceSheet').value = '';
     const podStatusAddEl = document.getElementById('m_podAmountStatus');
@@ -920,6 +921,7 @@ const TableModule = {
     const lrInput = document.getElementById('m_lrNo');
     if (lrInput) {
       lrInput.value = '';
+      lrInput.dataset.originalLrNo = '';
       lrInput.style.borderColor = '';
       lrInput.style.backgroundColor = '';
     }
@@ -1043,7 +1045,7 @@ const TableModule = {
   },
 
   liveCalcModal() {
-    const fright = Number(document.getElementById('m_fright').value) || 0;
+    const fright = CalculationEngine.parseAmount(document.getElementById('m_fright').value);
     const topay = document.getElementById('m_topay').value || 'TOBILLED';
     const topayVal = String(topay).trim().toUpperCase();
 
@@ -1051,7 +1053,7 @@ const TableModule = {
     const getVal = (id) => {
       const el = document.getElementById(id);
       if (!el || el.disabled) return 0;
-      return Number(el.value) || 0;
+      return CalculationEngine.parseAmount(el.value);
     };
 
     const tm = getVal('m_tm');
@@ -1062,7 +1064,7 @@ const TableModule = {
     const pm = (topayVal === 'TOBILLED') ? getVal('m_pm') : 0;
     const codInput = document.getElementById('m_cod');
     const isCodAuto = codInput ? (codInput.dataset.autoFilled === 'true' || !codInput.dataset.autoFilled) : true;
-    const userCod = (codInput && !codInput.disabled) ? (Number(codInput.value) || 0) : 0;
+    const userCod = (codInput && !codInput.disabled) ? CalculationEngine.parseAmount(codInput.value) : 0;
 
     const dummy = {
       fright,
@@ -1164,7 +1166,8 @@ const TableModule = {
       normalizedTopay = 'A/TO-PAY';
     }
 
-    const frightVal = Number(document.getElementById('m_fright').value) || 0;
+    const getAmount = (id) => CalculationEngine.parseAmount(document.getElementById(id)?.value);
+    const frightVal = getAmount('m_fright');
     let tmVal = 0;
     let adv1Val = 0;
     let date1Val = '';
@@ -1178,30 +1181,29 @@ const TableModule = {
     let pmVal = 0;
 
     if (normalizedTopay === 'F/TO-PAY') {
-      tmVal = Number(document.getElementById('m_tm').value) || 0;
+      tmVal = getAmount('m_tm');
       codVal = frightVal;
       // All other advances, Extra, PM are strictly 0 and blank dates
     } else if (normalizedTopay === 'A/TO-PAY') {
-      tmVal = Number(document.getElementById('m_tm').value) || 0;
-      adv1Val = Number(document.getElementById('m_advance1').value) || 0;
+      tmVal = getAmount('m_tm');
+      adv1Val = getAmount('m_advance1');
       date1Val = this.toDisplayDate(document.getElementById('m_date1').value);
       codVal = Math.max(0, frightVal - tmVal - adv1Val);
       // Adv 2, 3, Extra, PM are strictly 0 and blank dates
     } else { // TOBILLED
-      tmVal = Number(document.getElementById('m_tm').value) || 0;
-      adv1Val = Number(document.getElementById('m_advance1').value) || 0;
+      tmVal = getAmount('m_tm');
+      adv1Val = getAmount('m_advance1');
       date1Val = this.toDisplayDate(document.getElementById('m_date1').value);
-      adv2Val = Number(document.getElementById('m_advance2').value) || 0;
+      adv2Val = getAmount('m_advance2');
       date2Val = this.toDisplayDate(document.getElementById('m_date2').value);
-      adv3Val = Number(document.getElementById('m_advance3').value) || 0;
+      adv3Val = getAmount('m_advance3');
       date3Val = this.toDisplayDate(document.getElementById('m_date3').value);
       codVal = 0;
-      extraVal = Number(document.getElementById('m_extraAmount').value) || 0;
+      extraVal = getAmount('m_extraAmount');
       payDateVal = this.toDisplayDate(document.getElementById('m_payDate').value);
-      pmVal = Number(document.getElementById('m_pm').value) || 0;
+      pmVal = getAmount('m_pm');
     }
 
-    const sourceSheet = document.getElementById('m_sourceSheet')?.value || '';
     const podStatusSelected = document.getElementById('m_podAmountStatus')?.value || 'PENDING';
 
     const tripData = {
@@ -1212,6 +1214,7 @@ const TableModule = {
       trspName: document.getElementById('m_trspName').value.trim(),
       date: this.toDisplayDate(document.getElementById('m_date').value),
       lrNo: lrNo,
+      originalLrNo: document.getElementById('m_lrNo').dataset.originalLrNo || '',
       truckNo: document.getElementById('m_truckNo').value.trim().toUpperCase(),
       from: document.getElementById('m_from').value.trim(),
       to: document.getElementById('m_to').value.trim(),
@@ -1266,29 +1269,47 @@ const TableModule = {
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
         try {
           const res = await ApiService.saveTrip(tripData);
-          if (res && res.status === 'error') {
+          if (!res || res.status !== 'success') {
             // Cloud rejected - show error toast but keep local save
             if (typeof AppModule !== 'undefined') {
-              if (res.code === 'DUPLICATE_LR') {
+              AppModule.updateCloudSyncBadge(false, true, false);
+              if (res && res.code === 'DUPLICATE_LR') {
                 AppModule.showToast('\u26A0\uFE0F Cloud rejected: Duplicate LR NO on server. Check Google Sheets.');
               } else {
-                AppModule.showToast('\u26A0\uFE0F Cloud save error: ' + (res.message || 'Unknown error'));
+                AppModule.showToast('\u26A0\uFE0F Cloud save error: ' + (res?.message || 'Unknown error'));
               }
             }
           } else {
-            if (res && res.version) { DataManager.setVersion(String(res.version)); }
-            // Update local record with cloud-authoritative row/sheetName
-            if (res && res.rowNum && res.sheetName) {
-              const saved = DataManager.getAll().find(t => t.lrNo === tripData.lrNo && t.sheetName === res.sheetName);
-              if (saved) { saved.row = res.rowNum; DataManager.saveAll(DataManager.getAll()); }
+            if (res.version !== undefined) DataManager.setVersion(String(res.version));
+            if (res.rowNum && res.sheetName) {
+              const savedTrips = DataManager.getAll();
+              const saved = isAdd
+                ? savedTrips.find(t => Number(t.row) === rowNum && String(t.lrNo || '').trim().toUpperCase() === lrNo.toUpperCase())
+                : savedTrips.find(t => Number(t.row) === rowNum && String(t.sheetName || '').trim() === sourceSheet);
+              if (saved) {
+                if (!isAdd && sourceSheet !== res.sheetName) {
+                  savedTrips.forEach(trip => {
+                    if (trip !== saved && String(trip.sheetName || '').trim() === sourceSheet && Number(trip.row) > rowNum) {
+                      trip.row = Number(trip.row) - 1;
+                    }
+                  });
+                }
+                saved.row = Number(res.rowNum);
+                saved.sheetName = res.sheetName;
+                saved.sourceSheet = res.sheetName;
+                delete saved.isAdd;
+                DataManager.saveAll(savedTrips);
+              }
             }
             if (typeof AppModule !== 'undefined') {
+              AppModule.refresh();
+              AppModule.updateCloudSyncBadge(true);
               AppModule.showToast(isAdd ? '\u2795 New shipment saved to Google Sheets!' : '\uD83D\uDCBE Changes saved to Google Sheets!');
-              await AppModule.syncNow(true);
             }
           }
         } catch (err) {
           if (typeof AppModule !== 'undefined') {
+            AppModule.updateCloudSyncBadge(false, true, false);
             AppModule.showToast('\u26A0\uFE0F Cloud unavailable - saved locally only. Sync when online.');
           }
           console.warn('Cloud sync note for saveTrip:', err);
@@ -1296,6 +1317,7 @@ const TableModule = {
       } else {
         // Offline - local only
         if (typeof AppModule !== 'undefined') {
+          AppModule.updateCloudSyncBadge(false, false, true);
           AppModule.showToast(isAdd ? '\u2795 New shipment saved (offline).' : '\uD83D\uDCBE Changes saved (offline).');
         }
       }
@@ -1336,14 +1358,12 @@ const TableModule = {
         AppModule.showToast('\u23F3 Deleting record from Google Sheets...');
       }
       try {
-        const res = await ApiService.deleteTrip(rowNum, targetSheetName);
+        const res = await ApiService.deleteTrip(rowNum, targetSheetName, targetTrip?.lrNo || '');
         if (res && res.status === 'success') {
-          // Cloud confirmed deletion: now safe to remove from local state
-          DataManager.deleteTrip(rowNum, targetSheetName);
           if (typeof AppModule !== 'undefined') {
             AppModule.refresh();
+            AppModule.updateCloudSyncBadge(true);
             AppModule.showToast('\uD83D\uDDD1\uFE0F Trip deleted successfully from Google Sheets.');
-            await AppModule.syncNow(true);
           }
         } else {
           // Backend rejection: retain data and show informative error

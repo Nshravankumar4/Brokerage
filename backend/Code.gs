@@ -537,8 +537,10 @@ function normalizeToPayStatus(value) {
 function amount(value) {
   if (value === '' || value === null || value === undefined) return 0;
   if (typeof value === 'string') {
-    value = value.replace(/,/g, '').trim();
-    if (value === '' || value.toUpperCase() === 'NA') return 0;
+    value = value.trim();
+    if (/^(?:N\/?A|NA|NONE|NULL|-)$/i.test(value)) return 0;
+    value = value.replace(/[\s,\u20B9]/g, '').replace(/^(?:INR|RS\.?)/i, '').replace(/\/-$/, '');
+    if (value === '') return 0;
   }
   var n = Number(value);
   if (!Number.isFinite(n)) throw new Error('Invalid numeric amount: ' + value);
@@ -718,7 +720,7 @@ function doPost(e) {
     if (action === 'saveTrip') {
       result = handleSaveTrip(data.trip || data, sheetId);
     } else if (action === 'deleteTrip') {
-      result = handleDeleteTrip(data.rowNum, sheetId, data.sheetName || (data.trip && data.trip.sheetName));
+      result = handleDeleteTrip(data.rowNum, sheetId, data.sheetName || (data.trip && data.trip.sheetName), data.lrNo);
     } else if (action === 'restoreDatabase') {
       result = { status: 'error', message: 'Destructive restore disabled. Use backups manually.' };
     } else if (action === 'backupDatabase') {
@@ -760,17 +762,8 @@ function handleGetAll(optId) {
 
   if (totalRowsInPhysical === 0) {
     // 1. Perform safe automatic migration from 'final' if it exists
-    var count = migrateHistoricalFinalRecords(ss);
-    // 2. If no historical 'final' sheet exists or was empty, seed authoritative records
-    if (count === 0) {
-      seedInitialData(optId);
-      // Re-read sheetsToRead after seeding
-      sheetsToRead = [];
-      for (var c = 0; c < targetCategories.length; c++) {
-        var ws = resolveWorksheet(ss, targetCategories[c]);
-        if (ws) sheetsToRead.push(ws);
-      }
-    }
+    migrateHistoricalFinalRecords(ss);
+    // Do not seed example rows during reads; an empty worksheet remains an empty dataset.
   }
 
   var trips = [];
@@ -897,6 +890,18 @@ function handleSaveTrip(t, optId) {
 
   var sourceSheetName = t.sourceSheet ? String(t.sourceSheet).trim() : null;
   var rowNum = parseInt(t.row, 10);
+  var isAdd = t.isAdd === true || String(t.isAdd).toLowerCase() === 'true';
+
+  if (!isAdd) {
+    var sourceSheet = sourceSheetName ? ss.getSheetByName(sourceSheetName) : null;
+    if (!sourceSheetName || !sourceSheet || !Number.isInteger(rowNum) || rowNum < 2 || rowNum > sourceSheet.getLastRow()) {
+      return { status: 'error', code: 'INVALID_SOURCE_ROW', message: 'Cannot edit: source worksheet or row is invalid. Refresh the ledger and try again.' };
+    }
+    var actualLrNo = String(sourceSheet.getRange(rowNum, 4).getValue() || '').trim().toUpperCase();
+    if (actualLrNo !== String(t.originalLrNo || '').trim().toUpperCase()) {
+      return { status: 'error', code: 'ROW_MISMATCH', message: 'The worksheet row no longer matches this trip. Refresh the ledger before saving.' };
+    }
+  }
 
   // Global Duplicate LR NO Validation across all physical worksheets
   if (lr) {
@@ -956,7 +961,7 @@ function handleSaveTrip(t, optId) {
 
   if (rowData.length !== 28) throw new Error('Internal error: expected 28 columns.');
 
-  var isStatusChangeMove = Boolean(sourceSheetName && sourceSheetName !== targetSheetName && rowNum);
+  var isStatusChangeMove = Boolean(!isAdd && sourceSheetName !== targetSheetName);
 
   if (isStatusChangeMove) {
     // 1. Write to target physical worksheet
@@ -972,7 +977,7 @@ function handleSaveTrip(t, optId) {
     }
 
     rowNum = newRowNum;
-  } else if (!t.isAdd && rowNum && rowNum >= 2 && rowNum <= targetSheet.getLastRow()) {
+  } else if (!isAdd) {
     // Update existing record in same physical worksheet (isAdd must be false for update)
     targetSheet.getRange(rowNum, 1, 1, 28).setValues([rowData]);
     SpreadsheetApp.flush();
@@ -1001,13 +1006,13 @@ function handleSaveTrip(t, optId) {
 // DELETE TRIP FROM SPECIFIC PHYSICAL WORKSHEET
 // =====================================================
 
-function handleDeleteTrip(rowNum, optId, optSheetName) {
+function handleDeleteTrip(rowNum, optId, optSheetName, optLrNo) {
   var ss = getSpreadsheet(optId);
   var r = parseInt(rowNum, 10);
 
   var targetSheet = optSheetName ? ss.getSheetByName(optSheetName) : null;
 
-  if (!targetSheet) {
+  if (!optSheetName) {
     // Fallback: search across all physical sheets
     var checkCats = ['TOBILLED', 'A/TO-PAY', 'F/TO-PAY'];
     for (var c = 0; c < checkCats.length; c++) {
@@ -1021,6 +1026,13 @@ function handleDeleteTrip(rowNum, optId, optSheetName) {
 
   if (!targetSheet || !Number.isInteger(r) || r < 2 || r > targetSheet.getLastRow()) {
     return { status: 'error', message: 'Invalid sheet or row number for deletion.' };
+  }
+
+  if (optLrNo) {
+    var actualLrNo = String(targetSheet.getRange(r, 4).getValue() || '').trim().toUpperCase();
+    if (actualLrNo !== String(optLrNo).trim().toUpperCase()) {
+      return { status: 'error', code: 'ROW_MISMATCH', message: 'The worksheet row no longer matches this trip. Refresh the ledger before deleting.' };
+    }
   }
 
   targetSheet.deleteRow(r);
