@@ -8,7 +8,7 @@
 
 const ApiService = {
   config: {
-    apiUrl: 'https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec',
+    apiUrl: 'https://script.google.com/macros/s/AKfycbyfa4DRua4NpAMDFJ-njLHvwXOl5SaE6A_QT48yqPaxY64DB5r8KPFH2L7AkEm4f3g1/exec',
     timeoutMs: 30000
   },
 

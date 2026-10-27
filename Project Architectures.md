@@ -3,13 +3,14 @@
 > **System Title:** SR Brokerage Ledger -- Enterprise Fleet Logistics & Financial Accounts Management  
 > **Author & Developer:** Shravan Kumar  
 > **Organization:** Transport Brokerage Ledger Pvt Ltd  
-> **Current Application Version:** Upgrade 1.2 source with security hardening changes not yet deployed
+> **Current Application Version:** Upgrade 1.2 source with security hardening changes
 > **UI Requirement:** Excel-style interactive worksheet within the existing `index.html`  
 > **Reference Workbooks:**  
 >   * `E:\TR\New\Final Sheet Broker.xlsx` (Authoritative 3-Sheet Physical Split, Created 26-Oct-2026)  
 >   * `E:\TR\P1\Final Sheet Broker.xlsx`  
 >   * `E:\TR\P1\BROKER DETAILS ADVANCE BALC DETAILS.xlsx`  
-> **Cloud Backend:** Google Apps Script Web App; deployment and spreadsheet configuration require administrator review  
+> **Cloud Backend:** Google Apps Script Web App Version 3 (27 Oct 2026, 21:15)
+> **Deployment ID:** `AKfycbyfa4DRua4NpAMDFJ-njLHvwXOl5SaE6A_QT48yqPaxY64DB5r8KPFH2L7AkEm4f3g1`
 
 **Primary Requirement:** Maintain one existing web application, one existing main HTML page (`index.html`), the existing Google Apps Script backend (`backend/Code.gs`), and three independent payment-status views. Do not create a separate frontend application or merge the three statuses.
 
@@ -61,7 +62,7 @@ The frontend communicates with the existing Google Apps Script backend, which ma
                               v
 +--------------------------------------------------------------+
 |              GOOGLE APPS SCRIPT BACKEND                      |
-|              Existing Code.gs (Version 2)                    |
+|              Existing Code.gs (Version 3)                    |
 |                                                              |
 |  Authentication and validation                               |
 |  CRUD operations                                             |
@@ -253,8 +254,9 @@ The canonical application data model consists of 28 fields (A through AB):
 ## 7. Data Synchronization and API Configuration (js/api.js)
 
 - The frontend communicates with the configured Apps Script deployment using authenticated POST requests.
+- Active deployment: Version 3, published 27 Oct 2026 at 21:15; its deployment ID is recorded above.
 - The client cannot choose a spreadsheet. Set `SPREADSHEET_ID` in Apps Script Script Properties; the server-side property is authoritative.
-- Deployment changes are not automatic: configure credentials and the spreadsheet property, review the target spreadsheet, then deploy and verify the backend separately.
+- The Version 3 deployment was reported updated on 27 Oct 2026 at 21:15. Verify authentication and cloud access against that deployment before production use.
 - Cloud saves and deletes require server confirmation. Offline writes are rejected rather than reported as successful.
 - The local shipment list is a cache, not an authoritative offline ledger. Valid empty cloud responses clear stale cache data.
 
@@ -345,7 +347,7 @@ All six PowerShell verification scripts currently pass 144 assertions. They are 
 - **Exit Code Verification:**
   - Corrected `verify_section_clear_and_backspace.ps1`, `verify_backend_and_schema.ps1`, and `verify_mode_blocking.ps1` to strictly return exit code `1` on failure and `0` on pass.
 - **Deployment status:**
-  - Source changes have not been deployed, and no production spreadsheet migration has been run.
+  - Version 3 deployment was reported updated; the app now targets its URL. No production spreadsheet migration has been run.
 
 ---
 
@@ -362,7 +364,7 @@ All six PowerShell verification scripts currently pass 144 assertions. They are 
 - [x] Working toolbar with Search, Add Trip, Refresh, Zoom, and XLSX Download.
 - [x] Interactive spreadsheet grid with sticky headers, row numbers, and borders.
 - [x] Backend routes to physical worksheets `TOBILLED`, `A-TO-PAY`, and `F-TO-PAY`.
-- [ ] Configure credentials and `SPREADSHEET_ID` in Apps Script Script Properties before deployment.
+- [ ] Confirm credentials and `SPREADSHEET_ID` are configured in Apps Script Script Properties before production use.
 - [ ] Run the reviewed shipment-ID and historical worksheet migrations only after a production backup and owner approval.
-- [ ] Verify the deployed backend and spreadsheet using a controlled test account before production use.
+- [ ] Verify the Version 3 backend and spreadsheet using a controlled test account before production use.
 - [x] Pure 7-bit ASCII representation throughout (0 non-ASCII bytes).

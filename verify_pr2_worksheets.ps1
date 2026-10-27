@@ -40,7 +40,7 @@ Assert-Test ($codeGs -match 'handleDeleteTrip\(data\.id,\s*null,\s*data\.sheetNa
 Assert-Test ($codeGs -match 'appendedLocations\.length\s*!==\s*2[\s\S]*?appendedTargetRecords\.length\s*!==\s*1') "status moves verify source and target identity before deleting the source"
 
 # 4. Active API Endpoint
-Assert-Test ($apiJs -match 'AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA') "js/api.js connects to active Google Apps Script deployment URL"
+Assert-Test ($apiJs -match 'AKfycbyfa4DRua4NpAMDFJ-njLHvwXOl5SaE6A_QT48yqPaxY64DB5r8KPFH2L7AkEm4f3g1') "js/api.js connects to the Version 3 Google Apps Script deployment URL"
 Assert-Test ($apiJs -match 'async\s+saveTrip\(trip\)[\s\S]*?request\(''saveTrip'',\s*\{\s*trip\s*\}\)') "js/api.js transmits shipment identity without client-selected spreadsheet data"
 Assert-Test ($apiJs -match 'async\s+deleteTrip\(id,\s*sheetName\s*=\s*'''',\s*lrNo\s*=\s*''''\)[\s\S]*?id,\s*sheetName,\s*lrNo') "js/api.js deleteTrip transmits stable ID, worksheet, and LR confirmation"
 Assert-Test ($apiJs -match 'method:\s*''POST''[\s\S]*?sessionToken') "js/api.js sends authenticated API requests using POST"
