@@ -133,7 +133,6 @@ const AppModule = {
         if (res && res.trips) {
           this.refresh();
           this.updateCloudSyncBadge(true);
-          this.showToast(`\u26A1 Live sync: Updated to cloud version ${serverVersion}`);
         }
       } else if (serverVersion) {
         this.updateCloudSyncBadge(true);

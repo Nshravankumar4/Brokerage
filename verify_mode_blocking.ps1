@@ -54,7 +54,7 @@ Assert-Test ($tableJs -match 'codVal\s*=\s*0') "handleSaveModal sets COD = 0 for
 
 # 7. Verify Physical Worksheet Tabs & Removal of Redundant Filters
 Assert-Test ($indexHtml -match 'id="sheetTab_tobilled"') "index.html defines physical TOBILLED worksheet tab"
-Assert-Test (!($indexHtml -match 'id="sheetTab_all"')) "index.html removed Master Ledger (All) tab as requested"
+Assert-Test ($indexHtml -match 'id="sheetTab_all"') "index.html defines ALL filter worksheet tab as requested"
 
 # 8. Verify UI Improvements in CSS
 Assert-Test ($cssStyles -match '\.field-blocked') "css/styles.css defines .field-blocked indicator"

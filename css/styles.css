@@ -1203,7 +1203,7 @@ html, body {
 .btn-secondary:hover { background: #cbd5e1; }
 .btn-danger-soft { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 .btn-danger-soft:hover { background: #dc2626; color: #ffffff; }
-.btn-sm { padding: 0.32rem 0.65rem; font-size: 0.76rem; }
+.btn-sm { padding: 0.25rem 0.65rem; font-size: 0.78rem; min-height: 28px; height: 28px; line-height: 1.2; }
 
 /* Views Container */
 .view-container {
@@ -1246,14 +1246,18 @@ table.excel-grid {
   min-width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
-  font-size: 9pt;
+  font-size: 8.5pt;
+  line-height: 1.25;
   white-space: nowrap;
 }
 
 table.excel-grid th, table.excel-grid td {
   border: 1px solid var(--border);
-  padding: 4px 6px;
+  padding: 3px 5px;
   box-sizing: border-box;
+  font-size: 8.5pt;
+  line-height: 1.25;
+  vertical-align: middle;
 }
 
 /* Excel Letter Row (A to AA) */
@@ -1793,15 +1797,17 @@ tr.excel-totals-row td {
 
 .form-control {
   width: 100%;
-  min-height: 42px;
-  padding: 0.7rem 0.8rem;
+  min-height: 38px;
+  height: 38px;
+  padding: 0.45rem 0.75rem;
   border: 1.5px solid #cbd5e1;
   border-radius: 8px;
   background: #fff;
   color: #0f172a;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-sizing: border-box;
 }
 
 .form-control:focus {
@@ -1811,7 +1817,8 @@ tr.excel-totals-row td {
 }
 
 .shipment-modal-textarea {
-  min-height: 86px;
+  min-height: 72px;
+  height: auto;
   resize: vertical;
 }
 
@@ -1889,16 +1896,59 @@ tr.excel-totals-row td {
   padding-top: 0.35rem;
 }
 
-.btn {
+/* Section-level Clean / Reset Buttons */
+.btn-clear-section {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 2px 9px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+  line-height: 1.4;
+  height: 24px;
+}
+
+.btn-clear-section:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+/* Compact Table Row Buttons */
+.excel-grid .btn-sm {
+  min-height: 22px !important;
+  height: 22px !important;
+  padding: 1px 7px !important;
+  font-size: 7.5pt !important;
+  line-height: 1.1 !important;
+  border-radius: 4px !important;
+}
+
+.excel-grid .btn-action-del {
+  min-height: 22px !important;
+  height: 22px !important;
+  padding: 1px 5px !important;
+  font-size: 0.82rem !important;
+  line-height: 1 !important;
+}
+
+.shipment-modal-footer .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  min-height: 42px;
-  padding: 0.7rem 1.1rem;
-  border-radius: 9px;
+  min-height: 38px;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
   border: 1px solid transparent;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -2942,10 +2992,10 @@ tr.excel-cols-row th {
 
 .excel-cell {
   border: 1px solid #d4d4d4;
-  padding: 4px 6px;
+  padding: 3px 5px;
   white-space: nowrap;
   line-height: 1.25;
-  font-size: 9pt;
+  font-size: 8.5pt;
   font-family: Calibri, Aptos, 'Segoe UI', Arial, sans-serif;
   box-sizing: border-box;
 }

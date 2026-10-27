@@ -9,16 +9,16 @@
 
 const ApiService = {
   config: {
-    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-/exec',
-    defaultSheetId: '1PLUsbBM2BDbb-WdwScnaZX4C64T7c9gZyxuVqVRtgAg',
-    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-/exec',
-    sheetId: localStorage.getItem('broker_sheet_id') || '1PLUsbBM2BDbb-WdwScnaZX4C64T7c9gZyxuVqVRtgAg',
+    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU/exec',
+    defaultSheetId: '1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU',
+    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU/exec',
+    sheetId: localStorage.getItem('broker_sheet_id') || '1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU',
     timeoutMs: 12000
   },
 
   getApiUrl() {
     const stored = localStorage.getItem('broker_api_url');
-    // Auto-migrate legacy deployment endpoints to active Version 3 endpoint
+    // Auto-migrate legacy deployment endpoints to active production endpoint
     const legacyIds = [
       'AKfycbwVgbDsDazKLlwR2Bh',
       'AKfycbxhwvJi8UDsJd2yFo',
@@ -29,7 +29,8 @@ const ApiService = {
       'AKfycbzFAtw3o_YHqS5BfuXFCzP684AwF4YiSHc83o80C8eo0kxgZUcAufP2LkiWqWKMbUB6NA',
       'AKfycbzwQS2FSywZ5GlwqjUBbSrzjg_ZwUL2PrN7q-NT0PKZYeJZ3PxpH55KiG30azYslUJE',
       'AKfycbyyJYnJo3niwEQfmVt02rWyN5XnkrETWzZL6FHqk3ZBQSwY8H0q2sfb4K42c88oQRsc',
-      'AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8'
+      'AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8',
+      'AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-'
     ];
     if (!stored || legacyIds.some(id => stored.includes(id))) {
       return this.config.defaultApiUrl;
@@ -44,8 +45,12 @@ const ApiService = {
 
   getSheetId() {
     const stored = localStorage.getItem('broker_sheet_id');
-    // Auto-migrate legacy spreadsheet ID to the active production sheet
-    if (!stored || stored === '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA') {
+    // Auto-migrate legacy spreadsheet IDs to the active production sheet
+    const legacySheets = [
+      '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
+      '1PLUsbBM2BDbb-WdwScnaZX4C64T7c9gZyxuVqVRtgAg'
+    ];
+    if (!stored || legacySheets.includes(stored)) {
       return this.config.defaultSheetId;
     }
     return this.config.sheetId || this.config.defaultSheetId || '';

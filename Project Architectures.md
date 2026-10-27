@@ -9,10 +9,10 @@
 >   * `E:\TR\New\Final Sheet Broker.xlsx` (Authoritative 3-Sheet Physical Split, Created 26-Oct-2026)  
 >   * `E:\TR\P1\Final Sheet Broker.xlsx`  
 >   * `E:\TR\P1\BROKER DETAILS ADVANCE BALC DETAILS.xlsx`  
-> **Cloud Backend:** Google Apps Script Web App Deployment Version 3 (26 Oct 2026, 22:08)  
-> **Deployment ID:** `AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-`  
-> **Live API URL:** `https://script.google.com/macros/s/AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-/exec`  
-> **Target Spreadsheet ID:** `1PLUsbBM2BDbb-WdwScnaZX4C64T7c9gZyxuVqVRtgAg`  
+> **Cloud Backend:** Google Apps Script Web App Deployment Version 1 (26 Oct 2026, 22:23)  
+> **Deployment ID:** `AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU`  
+> **Live API URL:** `https://script.google.com/macros/s/AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU/exec`  
+> **Target Spreadsheet ID:** `1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU`  
 
 **Primary Requirement:** Maintain one existing web application, one existing main HTML page (`index.html`), the existing Google Apps Script backend (`backend/Code.gs`), and three independent payment-status views. Do not create a separate frontend application or merge the three statuses.
 
@@ -295,15 +295,16 @@ The canonical application data model consists of 28 fields (A through AB):
 
 ## 12. Verification and Regression Tests
 
-The complete automated test suite validates all 117 assertions across 5 verification scripts:
+The complete automated test suite validates all 134 assertions across 6 verification scripts:
 
 1. `verify_enhancements.ps1` -- **37 / 37 PASS** (28-column master schema, headers, modal inputs, RBAC, calculations)
 2. `verify_calculations.ps1` -- **20 / 20 PASS** (Full accounting rules, COD settlement, extra amount, POD settlement, idempotence)
 3. `verify_mode_blocking.ps1` -- **27 / 27 PASS** (Mode-specific input blocking, zeroing on save, physical worksheet tabs)
 4. `verify_backend_and_schema.ps1` -- **16 / 16 PASS** (Workbook XML verification, 28-column dimensions, formulas, Apps Script locking)
-5. `verify_pr2_worksheets.ps1` -- **17 / 17 PASS** (Physical sheet routing, Version 8 endpoint, inter-sheet moves, POD DONE status)
+5. `verify_pr2_worksheets.ps1` -- **17 / 17 PASS** (Physical sheet routing, Version 1 endpoint, inter-sheet moves, POD DONE status)
+6. `verify_section_clear_and_backspace.ps1` -- **17 / 17 PASS** (Section clear buttons, backspace protection, status isolation, UI polish)
 
-**Total: 117 / 117 Tests Passing (100% Green).**
+**Total: 134 / 134 Tests Passing (100% Green).**
 
 ---
 
@@ -311,19 +312,43 @@ The complete automated test suite validates all 117 assertions across 5 verifica
 
 - Single main page: `index.html`.
 - Single Google Apps Script backend: `backend/Code.gs`.
-- Exactly three payment-status tabs: `TOBILLED`, `A/TO-PAY`, `F/TO-PAY`.
+- Exactly three payment-status tabs: `TOBILLED`, `A/TO-PAY`, `F/TO-PAY` (plus `ALL` filter view).
 - Zero non-ASCII bytes in `Project Architectures.md` and codebase.
 - Reference directory `E:\TR\SR_T` remained strictly untouched.
+- Clean inline error handling (no intrusive system alert popups).
 
 ---
 
-## 14. Final Acceptance Checklist
+## 14. Section Clear, Input Isolation & UI Refinements
+
+- **Section-Level Clear Controllers:**
+  - `TableModule.clearSection('shipment')`: Clears date, transporter, LR NO, truck number, and locations while strictly preserving sequential `SL NO`.
+  - `TableModule.clearSection('payment')`: Resets freight, T/M, advances 1-3, COD, extra amount, and payment mamul to blank, resetting COD auto-calculate mode.
+  - `TableModule.clearSection('bank')`: Clears account number, IFSC, payment mode, POD date, and remarks, reverting POD status to `PENDING`.
+- **Backspace & Focus Safety:**
+  - Removed full-field auto-selection on focus to enable natural cursor placement.
+  - `liveCalcModal()` checks `document.activeElement !== codInput` and user-edit flags, completely eliminating input reversion or overwriting when typing or deleting digits.
+- **Inter-Mode Isolation:**
+  - `cleanIncompatibleFields(status)` zeroes and wipes fields non-applicable to the destination mode when switching between `TOBILLED`, `A/TO-PAY`, and `F/TO-PAY`.
+- **POD Status Automation:**
+  - Entering a POD date automatically sets `m_podAmountStatus` to `DONE`. Clearing the date resets it to `PENDING`.
+- **UI Uniformity & Button Standardization:**
+  - Standardized `.btn-sm` (28-30px), `.excel-grid .btn-sm` (22px compact action buttons), and modal `.form-control` (38px height).
+  - All table cells uniformly use 8.5pt font size and matching line height.
+
+---
+
+## 15. Final Acceptance Checklist
 
 - [x] Application opens directly into Excel-style spreadsheet interface (`viewExcel`).
-- [x] Three independent payment-status tabs: `TOBILLED`, `A/TO-PAY`, `F/TO-PAY`.
+- [x] Three independent payment-status tabs: `TOBILLED`, `A/TO-PAY`, `F/TO-PAY` plus `ALL` filter tab.
+- [x] Section clear buttons on Shipment Information, Payment Details, and Bank Details.
+- [x] Backspace and input deletion work naturally with zero forced overwrites.
+- [x] Mode switching clears incompatible amounts and prevents cross-status value leakage.
 - [x] Working toolbar with Search, Add Trip, Refresh, Zoom, and XLSX Download.
 - [x] Interactive spreadsheet grid with sticky headers, row numbers, and borders.
 - [x] Backend routes to physical worksheets `TOBILLED`, `A-TO-PAY`, and `F-TO-PAY`.
-- [x] Configured deployment: Version 2 (`AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8`).
-- [x] All 117 automated unit and integration tests passing.
-- [x] Pure 7-bit ASCII representation throughout.
+- [x] Active Deployment: Version 1 (`AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU`).
+- [x] Active Sheet ID: `1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU`.
+- [x] All 134 automated unit and integration tests passing.
+- [x] Pure 7-bit ASCII representation throughout (0 non-ASCII bytes).

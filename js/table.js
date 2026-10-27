@@ -28,12 +28,18 @@ const TableModule = {
         pill.innerHTML = '<span>\uD83D\uDCB3 Physical Worksheet: A/TO-PAY</span>';
       } else if (sheetType === 'F/TO-PAY') {
         pill.innerHTML = '<span>\uD83D\uDE9A Physical Worksheet: F/TO-PAY</span>';
+      } else {
+        pill.innerHTML = '<span>\uD83D\uDCCB Master Ledger: All Worksheets</span>';
       }
     }
 
     const secTitle = document.getElementById('excelSectionTitle');
     if (secTitle) {
-      secTitle.innerHTML = `<span>\uD83D\uDCC4</span> Section: ${sheetType} (Active Physical Worksheet)`;
+      if (sheetType === 'all') {
+        secTitle.innerHTML = '<span>\uD83D\uDCCB</span> Section: ALL (All Worksheets)';
+      } else {
+        secTitle.innerHTML = `<span>\uD83D\uDCC4</span> Section: ${sheetType} (Active Physical Worksheet)`;
+      }
     }
 
     const grid = document.querySelector('.excel-grid');
@@ -84,6 +90,85 @@ const TableModule = {
   },
 
   // ================= DYNAMIC FORM MODE CONTROLLER =================
+  cleanIncompatibleFields(status) {
+    const s = String(status || 'TOBILLED').trim().toUpperCase();
+    if (s === 'F/TO-PAY') {
+      const ids = ['m_advance1', 'm_date1', 'm_advance2', 'm_date2', 'm_advance3', 'm_date3', 'm_extraAmount', 'm_payDate', 'm_pm'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      const codIn = document.getElementById('m_cod');
+      if (codIn) codIn.dataset.autoFilled = 'true';
+    } else if (s === 'A/TO-PAY') {
+      const ids = ['m_advance2', 'm_date2', 'm_advance3', 'm_date3', 'm_extraAmount', 'm_payDate', 'm_pm'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      const codIn = document.getElementById('m_cod');
+      if (codIn) codIn.dataset.autoFilled = 'true';
+    } else if (s === 'TOBILLED') {
+      const codIn = document.getElementById('m_cod');
+      if (codIn) {
+        codIn.value = '';
+        codIn.dataset.autoFilled = 'false';
+      }
+    }
+  },
+
+  clearSection(section) {
+    if (section === 'shipment') {
+      const isAdd = document.getElementById('m_isAdd')?.value === 'true';
+      const today = new Date().toISOString().split('T')[0];
+      const dateEl = document.getElementById('m_date');
+      if (dateEl) dateEl.value = isAdd ? today : '';
+
+      const trspEl = document.getElementById('m_trspName');
+      if (trspEl) trspEl.value = '';
+
+      const lrEl = document.getElementById('m_lrNo');
+      if (lrEl) {
+        lrEl.value = '';
+        lrEl.style.borderColor = '';
+        lrEl.style.backgroundColor = '';
+      }
+      const errSpan = document.getElementById('m_lrNoError');
+      if (errSpan) {
+        errSpan.innerText = '';
+        errSpan.style.display = 'none';
+      }
+
+      const truckEl = document.getElementById('m_truckNo');
+      if (truckEl) truckEl.value = '';
+
+      const fromEl = document.getElementById('m_from');
+      if (fromEl) fromEl.value = '';
+
+      const toEl = document.getElementById('m_to');
+      if (toEl) toEl.value = '';
+      // SL NO (m_slNo) is intentionally preserved to maintain sequential ordering
+    } else if (section === 'payment') {
+      const ids = ['m_fright', 'm_tm', 'm_advance1', 'm_date1', 'm_advance2', 'm_date2', 'm_advance3', 'm_date3', 'm_cod', 'm_extraAmount', 'm_payDate', 'm_pm'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      const codIn = document.getElementById('m_cod');
+      if (codIn) {
+        codIn.dataset.autoFilled = 'true';
+      }
+      this.liveCalcModal();
+    } else if (section === 'bank') {
+      const ids = ['m_accountNo', 'm_ifsc', 'm_paymentMade', 'm_pod', 'm_note'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      this.handlePodDateChange();
+    }
+  },
+
   selectToPayStatus(status) {
     const topaySelect = document.getElementById('m_topay');
     if (topaySelect) {
@@ -93,6 +178,7 @@ const TableModule = {
     if (codInput) {
       codInput.dataset.autoFilled = 'true';
     }
+    this.cleanIncompatibleFields(status);
     this.updateFormFieldsVisibility(status);
     this.liveCalcModal();
   },
@@ -100,6 +186,7 @@ const TableModule = {
   syncToPayFromSelect() {
     const topaySelect = document.getElementById('m_topay');
     const val = topaySelect ? topaySelect.value : 'TOBILLED';
+    this.cleanIncompatibleFields(val);
     this.updateFormFieldsVisibility(val);
     this.liveCalcModal();
   },
@@ -318,7 +405,7 @@ const TableModule = {
           ${CalculationEngine.formatCurrency(calc.finalBalc, false)}
         </td>
         <td class="col-center">${podStatusHtml}</td>
-        <td style="font-size:0.78rem;">${escapeHtml(t.note || '')}</td>
+        <td>${escapeHtml(t.note || '')}</td>
         <td class="col-center" style="white-space:nowrap;">
           <button class="btn btn-secondary btn-sm" onclick="TableModule.openEditModal(${t.row})" title="Edit Details">\u270F\uFE0F Edit</button>
           ${deleteBtnHtml}
@@ -529,10 +616,11 @@ const TableModule = {
     const toList = document.getElementById('m_to_list');
     const bankList = document.getElementById('m_paymentMade_list');
 
+    const hubSuggestions = ['MEDCHAL', 'WARANGAL', 'HYDERABAD', 'RAIPUR', 'LUCKNOW', 'PANKANJUR', 'MADHAPURA', 'NAGPUR', 'MUMBAI'];
     const uniqueTrsp = [...new Set(trips.map(t => (t.trspName || '').trim()).filter(Boolean))];
     const uniqueTrucks = [...new Set(trips.map(t => (t.truckNo || '').trim().toUpperCase()).filter(Boolean))];
-    const uniqueFrom = [...new Set(trips.map(t => (t.from || '').trim().toUpperCase()).filter(Boolean))];
-    const uniqueTo = [...new Set(trips.map(t => (t.to || '').trim().toUpperCase()).filter(Boolean))];
+    const uniqueFrom = [...new Set([...trips.map(t => (t.from || '').trim().toUpperCase()), ...hubSuggestions].filter(Boolean))];
+    const uniqueTo = [...new Set([...trips.map(t => (t.to || '').trim().toUpperCase()), ...hubSuggestions].filter(Boolean))];
     const uniqueBank = [...new Set(trips.map(t => (t.paymentMade || '').trim()).filter(Boolean))];
 
     if (trspList) trspList.innerHTML = uniqueTrsp.map(v => `<option value="${escapeHtml(v)}">`).join('');
@@ -652,9 +740,12 @@ const TableModule = {
 
     let match = null;
     if (field === 'trspName') {
-      match = trips.slice().reverse().find(t => (t.trspName || '').trim().toUpperCase() === cleanVal);
+      match = trips.slice().reverse().find(t => (t.trspName || '').trim().toUpperCase() === cleanVal) ||
+              trips.slice().reverse().find(t => (t.trspName || '').trim().toUpperCase().startsWith(cleanVal)) ||
+              trips.slice().reverse().find(t => (t.trspName || '').trim().toUpperCase().includes(cleanVal));
     } else if (field === 'truckNo') {
-      match = trips.slice().reverse().find(t => (t.truckNo || '').trim().toUpperCase() === cleanVal);
+      match = trips.slice().reverse().find(t => (t.truckNo || '').trim().toUpperCase() === cleanVal) ||
+              trips.slice().reverse().find(t => (t.truckNo || '').trim().toUpperCase().startsWith(cleanVal));
     }
 
     if (match) {
@@ -669,7 +760,7 @@ const TableModule = {
       if (acctInput && (!acctInput.value || isChange)) acctInput.value = match.accountNo || '';
       if (ifscInput && (!ifscInput.value || isChange)) ifscInput.value = match.ifsc || '';
       if (bankInput && (!bankInput.value || bankInput.value === 'SBI BANK' || isChange)) bankInput.value = match.paymentMade || 'SBI BANK';
-      if (fromInput && (!fromInput.value || fromInput.value === 'MEDCHAL')) fromInput.value = match.from || 'MEDCHAL';
+      if (fromInput && (!fromInput.value || isChange)) fromInput.value = match.from || '';
       if (toInput && (!toInput.value || isChange)) toInput.value = match.to || '';
       if (field === 'truckNo' && trspInput && (!trspInput.value || isChange)) trspInput.value = match.trspName || '';
       if (field === 'trspName' && truckInput && (!truckInput.value || isChange)) truckInput.value = match.truckNo || '';
@@ -677,12 +768,33 @@ const TableModule = {
   },
 
   handlePodDateChange() {
-    const podVal = document.getElementById('m_pod')?.value;
+    const podVal = (document.getElementById('m_pod')?.value || '').trim();
     const statusEl = document.getElementById('m_podAmountStatus');
-    if (statusEl && podVal && podVal.trim() !== '') {
-      statusEl.value = 'DONE';
+    if (statusEl) {
+      if (podVal && podVal !== '') {
+        statusEl.value = 'DONE';
+        statusEl.style.color = '#15803d';
+        statusEl.style.backgroundColor = '#f0fdf4';
+      } else {
+        statusEl.value = 'PENDING';
+        statusEl.style.color = '#92400e';
+        statusEl.style.backgroundColor = '#fef3c7';
+      }
     }
     this.liveCalcModal();
+  },
+
+  handlePodStatusChange() {
+    const statusEl = document.getElementById('m_podAmountStatus');
+    if (statusEl) {
+      if (statusEl.value === 'DONE') {
+        statusEl.style.color = '#15803d';
+        statusEl.style.backgroundColor = '#f0fdf4';
+      } else {
+        statusEl.style.color = '#92400e';
+        statusEl.style.backgroundColor = '#fef3c7';
+      }
+    }
   },
 
   openEditModal(rowNum, focusPod = false) {
@@ -752,7 +864,10 @@ const TableModule = {
     const podStatusEl = document.getElementById('m_podAmountStatus');
     if (podStatusEl) {
       const curStatus = String(trip.podAmountStatus || '').trim().toUpperCase();
-      podStatusEl.value = (curStatus === 'DONE' || trip.pod) ? 'DONE' : 'PENDING';
+      const isDone = (curStatus === 'DONE' || trip.pod);
+      podStatusEl.value = isDone ? 'DONE' : 'PENDING';
+      podStatusEl.style.color = isDone ? '#15803d' : '#92400e';
+      podStatusEl.style.backgroundColor = isDone ? '#f0fdf4' : '#fef3c7';
     }
 
     // Apply strict field visibility & zero out any blocked/non-applicable fields for this mode
@@ -786,7 +901,11 @@ const TableModule = {
     document.getElementById('m_isAdd').value = 'true';
     document.getElementById('m_sourceSheet').value = '';
     const podStatusAddEl = document.getElementById('m_podAmountStatus');
-    if (podStatusAddEl) podStatusAddEl.value = 'PENDING';
+    if (podStatusAddEl) {
+      podStatusAddEl.value = 'PENDING';
+      podStatusAddEl.style.color = '#92400e';
+      podStatusAddEl.style.backgroundColor = '#fef3c7';
+    }
 
     // Dedicated button: "Submit / Add Shipment" for Add
     const submitBtn = document.getElementById('m_submitBtn');
@@ -810,7 +929,7 @@ const TableModule = {
     }
 
     document.getElementById('m_truckNo').value = '';
-    document.getElementById('m_from').value = 'MEDCHAL';
+    document.getElementById('m_from').value = '';
     document.getElementById('m_to').value = '';
     document.getElementById('m_accountNo').value = '';
     document.getElementById('m_ifsc').value = '';
@@ -930,6 +1049,7 @@ const TableModule = {
     const extraAmount = (topayVal === 'TOBILLED') ? getVal('m_extraAmount') : 0;
     const pm = (topayVal === 'TOBILLED') ? getVal('m_pm') : 0;
     const codInput = document.getElementById('m_cod');
+    const isCodAuto = codInput ? (codInput.dataset.autoFilled === 'true' || !codInput.dataset.autoFilled) : true;
     const userCod = (codInput && !codInput.disabled) ? (Number(codInput.value) || 0) : 0;
 
     const dummy = {
@@ -940,7 +1060,7 @@ const TableModule = {
       advance2,
       advance3,
       extraAmount,
-      cod: userCod,
+      cod: isCodAuto ? 0 : userCod,
       pm
     };
 
@@ -957,15 +1077,17 @@ const TableModule = {
     if (topayVal.startsWith('A') || topayVal.startsWith('F')) {
       if (mCodBox) mCodBox.style.display = 'block';
       if (mCalcCod) mCalcCod.innerText = CalculationEngine.formatCurrency(calc.cod);
-      // Auto-fill COD field if it's currently 0 or previously auto-set
-      if (codInput && (userCod === 0 || codInput.dataset.autoFilled === 'true')) {
-        codInput.value = calc.cod;
-        codInput.dataset.autoFilled = 'true';
+      // Auto-fill COD field ONLY if auto-filled mode is active AND user is not actively editing it
+      if (codInput) {
+        if (isCodAuto && document.activeElement !== codInput) {
+          codInput.value = calc.cod > 0 ? calc.cod : '';
+          codInput.dataset.autoFilled = 'true';
+        }
       }
     } else {
       if (mCodBox) mCodBox.style.display = 'none';
       if (codInput) {
-        codInput.value = 0;
+        codInput.value = '';
         codInput.dataset.autoFilled = 'false';
       }
     }

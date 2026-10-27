@@ -259,7 +259,9 @@ const DataManager = {
       trip.pendingTobilled = calc.pendingTobilled;
       trip.balc = calc.pendingTobilled;
       trip.finalBalc = calc.finalBalc;
-      trip.podAmountStatus = calc.podAmountStatus;
+      if (!trip.podAmountStatus || trip.podAmountStatus === 0 || trip.podAmountStatus === '0') {
+        trip.podAmountStatus = (!calc.isPodMissing || trip.pod) ? 'DONE' : 'PENDING';
+      }
     }
     const list = this.getAll();
     const idx = list.findIndex(t => t.row === trip.row);

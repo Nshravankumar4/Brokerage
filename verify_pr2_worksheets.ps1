@@ -38,7 +38,7 @@ Assert-Test ($codeGs -match 'srcSheet\.deleteRow\(rowNum\)') "handleSaveTrip saf
 Assert-Test ($codeGs -match 'handleDeleteTrip\(rowNum,\s*optId,\s*optSheetName\)') "handleDeleteTrip targets the record's specific physical worksheet"
 
 # 4. Active API Endpoint
-Assert-Test ($apiJs -match 'AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-' -or $apiJs -match 'AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8') "js/api.js connects to active Google Apps Script deployment URL"
+Assert-Test ($apiJs -match 'AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU' -or $apiJs -match 'AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-' -or $apiJs -match 'AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8') "js/api.js connects to active Google Apps Script deployment URL"
 Assert-Test ($apiJs -match 'sourceSheet:\s*trip\.sourceSheet') "js/api.js transmits sourceSheet in saveTrip payload"
 Assert-Test ($apiJs -match 'deleteTrip\(rowNum,\s*sheetName\s*=\s*''''\)') "js/api.js deleteTrip transmits target physical sheetName"
 
