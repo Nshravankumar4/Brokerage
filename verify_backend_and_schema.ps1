@@ -56,12 +56,17 @@ Assert-Test ($z12.f -eq 'K12-N12-O12-U12') "Workbook Cell Z12 formula is K12-N12
 $codeGs = [System.IO.File]::ReadAllText("E:\TR\P1\backend\Code.gs", [System.Text.Encoding]::UTF8)
 
 Assert-Test ($codeGs -match 'HEADERS\s*=\s*\[[\s\S]*?''REMARKS\s*/\s*NOTE''[\s\S]*?\];') "backend/Code.gs defines authoritative 28-column HEADERS array"
-Assert-Test ($codeGs -match 'rowData\.length\s*!==\s*28') "backend/Code.gs strictly verifies rowData.length === 28"
+Assert-Test ($codeGs -match 'STORAGE_HEADERS\s*=\s*HEADERS\.concat\(\[SHIPMENT_ID_HEADER\]\)') "backend/Code.gs adds internal shipment ID storage without changing the 28 user columns"
+Assert-Test ($codeGs -match 'rowData\.length\s*!==\s*STORAGE_HEADERS\.length') "backend/Code.gs strictly verifies the full storage row shape"
 Assert-Test ($codeGs -match 'lock\.waitLock\(15000\)') "backend/Code.gs uses LockService concurrency protection"
-Assert-Test ($codeGs -match 'adminActions\.indexOf\(action\)\s*!==\s*-1') "backend/Code.gs enforces authorization for admin actions"
-Assert-Test ($codeGs -match 'actualRow\s*!==\s*rowNum') "backend/Code.gs excludes current record when checking duplicate LR"
+Assert-Test ($codeGs -match 'adminActions\.indexOf\(action\)\s*!==\s*-1[\s\S]*?sessionRole\s*!==\s*''admin''') "backend/Code.gs authorizes admin actions from the server session role"
+Assert-Test ($codeGs -match 'isSameRecord\s*=\s*String\(idVals\[j\]\[0\]\s*\|\|\s*''''\)\.trim\(\)\s*===\s*shipmentId') "backend/Code.gs excludes the current shipment ID when checking duplicate LR"
 Assert-Test ($codeGs -match 'calc\.pendingTobilled') "backend/Code.gs uses calc.pendingTobilled consistently"
 Assert-Test ($codeGs -match 'calc\.status\s*===\s*''TOBILLED''\s*\?\s*calc\.pendingTobilled\s*:\s*''if A/Topay&Ftopay Na''') "backend/Code.gs maps Column V dynamically per status"
+Assert-Test ($codeGs -match 'function\s+doGet\s*\([\s\S]*?METHOD_NOT_ALLOWED') "backend/Code.gs rejects unauthenticated GET requests"
+Assert-Test ($codeGs -match 'function\s+resolveSessionRole\s*\(' -and $codeGs -match 'function\s+authenticateCredentials\s*\(') "backend/Code.gs validates server-issued sessions and server-side credentials"
+Assert-Test ($codeGs -match 'function\s+isValidShipmentId\s*\(' -and $codeGs -match 'invalid shipment ID was detected') "backend/Code.gs validates internal IDs before returning them to the UI"
+Assert-Test ($codeGs -match 'The legacy worksheet was preserved' -and $codeGs -notmatch 'deleteSheet\(finalSheet\)') "Historical migration preserves the legacy worksheet for recovery"
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  TEST RESULTS: Passed: $passed, Failed: $failed" -ForegroundColor Cyan

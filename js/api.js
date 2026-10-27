@@ -4,290 +4,164 @@
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * Interfaces with Google Apps Script backend (backend/Code.gs)
- * Live Production Endpoint: https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec
  */
 
 const ApiService = {
   config: {
-    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec',
-    defaultSheetId: '1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU',
-    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec',
-    sheetId: localStorage.getItem('broker_sheet_id') || '1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU',
-    timeoutMs: 12000
+    apiUrl: 'https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec',
+    timeoutMs: 30000
   },
 
   getApiUrl() {
-    return this.config.defaultApiUrl;
-  },
-
-  setApiUrl(url) {
-    this.config.apiUrl = this.config.defaultApiUrl;
-    localStorage.setItem('broker_api_url', this.config.defaultApiUrl);
-  },
-
-  getSheetId() {
-    return this.config.defaultSheetId;
-  },
-
-  setSheetId(id) {
-    this.config.sheetId = this.config.defaultSheetId;
-    localStorage.setItem('broker_sheet_id', this.config.defaultSheetId);
+    return this.config.apiUrl;
   },
 
   isCloudConnected() {
     return Boolean(this.getApiUrl());
   },
 
-  buildUrl(action) {
-    const base = this.getApiUrl();
-    const sheetParam = this.getSheetId() ? `&sheetId=${encodeURIComponent(this.getSheetId())}` : '';
-    return `${base}?action=${action}${sheetParam}`;
+  async request(action, payload = {}, requiresSession = true) {
+    const url = this.getApiUrl();
+    if (!url) return { status: 'error', code: 'API_NOT_CONFIGURED', message: 'Cloud API is not configured.' };
+    const sessionToken = (typeof AuthModule !== 'undefined') ? AuthModule.getSessionToken() : '';
+    if (requiresSession && !sessionToken) {
+      return { status: 'error', code: 'UNAUTHORIZED', message: 'Sign in before using the cloud ledger.' };
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.config.timeoutMs);
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          action,
+          ...payload,
+          ...(sessionToken ? { sessionToken } : {})
+        })
+      });
+      let result;
+      try {
+        result = await response.json();
+      } catch (error) {
+        return { status: 'error', code: 'INVALID_RESPONSE', message: 'The cloud service returned an invalid response.' };
+      }
+      if (!response.ok) {
+        return { status: 'error', code: 'HTTP_ERROR', message: `Cloud service returned HTTP ${response.status}.` };
+      }
+      if (result && result.code === 'UNAUTHORIZED' && typeof AuthModule !== 'undefined') {
+        AuthModule.handleSessionExpired();
+      }
+      return result;
+    } catch (error) {
+      return {
+        status: 'error',
+        code: error.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR',
+        message: error.name === 'AbortError' ? 'Cloud request timed out.' : 'Cloud service is unavailable.'
+      };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  },
+
+  async login(username, password) {
+    return this.request('login', { username, password }, false);
+  },
+
+  async logout() {
+    return this.request('logout');
+  },
+
+  async changePassword(newPassword) {
+    return this.request('changePassword', { newPassword });
   },
 
   /**
-   * Lightweight DATA_VERSION check for real-time background polling (3.5s)
+   * Lightweight DATA_VERSION check for background polling (15s)
    */
   async getDataVersion() {
-    const url = this.getApiUrl();
-    if (!url || !window.navigator.onLine) return null;
-
-    try {
-      const targetUrl = this.buildUrl('getVersion');
-      const res = await fetch(targetUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (data && data.status === 'success' && data.version !== undefined) {
-        return String(data.version);
-      }
-    } catch (e) {
-      // Poller fails silently without spamming logs
-    }
-    return null;
+    if (!window.navigator.onLine) return null;
+    const data = await this.request('getVersion');
+    return data && data.status === 'success' && data.version !== undefined
+      ? String(data.version)
+      : null;
   },
 
   async fetchAll() {
-    const url = this.getApiUrl();
-
-    if (url && window.navigator.onLine) {
+    if (!window.navigator.onLine) {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.config.timeoutMs);
-
-        const targetUrl = this.buildUrl('getAll');
-        const res = await fetch(targetUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const data = await res.json();
-          // Clear distinction: A valid cloud response returning an empty or populated trips array is authoritative cloud data
-          if (data && data.status === 'success' && Array.isArray(data.trips)) {
-            DataManager.saveAll(data.trips);
-            if (data.version !== undefined && data.version !== null) {
-              DataManager.setVersion(String(data.version));
-            }
-            return {
-              status: 'success',
-              source: 'cloud',
-              trips: data.trips,
-              version: data.version,
-              summary: data.summary || {
-                totalTrips: data.trips.length,
-                totalFreight: 0,
-                totalAdvances: 0,
-                finalBalance: 0,
-                pendingPod: 0
-              }
-            };
-          } else {
-            console.warn('Unexpected cloud payload structure:', data);
-            return {
-              status: 'error',
-              source: 'local',
-              error: 'Invalid cloud payload structure',
-              trips: DataManager.getAll(),
-              version: DataManager.getVersion()
-            };
-          }
-        } else {
-          console.warn(`Cloud API HTTP error: ${res.status}`);
-          return {
-            status: 'error',
-            source: 'local',
-            error: `HTTP error ${res.status}`,
-            trips: DataManager.getAll(),
-            version: DataManager.getVersion()
-          };
-        }
-      } catch (err) {
-        console.warn('Cloud API fetch note (fallback to verified local cache):', err.message);
+        return { status: 'error', source: 'offline', trips: DataManager.getAll(), version: DataManager.getVersion() };
+      } catch (error) {
+        console.error('Could not read the offline shipment cache:', error);
+        return { status: 'error', source: 'local', code: 'INVALID_LOCAL_CACHE', message: 'The local shipment cache is invalid; reconnect and load the cloud ledger.' };
+      }
+    }
+    const data = await this.request('getAll');
+    if (data && data.status === 'success' && Array.isArray(data.trips)) {
+      try {
+        DataManager.saveAll(data.trips);
+      } catch (error) {
+        console.error('Cloud shipment data could not be cached:', error);
         return {
           status: 'error',
           source: 'local',
-          error: err.message,
-          trips: DataManager.getAll(),
-          version: DataManager.getVersion()
+          code: 'INVALID_CLOUD_DATA',
+          message: 'Cloud shipment data is invalid and was not saved to the local cache.'
         };
       }
+      if (data.version !== undefined && data.version !== null) DataManager.setVersion(String(data.version));
+      return {
+        status: 'success',
+        source: 'cloud',
+        trips: data.trips,
+        version: data.version,
+        summary: data.summary || {
+          totalTrips: data.trips.length,
+          totalFreight: 0,
+          totalAdvances: 0,
+          finalBalance: 0,
+          pendingPod: 0
+        }
+      };
     }
-
-    // Explicitly supported offline mode fallback
-    const localTrips = DataManager.getAll();
     return {
-      status: 'success',
-      source: 'offline',
-      trips: localTrips,
+      status: 'error',
+      source: data && data.code === 'UNAUTHORIZED' ? 'unauthorized' : 'local',
+      error: data && data.message ? data.message : 'Invalid cloud payload structure',
       version: DataManager.getVersion()
     };
   },
 
   async saveTrip(trip) {
-    // Synchronize with Cloud backend (no double-save: caller handles local DataManager)
-    const url = this.getApiUrl();
-    if (url && window.navigator.onLine) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          // Use text/plain to avoid CORS preflight OPTIONS rejection in Google Apps Script
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'saveTrip',
-            trip: trip,
-            sheetName: trip.sheetName || '',
-            sourceSheet: trip.sourceSheet || trip.sheetName || '',
-            isAdd: trip.isAdd || false,
-            sheetId: this.getSheetId()
-          })
-        });
-        if (res.ok) {
-          const result = await res.json();
-          if (result && result.version) {
-            DataManager.setVersion(String(result.version));
-          }
-          return result;
-        }
-      } catch (err) {
-        console.warn('Cloud sync note for saveTrip:', err.message);
-        return { status: 'error', code: 'NETWORK_ERROR', message: err.message };
-      }
-    }
-
-    return { status: 'success', source: 'local', trip: trip };
+    if (!window.navigator.onLine) return { status: 'error', source: 'offline', code: 'OFFLINE', message: 'Connect to the cloud ledger before saving.' };
+    const result = await this.request('saveTrip', { trip });
+    if (result && result.version !== undefined) DataManager.setVersion(String(result.version));
+    return result;
   },
 
-  async deleteTrip(rowNum, sheetName = '') {
+  async deleteTrip(id, sheetName = '', lrNo = '') {
     if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
       return { status: 'error', message: 'Unauthorized: Admin role required' };
     }
 
-    const session = (typeof AuthModule !== 'undefined') ? AuthModule.getCurrentUser() : null;
-    const url = this.getApiUrl();
-
-    if (url && window.navigator.onLine) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'deleteTrip',
-            rowNum: rowNum,
-            sheetName: sheetName || '',
-            role: session?.role || '',
-            authHash: session?.authHash || '',
-            sheetId: this.getSheetId()
-          })
-        });
-
-        if (res.ok) {
-          const result = await res.json();
-          if (result && result.version !== undefined) {
-            DataManager.setVersion(String(result.version));
-          }
-          if (result && result.status === 'success') {
-            // Confirm cloud success before deleting local state
-            DataManager.deleteTrip(rowNum, sheetName);
-            return {
-              status: 'success',
-              source: 'cloud',
-              message: result.message || 'Trip deleted from Google Sheets',
-              sheetName: result.sheetName
-            };
-          } else {
-            const msg = (result && result.message) ? result.message : 'Cloud deletion rejected by server';
-            console.error('Server rejection on deleteTrip:', msg);
-            return { status: 'error', code: result?.code || 'SERVER_ERROR', message: msg };
-          }
-        } else {
-          return { status: 'error', code: 'HTTP_ERROR', message: `Server returned HTTP ${res.status}` };
-        }
-      } catch (err) {
-        console.warn('Cloud sync error for deleteTrip:', err.message);
-        return { status: 'error', code: 'NETWORK_ERROR', message: err.message };
-      }
-    }
-
-    // Explicitly supported offline mode deletion
-    DataManager.deleteTrip(rowNum, sheetName);
-    return { status: 'success', source: 'offline', message: 'Trip deleted locally (offline mode)' };
+    if (!window.navigator.onLine) return { status: 'error', source: 'offline', code: 'OFFLINE', message: 'Connect to the cloud ledger before deleting.' };
+    const result = await this.request('deleteTrip', {
+      id,
+      sheetName,
+      lrNo
+    });
+    if (result && result.version !== undefined) DataManager.setVersion(String(result.version));
+    return result;
   },
 
   async triggerRestoreDatabase() {
-    if (typeof AuthModule !== 'undefined' && !AuthModule.isAdmin()) {
-      alert('Access Denied: Only Administrator is authorized to restore database.');
-      return { status: 'error', message: 'Unauthorized: Admin role required' };
-    }
-
-    const session = (typeof AuthModule !== 'undefined') ? AuthModule.getCurrentUser() : null;
-    const url = this.getApiUrl();
-    if (url && window.navigator.onLine) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'restoreDatabase',
-            role: session?.role || '',
-            authHash: session?.authHash || '',
-            sheetId: this.getSheetId()
-          })
-        });
-        if (res.ok) {
-          const result = await res.json();
-          await this.fetchAll();
-          return result;
-        }
-      } catch (err) {
-        console.warn('Cloud restore note:', err);
-      }
-    }
-    DataManager.restoreDefault();
-    return { status: 'success', message: 'Local default data restored' };
+    return { status: 'error', code: 'RESTORE_DISABLED', message: 'Database restore is disabled. Use a reviewed manual recovery procedure.' };
   },
 
   async triggerCloudBackup() {
-    const url = this.getApiUrl();
-    if (!url || !window.navigator.onLine) {
-      TableModule.exportToExcel();
-      return { status: 'success', message: 'Local Excel backup generated.' };
-    }
-
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'backupDatabase',
-          sheetId: this.getSheetId()
-        })
-      });
-      return await res.json();
-    } catch (err) {
-      console.warn('Cloud backup note, downloading local copy:', err);
-      TableModule.exportToExcel();
-      return { status: 'local_only', message: 'Cloud backup unavailable, downloaded local Excel copy.' };
-    }
+    if (!window.navigator.onLine) return { status: 'error', code: 'OFFLINE', message: 'Connect to the cloud ledger before creating a cloud backup.' };
+    return this.request('backupDatabase');
   }
 };
 

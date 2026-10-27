@@ -17,7 +17,7 @@
       <h2 id="welcomeSplashGreeting" class="welcome-splash-title">&#128075; Welcome to SR Brokerage Ledger!</h2>
       <p class="welcome-splash-sub">Transport Brokerage Ledger Pvt Ltd</p>
       <div class="welcome-spinner-ring"></div>
-      <div id="welcomeSplashStatus" class="welcome-splash-status">Connecting to live cloud ledger &amp; verifying financial totals...</div>
+      <div id="welcomeSplashStatus" class="welcome-splash-status">Sign in to load verified cloud ledger data.</div>
     </div>
   </div>
 
@@ -58,7 +58,7 @@
         <div class="form-group" style="margin-bottom: 1.25rem;">
           <label for="loginPassword" style="font-weight: 600; margin-bottom: 0.4rem; display: block; font-size: 0.88rem; color: #334155;">&#128273; Password</label>
           <div style="position: relative;">
-            <input type="password" id="loginPassword" class="form-control" placeholder="Enter password for Admin" required autocomplete="current-password" autofocus style="padding-right: 2.5rem; font-size: 1rem; width: 100%;">
+            <input type="password" id="loginPassword" class="form-control" placeholder="Enter password for Admin" required maxlength="256" autocomplete="current-password" autofocus style="padding-right: 2.5rem; font-size: 1rem; width: 100%;">
             <button type="button" id="togglePasswordBtn" onclick="AuthModule.togglePasswordVisibility()" style="position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0; line-height: 1;" title="Show/Hide Password">&#128065;&#65039;</button>
           </div>
         </div>
@@ -135,7 +135,7 @@
       <div class="drawer-status-bar">
         <div class="drawer-system-status">
           <span class="status-dot online"></span>
-          <span id="drawerStatusText">Online &#8226; 19 Verified Trips</span>
+          <span id="drawerStatusText">Sign in to load ledger status.</span>
         </div>
         <button id="manualSyncBtn" class="drawer-sync-btn" onclick="AppModule.syncNow()" title="Sync database from Google Sheets now">
           <span>&#128260;</span> Sync
@@ -802,7 +802,7 @@
           <div style="font-size: 0.8rem; color: #64748b; line-height: 1.6;">
             Authoritative Workbook: <strong>BROKER DETAILS ADVANCE BALC DETAILS.xlsx</strong><br>
             Active Sheet: <strong>final</strong> (27 Columns A to AA)<br>
-            Database Status: <span class="status-dot online" style="display: inline-block; vertical-align: middle;"></span> <strong style="color: #15803d;">Online &#8226; 19 Verified Trips Active</strong><br>
+            Database Status: <strong style="color: #475569;">See the authenticated cloud-sync status in the ledger.</strong><br>
             Current Session: <strong id="settingsSessionUser" style="color: #0f172a;">Shravan (Admin)</strong>
           </div>
         </div>
@@ -813,26 +813,7 @@
             &#9729;&#65039; Google Sheets API Sync (<code style="color: #1e40af; font-size: 0.82rem;">backend/Code.gs</code>)
           </div>
           <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 0.75rem; line-height: 1.4;">
-            Configure your Google Apps Script Web App URL and Google Sheet ID below to enable live 2-way cloud sync without "Spreadsheet not found" errors.
-          </div>
-          
-          <div style="display: flex; flex-direction: column; gap: 0.65rem;">
-            <div>
-              <label style="font-size: 0.75rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Google Apps Script Web App URL:</label>
-              <input type="url" id="settingApiUrlInput" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" style="width: 100%; font-size: 0.82rem;">
-            </div>
-
-            <div>
-              <label style="font-size: 0.75rem; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Google Spreadsheet ID or URL (Optional):</label>
-              <input type="text" id="settingSheetIdInput" class="form-control" placeholder="e.g. 1eZ748Kh9G1yYecjML-Pnc-nnDx9AVpz2o76e2jLckZg or full URL" style="width: 100%; font-size: 0.82rem;">
-              <span style="font-size: 0.7rem; color: #64748b; margin-top: 2px; display: block;">Found in your sheet address: docs.google.com/spreadsheets/d/<strong>YOUR_ID</strong>/edit</span>
-            </div>
-
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.25rem;">
-              <button type="button" class="btn btn-primary" onclick="AppModule.saveSettings()" style="font-size: 0.82rem; padding: 0.5rem 1rem;">
-                &#128190; Save Settings &amp; Sync
-              </button>
-            </div>
+            Cloud API and spreadsheet access are managed by the deployment administrator. Client-side settings cannot redirect ledger requests.
           </div>
         </div>
 
@@ -842,7 +823,7 @@
             &#128273; Change Password for Current Account
           </div>
           <div style="display: flex; gap: 0.5rem;">
-            <input type="password" id="newPasswordInput" class="form-control" placeholder="Enter new password" style="flex: 1;">
+            <input type="password" id="newPasswordInput" class="form-control" placeholder="Enter new password" maxlength="256" style="flex: 1;">
             <button type="button" class="btn btn-primary" onclick="AuthModule.changePassword()" style="white-space: nowrap;">Save Password</button>
           </div>
         </div>

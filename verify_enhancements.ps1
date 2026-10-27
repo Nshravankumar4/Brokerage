@@ -110,6 +110,13 @@ Assert-Test "js/table.js renderExcelView updates bottom sum totals" `
 Assert-Test "js/table.js exportToExcel includes 28 columns definitions" `
     ($tableJs -match 'Pending Amount: Tobilled' -and $tableJs -match 'Extra Amount' -and $tableJs -match 'POD Amount Status')
 
+Assert-Test "Exports require a verified cloud ledger before generating files" `
+    ($tableJs -match 'ensureCloudDataForExport' -and $tableJs -match 'result\.source\s*!==\s*''cloud''')
+
+Assert-Test "CSV export neutralizes formula-like text cells" `
+    ($tableJs -match 'const csvText = value =>' -and $tableJs.Contains('[=+\-@]') -and
+     $tableJs.Contains(([string][char]96) + [char]39 + '$' + '{text}'))
+
 Assert-Test "js/table.js liveCalcModal handles extraAmount, COD, and pending balances" `
     ($tableJs -match 'm_extraAmount' -and $tableJs -match 'mCalcBalc' -and $tableJs -match 'mCalcFinalBalc')
 
@@ -125,8 +132,8 @@ Assert-Test "backend/Code.gs HEADERS has authoritative 28 columns (A-AB)" `
 Assert-Test "backend/Code.gs handleGetAll maps 28 columns with formulas" `
     ($codeGs -match 'pendingTobilled\s*=\s*fright\s*-\s*tm\s*-\s*totalAdvances' -and $codeGs -match 'finalBalc\s*=\s*pendingTobilled\s*\+\s*extraAmount\s*-\s*pm')
 
-Assert-Test "backend/Code.gs handleSaveTrip writes 28-column rowData" `
-    ($codeGs -match 'pendingTobilled' -and $codeGs -match 'extraAmount' -and $codeGs -match 'podAmountStatus')
+Assert-Test "backend/Code.gs keeps 28 business columns and stores shipment identity separately" `
+    ($codeGs -match 'STORAGE_HEADERS\s*=\s*HEADERS\.concat\(\[SHIPMENT_ID_HEADER\]\)' -and $codeGs -match 'rowData\.length\s*!==\s*STORAGE_HEADERS\.length')
 
 Assert-Test "backend/Code.gs duplicate LR NO rejection active" `
     ($codeGs -match 'DUPLICATE_LR')
@@ -144,11 +151,11 @@ Assert-Test "Branding developer is 'Shravan Kumar'" `
 Assert-Test "Branding copyright is 'Transport Brokerage Ledger Pvt Ltd'" `
     ($html -match 'Transport Brokerage Ledger Pvt Ltd')
 
-Assert-Test "Admin credentials enforce SHA-256 hash" `
-    ($authJs -match 'passHash:\s*''ded12726612993e58a7f6f1b0428300adcf13f6cabb7515436c5888b3de21c0b''')
+Assert-Test "Browser authentication contains no hardcoded password hashes" `
+    ($authJs -notmatch 'passHash|ded12726612993e58a7f6f1b0428300adcf13f6cabb7515436c5888b3de21c0b|0a623bcaece42a5740cdfb0b78849ec8717d811c8c2583697ab884513f4d9e3f')
 
-Assert-Test "Rudra credentials enforce SHA-256 hash" `
-    ($authJs -match 'passHash:\s*''0a623bcaece42a5740cdfb0b78849ec8717d811c8c2583697ab884513f4d9e3f''')
+Assert-Test "Authentication delegates credential verification to the server" `
+    ($authJs -match 'ApiService\.login\(account\.username,\s*pwd\)' -and $codeGs -match 'derivePasswordHash' -and $codeGs -match '_PASSWORD_HASH')
 
 Assert-Test "Navbar has flex-wrap: nowrap on desktop" `
     ($css -match '\.app-navbar\s*\{[^}]*flex-wrap:\s*nowrap')

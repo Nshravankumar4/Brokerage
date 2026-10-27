@@ -3,16 +3,13 @@
 > **System Title:** SR Brokerage Ledger -- Enterprise Fleet Logistics & Financial Accounts Management  
 > **Author & Developer:** Shravan Kumar  
 > **Organization:** Transport Brokerage Ledger Pvt Ltd  
-> **Current Application Version:** Upgrade 1.2 (Active Production Build)  
+> **Current Application Version:** Upgrade 1.2 source with security hardening changes not yet deployed
 > **UI Requirement:** Excel-style interactive worksheet within the existing `index.html`  
 > **Reference Workbooks:**  
 >   * `E:\TR\New\Final Sheet Broker.xlsx` (Authoritative 3-Sheet Physical Split, Created 26-Oct-2026)  
 >   * `E:\TR\P1\Final Sheet Broker.xlsx`  
 >   * `E:\TR\P1\BROKER DETAILS ADVANCE BALC DETAILS.xlsx`  
-> **Cloud Backend:** Google Apps Script Web App Deployment Version 2 (27 Oct 2026, 07:16)  
-> **Deployment ID:** `AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA`  
-> **Live API URL:** `https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec`  
-> **Target Spreadsheet ID:** `1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU`  
+> **Cloud Backend:** Google Apps Script Web App; deployment and spreadsheet configuration require administrator review  
 
 **Primary Requirement:** Maintain one existing web application, one existing main HTML page (`index.html`), the existing Google Apps Script backend (`backend/Code.gs`), and three independent payment-status views. Do not create a separate frontend application or merge the three statuses.
 
@@ -87,7 +84,7 @@ The frontend communicates with the existing Google Apps Script backend, which ma
                 authorized migration procedures
 ```
 
-The existing `final` worksheet is safely preserved during migration until records are confirmed in the destination worksheets.
+The existing `final` worksheet is retained as a recovery source. The reviewed migration is repeatable, assigns stable IDs, rejects ambiguous duplicates, and never deletes the source worksheet.
 
 ---
 
@@ -239,25 +236,27 @@ The canonical application data model consists of 28 fields (A through AB):
    - `LockService.getScriptLock()` prevents race conditions during concurrent edits.
 3. **Global Duplicate LR NO Enforcement:**
    - LR numbers are checked across all three destination sheets.
-   - When editing, the current record's row is safely excluded from duplicate rejection.
+   - When editing, the current shipment ID is excluded from duplicate rejection.
 4. **Historical Migration & Sheet Cleanup:**
-   - `migrateHistoricalFinalRecords(ss)` safely copies records from legacy `final` to `TOBILLED`, `A-TO-PAY`, and `F-TO-PAY`.
-   - Deletes empty `Sheet1` and archives/deletes `final` once records are safely housed.
+   - The reviewed migration copies records from legacy `final` to the corresponding physical worksheet and uses shipment IDs for safe reruns.
+   - It fails on ambiguous IDs/LR numbers and preserves `final`; it does not automatically delete or clean up any worksheet.
 5. **Custom Google Sheets Menu:**
-   - `Transport Brokerage Ledger` menu allows manual migration, cleanup, and styling inside Google Sheets.
+   - `Transport Brokerage Ledger` menu allows a confirmed migration, ID backfill, cleanup, and styling inside Google Sheets.
+6. **Authentication:**
+   - `doGet()` rejects requests; the API accepts authenticated POST actions only.
+   - Credentials are salted and hashed in Apps Script Script Properties; sessions are server-issued, role-checked, and expire after one hour.
+   - Configure both account passwords and the `SPREADSHEET_ID` Script Property before deployment. No fallback admin token is supported.
+   - Restoring a database and production seeding are disabled.
 
 ---
 
 ## 7. Data Synchronization and API Configuration (js/api.js)
 
-- **Authoritative Single Endpoint:**
-  https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec
-- **Active Deployment ID:**
-  AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA (Version 2 on 27 Oct 2026, 07:16)
-- **Target Spreadsheet ID:**
-  1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU
-- **Strict Single-API Architecture:**
-  All legacy fallback endpoints, arrays, and migration chains removed. System communicates strictly through the authoritative Version 2 deployment.
+- The frontend communicates with the configured Apps Script deployment using authenticated POST requests.
+- The client cannot choose a spreadsheet. Set `SPREADSHEET_ID` in Apps Script Script Properties; the server-side property is authoritative.
+- Deployment changes are not automatic: configure credentials and the spreadsheet property, review the target spreadsheet, then deploy and verify the backend separately.
+- Cloud saves and deletes require server confirmation. Offline writes are rejected rather than reported as successful.
+- The local shipment list is a cache, not an authoritative offline ledger. Valid empty cloud responses clear stale cache data.
 
 ---
 
@@ -266,6 +265,7 @@ The canonical application data model consists of 28 fields (A through AB):
 - Genuine multi-sheet `.xlsx` file generated via `ExcelJS` and `FileSaver.js`.
 - Exports sheets: `TOBILLED`, `A_TOPAY`, `F_TOPAY`, and `Master Ledger`.
 - Applies authentic styling: bold dark-blue headers (`#1e3a8a`), white text, bordered data cells, and accounting currency formatting.
+- Export is blocked unless the latest cloud data is verified; CSV text cells are escaped against spreadsheet formula injection.
 
 ---
 
@@ -286,25 +286,18 @@ The canonical application data model consists of 28 fields (A through AB):
 
 ## 11. Security and Data Integrity
 
-- SHA-256 password hashing for Admin and Rudra roles.
-- Role-based access control (RBAC): Delete operations restricted to Admin.
-- Strict input validation before backend submission.
-- Zero data loss on payment status transitions.
+- Server-side salted PBKDF2-HMAC-SHA256 password hashes (100,000 iterations) are held in Apps Script Script Properties.
+- Server-issued session tokens expire after one hour; administrative authorization is derived from the server session, never a caller-supplied role.
+- Delete and backup operations are admin-only. Client-side settings cannot redirect requests to an arbitrary spreadsheet or API.
+- Shipment IDs provide stable edit/delete identity; status transitions verify the destination before removing the source.
+- The ID migration must be reviewed and run manually before legacy rows can be edited or deleted.
+- Financial calculation rules in `js/calculations.js` were not changed.
 
 ---
 
 ## 12. Verification and Regression Tests
 
-The complete automated test suite validates all 134 assertions across 6 verification scripts:
-
-1. `verify_enhancements.ps1` -- **37 / 37 PASS** (28-column master schema, headers, modal inputs, RBAC, calculations)
-2. `verify_calculations.ps1` -- **20 / 20 PASS** (Full accounting rules, COD settlement, extra amount, POD settlement, idempotence)
-3. `verify_mode_blocking.ps1` -- **27 / 27 PASS** (Mode-specific input blocking, zeroing on save, physical worksheet tabs)
-4. `verify_backend_and_schema.ps1` -- **16 / 16 PASS** (Workbook XML verification, 28-column dimensions, formulas, Apps Script locking)
-5. `verify_pr2_worksheets.ps1` -- **17 / 17 PASS** (Physical sheet routing, Version 1 endpoint, inter-sheet moves, POD DONE status)
-6. `verify_section_clear_and_backspace.ps1` -- **17 / 17 PASS** (Section clear buttons, backspace protection, status isolation, UI polish)
-
-**Total: 134 / 134 Tests Passing (100% Green).**
+All six PowerShell verification scripts currently pass 144 assertions. They are primarily source/workbook assertions, not deployed Apps Script integration tests; passing them does not verify a live deployment or spreadsheet migration.
 
 ---
 
@@ -345,14 +338,14 @@ The complete automated test suite validates all 134 assertions across 6 verifica
   - Distinct result types: `source: 'cloud'`, `source: 'offline'`, and `status: 'error'` with clear badge and toast indicators.
 - **Delete Confirmation & Rollback Protection (`js/table.js`, `js/data.js`):**
   - Concurrency lock `this._isDeleting` prevents double-submission race conditions.
-  - Multi-sheet row isolation: `DataManager.deleteTrip(rowNum, optSheetName)` filters by both `row` and `sheetName`, eliminating cross-sheet row collisions.
+  - Stable shipment IDs and server-side worksheet/LR checks prevent cross-sheet row collisions.
   - Cloud-first confirmation: only deletes local state upon server-confirmed `{ status: 'success' }`. Retains data and alerts user if deletion is rejected.
 - **Transporter Autocomplete Safety (`js/table.js`):**
   - `handleFieldAutofill()` preserves manually entered route locations (`From`, `To`) and truck plate numbers, only auto-filling bank credentials and empty fields.
 - **Exit Code Verification:**
   - Corrected `verify_section_clear_and_backspace.ps1`, `verify_backend_and_schema.ps1`, and `verify_mode_blocking.ps1` to strictly return exit code `1` on failure and `0` on pass.
-- **Branch Audit:**
-  - Audited `main`, `Upgrade_1.1`, and `Upgrade_1.2`. `main` contains the latest physical worksheet routing and fixes. Work branch `audit-bugfix-verification` created for verified fixes.
+- **Deployment status:**
+  - Source changes have not been deployed, and no production spreadsheet migration has been run.
 
 ---
 
@@ -369,7 +362,7 @@ The complete automated test suite validates all 134 assertions across 6 verifica
 - [x] Working toolbar with Search, Add Trip, Refresh, Zoom, and XLSX Download.
 - [x] Interactive spreadsheet grid with sticky headers, row numbers, and borders.
 - [x] Backend routes to physical worksheets `TOBILLED`, `A-TO-PAY`, and `F-TO-PAY`.
-- [x] Active Deployment: Version 2 (AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA).
-- [x] Active Sheet ID: `1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU`.
-- [x] All automated unit and integration tests passing with exit code 0.
+- [ ] Configure credentials and `SPREADSHEET_ID` in Apps Script Script Properties before deployment.
+- [ ] Run the reviewed shipment-ID and historical worksheet migrations only after a production backup and owner approval.
+- [ ] Verify the deployed backend and spreadsheet using a controlled test account before production use.
 - [x] Pure 7-bit ASCII representation throughout (0 non-ASCII bytes).

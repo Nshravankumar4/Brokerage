@@ -12,6 +12,7 @@ const AppModule = {
   dateFrom: '',
   dateTo: '',
   isSyncing: false,
+  _isCheckingCloud: false,
   _pollerInterval: null,
 
   init() {
@@ -20,18 +21,6 @@ const AppModule = {
     }
     this.bindEvents();
     this.initRealtimeSync();
-    this.refresh();
-
-    // CLOUD-FIRST ARCHITECTURE: Immediately fetch live data from Google Sheets endpoint
-    if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
-      ApiService.fetchAll().then(res => {
-        if (res && res.source === 'cloud') {
-          this.refresh();
-          this.updateCloudSyncBadge(true);
-          console.log('\u2705 Live Google Sheets cloud ledger synchronized on startup.');
-        }
-      }).catch(e => console.warn('Cloud startup fetch note:', e));
-    }
   },
 
   // ================= MOBILE & DESKTOP SLIDE-IN SIDEBAR =================
@@ -111,13 +100,15 @@ const AppModule = {
       if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
         this.checkCloudVersionAndSync();
       }
-    }, 3500);
+    }, 15000);
   },
 
   async checkCloudVersionAndSync() {
-    if (this.isSyncing) return;
-    if (typeof ApiService === 'undefined' || !ApiService.isCloudConnected()) return;
+    if (this.isSyncing || this._isCheckingCloud) return;
+    if (typeof ApiService === 'undefined' || !ApiService.isCloudConnected() ||
+        typeof AuthModule === 'undefined' || !AuthModule.getSessionToken()) return;
 
+    this._isCheckingCloud = true;
     try {
       const serverVersion = await ApiService.getDataVersion();
       const localVersion = DataManager.getVersion();
@@ -130,34 +121,39 @@ const AppModule = {
         const res = await ApiService.fetchAll();
         this.isSyncing = false;
 
-        if (res && res.trips) {
+        if (res && res.status === 'success' && res.source === 'cloud') {
           this.refresh();
           this.updateCloudSyncBadge(true);
+        } else {
+          this.updateCloudSyncBadge(false, true, false);
         }
       } else if (serverVersion) {
         this.updateCloudSyncBadge(true);
       }
     } catch (e) {
       this.isSyncing = false;
-      console.warn("[Sync] Background poll note:", e);
+      console.error('[Sync] Cloud polling failed:', e);
+    } finally {
+      this._isCheckingCloud = false;
     }
   },
 
   async syncNow(silent = false) {
     if (!silent) this.showToast("\uD83D\uDD04 Syncing latest cloud database...");
     this.updateCloudSyncBadge(false);
-    if (typeof ApiService !== 'undefined') {
+    if (typeof ApiService !== 'undefined' && typeof AuthModule !== 'undefined' && AuthModule.getSessionToken()) {
       const res = await ApiService.fetchAll();
-      this.refresh();
       if (res && res.status === 'success' && res.source === 'cloud') {
+        this.refresh();
         this.updateCloudSyncBadge(true);
         if (!silent) this.showToast(`\u2705 Synced ${res.trips.length} trips with latest Google Sheets ledger!`);
       } else if (res && res.source === 'offline') {
+        this.refresh();
         this.updateCloudSyncBadge(false, false, true);
         if (!silent) this.showToast("\uD83D\uDCE6 Offline mode: loaded local trip ledger.");
       } else {
         this.updateCloudSyncBadge(false, true, false);
-        if (!silent) this.showToast("\u26A0\uFE0F Cloud sync unavailable. Displaying local data.");
+        if (!silent) this.showToast("\u26A0\uFE0F Cloud sync failed. Local cache was not treated as cloud data.");
       }
     }
   },
@@ -165,11 +161,16 @@ const AppModule = {
   updateCloudSyncBadge(isLive, isError = false, isOffline = false) {
     const headerPill = document.getElementById('headerCloudSyncBadge');
     const drawerStatus = document.getElementById('drawerStatusText');
-    const count = DataManager.getAll().length;
+    let count = 'Unavailable';
+    try {
+      count = DataManager.getAll().length;
+    } catch (error) {
+      console.error('Could not read the local shipment cache for the sync badge:', error);
+    }
 
     if (headerPill) {
       if (isError) {
-        headerPill.innerHTML = `\u26A0\uFE0F Cloud Offline (v${DataManager.getVersion()})`;
+        headerPill.innerHTML = `\u26A0\uFE0F Cloud Sync Error (v${DataManager.getVersion()})`;
         headerPill.style.color = '#f59e0b';
       } else if (isOffline) {
         headerPill.innerHTML = `\uD83D\uDCE6 Offline Mode (v${DataManager.getVersion()})`;
@@ -184,9 +185,15 @@ const AppModule = {
     }
 
     if (drawerStatus) {
-      drawerStatus.innerText = isError
-        ? `Offline / Cached \u2022 ${count} Trips`
-        : `Online \u2022 ${count} Active Trips`;
+      if (isError) {
+        drawerStatus.innerText = `Cloud error \u2022 ${count} Local Trips`;
+      } else if (isOffline) {
+        drawerStatus.innerText = `Offline cache \u2022 ${count} Local Trips`;
+      } else if (isLive) {
+        drawerStatus.innerText = `Online \u2022 ${count} Active Trips`;
+      } else {
+        drawerStatus.innerText = `Syncing \u2022 ${count} Local Trips`;
+      }
     }
   },
 
@@ -292,32 +299,13 @@ const AppModule = {
 
   openSettingsModal() {
     if (typeof AuthModule !== 'undefined' && !AuthModule.isAdmin()) {
-      alert('Access Restricted: Only Administrator has permission to access API and System Settings!');
+      alert('Access Restricted: Only the Administrator can access system settings.');
       return;
     }
     const modal = document.getElementById('settingsModal');
     if (modal) {
       if (typeof AuthModule !== 'undefined') AuthModule.updateHeaderUI();
-      const apiUrlInput = document.getElementById('settingApiUrlInput');
-      const sheetIdInput = document.getElementById('settingSheetIdInput');
-      if (apiUrlInput && typeof ApiService !== 'undefined') {
-        apiUrlInput.value = ApiService.config.apiUrl || '';
-      }
-      if (sheetIdInput && typeof ApiService !== 'undefined') {
-        sheetIdInput.value = ApiService.getSheetId() || '';
-      }
       modal.style.display = 'flex';
-    }
-  },
-
-  saveSettings() {
-    const apiUrlInput = document.getElementById('settingApiUrlInput');
-    const sheetIdInput = document.getElementById('settingSheetIdInput');
-    if (typeof ApiService !== 'undefined') {
-      if (apiUrlInput) ApiService.setApiUrl(apiUrlInput.value.trim());
-      if (sheetIdInput) ApiService.setSheetId(sheetIdInput.value.trim());
-      this.showToast('\u2601\uFE0F Google Sheets API settings saved!');
-      this.checkCloudVersionAndSync();
     }
   },
 
@@ -333,15 +321,7 @@ const AppModule = {
       alert('Access Restricted: Only Administrator can restore original database records!');
       return;
     }
-    if (confirm('Are you sure you want to restore the current workbook records from BROKER DETAILS ADVANCE BALC DETAILS.xlsx? All unsaved manual edits will be reset.')) {
-      if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
-        await ApiService.triggerRestoreDatabase();
-      } else {
-        DataManager.reset();
-      }
-      this.refresh();
-      this.showToast('\uD83D\uDCCB Restored current workbook records successfully!');
-    }
+    this.showToast('Database restore is disabled. No local or cloud data was changed.');
   },
 
   setFilter(filterType) {

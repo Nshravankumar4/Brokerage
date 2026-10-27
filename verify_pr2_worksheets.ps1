@@ -24,8 +24,9 @@ $indexHtml = [System.IO.File]::ReadAllText("E:\TR\P1\index.html", [System.Text.E
 # 1. Physical Worksheet Routing Architecture in Code.gs
 Assert-Test ($codeGs -match 'PHYSICAL_SHEET_CANDIDATES\s*=\s*\{') "backend/Code.gs defines PHYSICAL_SHEET_CANDIDATES mapping"
 Assert-Test ($codeGs -match 'function\s+resolveWorksheet\s*\(') "backend/Code.gs implements centralized resolveWorksheet()"
-Assert-Test ($codeGs -match 'function\s+migrateHistoricalFinalRecords\s*\(') "backend/Code.gs implements safe migration from historical 'final' sheet"
+Assert-Test ($codeGs -match 'function\s+migrateHistoricalFinalRecords\s*\(' -and $codeGs -match 'The legacy worksheet was preserved') "backend/Code.gs implements repeatable migration while preserving historical 'final' sheet"
 Assert-Test ($codeGs -match 'function\s+runMigrateToPhysicalSheets\s*\(') "backend/Code.gs implements manual runMigrateToPhysicalSheets() runner"
+Assert-Test ($codeGs -match 'Duplicate LR numbers exist in the legacy worksheet') "backend/Code.gs rejects duplicate historical LR numbers instead of silently merging"
 
 # 2. Reading from Three Physical Worksheets
 Assert-Test ($codeGs -match 'targetCategories\s*=\s*\[\s*''TOBILLED'',\s*''A/TO-PAY'',\s*''F/TO-PAY''\s*\]') "handleGetAll targets TOBILLED, A/TO-PAY, and F/TO-PAY physical sheets"
@@ -33,14 +34,16 @@ Assert-Test ($codeGs -match 'sheetName:\s*sheetName') "handleGetAll includes phy
 Assert-Test ($codeGs -match 'id:\s*stableId') "handleGetAll assigns stable unique record identifier"
 
 # 3. Inter-Sheet Movement & Status Changes
-Assert-Test ($codeGs -match 'isStatusChangeMove\s*=\s*Boolean\(sourceSheetName\s*&&\s*sourceSheetName\s*!==\s*targetSheetName\s*&&\s*rowNum\)') "handleSaveTrip detects status-change inter-sheet movement"
+Assert-Test ($codeGs -match 'isStatusChangeMove\s*=\s*Boolean\(!isAdd\s*&&\s*sourceSheetName\s*!==\s*targetSheetName\)') "handleSaveTrip detects status-change inter-sheet movement"
 Assert-Test ($codeGs -match 'srcSheet\.deleteRow\(rowNum\)') "handleSaveTrip safely removes record from source sheet after confirmed write"
-Assert-Test ($codeGs -match 'handleDeleteTrip\(rowNum,\s*optId,\s*optSheetName\)') "handleDeleteTrip targets the record's specific physical worksheet"
+Assert-Test ($codeGs -match 'handleDeleteTrip\(data\.id,\s*null,\s*data\.sheetName,\s*data\.lrNo\)') "handleDeleteTrip deletes by stable ID with worksheet and LR confirmation"
+Assert-Test ($codeGs -match 'appendedLocations\.length\s*!==\s*2[\s\S]*?appendedTargetRecords\.length\s*!==\s*1') "status moves verify source and target identity before deleting the source"
 
 # 4. Active API Endpoint
 Assert-Test ($apiJs -match 'AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA') "js/api.js connects to active Google Apps Script deployment URL"
-Assert-Test ($apiJs -match 'sourceSheet:\s*trip\.sourceSheet') "js/api.js transmits sourceSheet in saveTrip payload"
-Assert-Test ($apiJs -match 'deleteTrip\(rowNum,\s*sheetName\s*=\s*''''\)') "js/api.js deleteTrip transmits target physical sheetName"
+Assert-Test ($apiJs -match 'async\s+saveTrip\(trip\)[\s\S]*?request\(''saveTrip'',\s*\{\s*trip\s*\}\)') "js/api.js transmits shipment identity without client-selected spreadsheet data"
+Assert-Test ($apiJs -match 'async\s+deleteTrip\(id,\s*sheetName\s*=\s*'''',\s*lrNo\s*=\s*''''\)[\s\S]*?id,\s*sheetName,\s*lrNo') "js/api.js deleteTrip transmits stable ID, worksheet, and LR confirmation"
+Assert-Test ($apiJs -match 'method:\s*''POST''[\s\S]*?sessionToken') "js/api.js sends authenticated API requests using POST"
 
 # 5. POD Status & Done Automation
 Assert-Test ($indexHtml -match 'id="m_podAmountStatus"') "index.html defines m_podAmountStatus selector in shipment modal"
@@ -53,4 +56,3 @@ Write-Host "  TEST RESULTS: Passed: $passed, Failed: $failed" -ForegroundColor C
 Write-Host "========================================================" -ForegroundColor Cyan
 
 if ($failed -gt 0) { exit 1 } else { exit 0 }
-

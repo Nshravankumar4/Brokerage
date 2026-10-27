@@ -9,6 +9,7 @@
 const TableModule = {
   // ================= 3-SHEET VIEW CONTROLLER =================
   currentExcelSheet: 'TOBILLED', // 'all', 'TOBILLED', 'A/TO-PAY', 'F/TO-PAY'
+  currentEditingId: null,
 
   switchExcelSheet(sheetType, element) {
     this.currentExcelSheet = sheetType;
@@ -345,6 +346,7 @@ const TableModule = {
 
     displayedTrips.forEach((t) => {
       const calc = CalculationEngine.calculate(t);
+      const shipmentId = /^[a-zA-Z0-9_-]{20,80}$/.test(String(t.id || '')) ? String(t.id) : '';
 
       totF += calc.fright;
       totTM += calc.tm;
@@ -361,12 +363,12 @@ const TableModule = {
 
       // POD cell styling: RED badge ONLY on the POD cell if date is missing
       const podCellHtml = calc.isPodMissing
-        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true)" style="cursor:pointer;" title="Click to enter POD date">\u26A0\uFE0F Missing</span>`
+        ? `<span class="pod-missing-badge" ${shipmentId ? `onclick="TableModule.openEditModal('${shipmentId}', true)"` : ''} style="cursor:${shipmentId ? 'pointer' : 'not-allowed'};" title="${shipmentId ? 'Click to enter POD date' : 'Run the reviewed shipment ID migration first'}">\u26A0\uFE0F Missing</span>`
         : `<span class="pod-received-text">${escapeHtml(t.pod)}</span>`;
 
       // Role-based delete action
       const deleteBtnHtml = canDel
-        ? `<button class="btn-action-del" onclick="TableModule.deleteTripRecord(${t.row}, '${escapeHtml(t.sheetName || '')}')" title="Delete Trip (Admin Only)">\uD83D\uDDD1\uFE0F</button>`
+        ? `<button class="btn-action-del" ${shipmentId ? `onclick="TableModule.deleteTripRecord('${shipmentId}', '${escapeHtml(t.sheetName || '')}')"` : 'disabled'} title="${shipmentId ? 'Delete Trip (Admin Only)' : 'Run the reviewed shipment ID migration first'}">\uD83D\uDDD1\uFE0F</button>`
         : `<button class="btn-action-del disabled" title="Delete restricted to Admin" disabled>\uD83D\uDD12</button>`;
 
       const rawPodStatus = String(t.podAmountStatus || calc.podAmountStatus || '').trim().toUpperCase();
@@ -407,7 +409,7 @@ const TableModule = {
         <td class="col-center">${podStatusHtml}</td>
         <td>${escapeHtml(t.note || '')}</td>
         <td class="col-center" style="white-space:nowrap;">
-          <button class="btn btn-secondary btn-sm" onclick="TableModule.openEditModal(${t.row})" title="Edit Details">\u270F\uFE0F Edit</button>
+          <button class="btn btn-secondary btn-sm" ${shipmentId ? `onclick="TableModule.openEditModal('${shipmentId}')"` : 'disabled'} title="${shipmentId ? 'Edit Details' : 'Run the reviewed shipment ID migration first'}">\u270F\uFE0F Edit</button>
           ${deleteBtnHtml}
         </td>
       `;
@@ -469,15 +471,16 @@ const TableModule = {
 
     displayedTrips.forEach((t) => {
       const calc = CalculationEngine.calculate(t);
+      const shipmentId = /^[a-zA-Z0-9_-]{20,80}$/.test(String(t.id || '')) ? String(t.id) : '';
       const card = document.createElement('div');
       card.className = `trip-card ${calc.isPodMissing ? 'card-pod-missing' : ''}`;
 
       const podBadge = calc.isPodMissing
-        ? `<span class="pod-missing-badge" onclick="TableModule.openEditModal(${t.row}, true)" style="cursor:pointer;" title="Click to Enter POD Date">\u26A0\uFE0F POD Missing (Click to Enter)</span>`
+        ? `<span class="pod-missing-badge" ${shipmentId ? `onclick="TableModule.openEditModal('${shipmentId}', true)"` : ''} style="cursor:${shipmentId ? 'pointer' : 'not-allowed'};" title="${shipmentId ? 'Click to enter POD date' : 'Run the reviewed shipment ID migration first'}">\u26A0\uFE0F POD Missing (Click to Enter)</span>`
         : `<span class="pod-ok-badge">\u2705 Received: ${escapeHtml(t.pod)}</span>`;
 
       const deleteBtn = canDel
-        ? `<button class="btn btn-danger-soft btn-sm" onclick="TableModule.deleteTripRecord(${t.row}, '${escapeHtml(t.sheetName || '')}')">\uD83D\uDDD1\uFE0F Delete</button>`
+        ? `<button class="btn btn-danger-soft btn-sm" ${shipmentId ? `onclick="TableModule.deleteTripRecord('${shipmentId}', '${escapeHtml(t.sheetName || '')}')"` : 'disabled'}>\uD83D\uDDD1\uFE0F Delete</button>`
         : `<span class="role-restricted-tag" title="Only Admin can delete">\uD83D\uDD12 Admin Delete</span>`;
 
       card.innerHTML = `
@@ -553,7 +556,7 @@ const TableModule = {
         <!-- Card Action Footer -->
         <div class="trip-card-footer">
           <div>${deleteBtn}</div>
-          <button class="btn btn-primary btn-sm" onclick="TableModule.openEditModal(${t.row})">
+          <button class="btn btn-primary btn-sm" ${shipmentId ? `onclick="TableModule.openEditModal('${shipmentId}')"` : 'disabled'}>
             \u270F\uFE0F Edit Details
           </button>
         </div>
@@ -798,9 +801,13 @@ const TableModule = {
     }
   },
 
-  openEditModal(rowNum, focusPod = false) {
-    const trip = DataManager.getTrip(rowNum);
-    if (!trip) return;
+  openEditModal(shipmentId, focusPod = false) {
+    const trip = DataManager.getTrip(shipmentId);
+    if (!trip || !trip.id) {
+      if (typeof AppModule !== 'undefined') AppModule.showToast('Run the reviewed shipment ID migration before editing existing records.');
+      return;
+    }
+    this.currentEditingId = trip.id;
 
     document.getElementById('modalTitle').innerText = `\u270F\uFE0F Edit Trip (SL NO: ${trip.slNo || trip.row})`;
     document.getElementById('m_editRow').value = trip.row;
@@ -896,6 +903,7 @@ const TableModule = {
     const nextRowNum = list.length > 0 ? (Math.max(...list.map(t => t.row)) + 1) : 2;
     const nextSlNo = list.length > 0 ? (Math.max(...list.map(t => parseInt(t.slNo, 10) || 0)) + 1) : 1;
     const today = new Date().toISOString().split('T')[0];
+    this.currentEditingId = DataManager.createShipmentId();
 
     document.getElementById('modalTitle').innerText = '\u2795 Add New Shipment';
     document.getElementById('m_editRow').value = 0;
@@ -977,6 +985,7 @@ const TableModule = {
       errSpan.style.display = 'none';
     }
     document.getElementById('editModal').style.display = 'none';
+    this.currentEditingId = null;
   },
 
   validateLrNoLive() {
@@ -1156,13 +1165,14 @@ const TableModule = {
     }
 
     // Determine strict normalized status and clean non-applicable fields
-    const rawTopay = String(document.getElementById('m_topay').value || 'TOBILLED').trim().toUpperCase();
-    let normalizedTopay = 'TOBILLED';
-    if (rawTopay.startsWith('F')) {
-      normalizedTopay = 'F/TO-PAY';
-    } else if (rawTopay.startsWith('A')) {
-      normalizedTopay = 'A/TO-PAY';
+    const rawTopay = String(document.getElementById('m_topay').value || '').trim().toUpperCase();
+    const allowedStatuses = ['TOBILLED', 'A/TO-PAY', 'F/TO-PAY'];
+    if (!allowedStatuses.includes(rawTopay)) {
+      this._isSaving = false;
+      if (typeof AppModule !== 'undefined') AppModule.showToast('Choose a supported shipment status.');
+      return;
     }
+    const normalizedTopay = rawTopay;
 
     const frightVal = Number(document.getElementById('m_fright').value) || 0;
     let tmVal = 0;
@@ -1201,10 +1211,10 @@ const TableModule = {
       pmVal = Number(document.getElementById('m_pm').value) || 0;
     }
 
-    const sourceSheet = document.getElementById('m_sourceSheet')?.value || '';
     const podStatusSelected = document.getElementById('m_podAmountStatus')?.value || 'PENDING';
 
     const tripData = {
+      id: this.currentEditingId || (isAdd ? DataManager.createShipmentId() : ''),
       row: rowNum,
       sourceSheet: sourceSheet,
       sheetName: sourceSheet || normalizedTopay,
@@ -1249,65 +1259,66 @@ const TableModule = {
       tripData.podAmountStatus = hasValidPodDate ? 'DONE' : 'PENDING';
     }
 
-    // Lock submit button during save
+    // Keep the form intact until the cloud confirms the write.
     const submitBtn = document.getElementById('m_submitBtn');
     const origBtnText = submitBtn ? submitBtn.innerText : '';
     if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Saving...'; }
 
     const doSave = async () => {
-      // 1. Optimistic local save for instant UI
-      DataManager.saveTrip(tripData);
-      this.closeModal();
-      if (typeof AppModule !== 'undefined') {
-        AppModule.refresh();
-      }
-
-      // 2. Cloud sync - wait for confirmation
-      if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
-        try {
-          const res = await ApiService.saveTrip(tripData);
-          if (res && res.status === 'error') {
-            // Cloud rejected - show error toast but keep local save
-            if (typeof AppModule !== 'undefined') {
-              if (res.code === 'DUPLICATE_LR') {
-                AppModule.showToast('\u26A0\uFE0F Cloud rejected: Duplicate LR NO on server. Check Google Sheets.');
-              } else {
-                AppModule.showToast('\u26A0\uFE0F Cloud save error: ' + (res.message || 'Unknown error'));
-              }
-            }
-          } else {
-            if (res && res.version) { DataManager.setVersion(String(res.version)); }
-            // Update local record with cloud-authoritative row/sheetName
-            if (res && res.rowNum && res.sheetName) {
-              const saved = DataManager.getAll().find(t => t.lrNo === tripData.lrNo && t.sheetName === res.sheetName);
-              if (saved) { saved.row = res.rowNum; DataManager.saveAll(DataManager.getAll()); }
-            }
-            if (typeof AppModule !== 'undefined') {
-              AppModule.showToast(isAdd ? '\u2795 New shipment saved to Google Sheets!' : '\uD83D\uDCBE Changes saved to Google Sheets!');
-              await AppModule.syncNow(true);
-            }
-          }
-        } catch (err) {
-          if (typeof AppModule !== 'undefined') {
-            AppModule.showToast('\u26A0\uFE0F Cloud unavailable - saved locally only. Sync when online.');
-          }
-          console.warn('Cloud sync note for saveTrip:', err);
+      let cloudSaveConfirmed = false;
+      let localCacheUpdated = false;
+      try {
+        if (typeof ApiService === 'undefined' || !ApiService.isCloudConnected()) {
+          throw new Error('Cloud API is not configured. The shipment was not saved.');
         }
-      } else {
-        // Offline - local only
+        const result = await ApiService.saveTrip(tripData);
+        if (!result || result.status !== 'success') {
+          throw new Error(result && result.message ? result.message : 'Cloud save was rejected.');
+        }
+        cloudSaveConfirmed = true;
+
+        const savedTrip = {
+          ...tripData,
+          id: result.id || tripData.id,
+          row: result.rowNum || rowNum,
+          sheetName: result.sheetName || tripData.sheetName,
+          sourceSheet: result.sheetName || tripData.sheetName,
+          isAdd: false
+        };
+        const trips = DataManager.getAll();
+        const existingIndex = trips.findIndex(item => String(item.id || '') === String(savedTrip.id));
+        if (existingIndex >= 0) trips[existingIndex] = savedTrip;
+        else trips.push(savedTrip);
+        DataManager.saveAll(trips);
+        localCacheUpdated = true;
+        this.closeModal();
         if (typeof AppModule !== 'undefined') {
-          AppModule.showToast(isAdd ? '\u2795 New shipment saved (offline).' : '\uD83D\uDCBE Changes saved (offline).');
+          AppModule.refresh();
+          AppModule.showToast(isAdd ? '\u2795 Shipment saved to Google Sheets.' : '\uD83D\uDCBE Changes saved to Google Sheets.');
+          await AppModule.syncNow(true);
         }
+      } catch (error) {
+        if (cloudSaveConfirmed) {
+          console.error('Cloud save succeeded but follow-up local processing failed:', error);
+          this.closeModal();
+          if (typeof AppModule !== 'undefined') {
+            AppModule.showToast(localCacheUpdated
+              ? 'Shipment was saved to Google Sheets, but the follow-up sync failed. Refresh the ledger.'
+              : 'Shipment was saved to Google Sheets, but the local cache could not update. Refresh the ledger.');
+          }
+        } else if (typeof AppModule !== 'undefined') {
+          AppModule.showToast(`\u274C Save failed: ${error.message}`);
+        }
+      } finally {
+        this._isSaving = false;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = origBtnText; }
       }
-
-      this._isSaving = false;
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = origBtnText; }
     };
 
     doSave();
   },
 
-  async deleteTripRecord(rowNum, optSheetName = null) {
+  async deleteTripRecord(shipmentId, optSheetName = null) {
     if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
       if (typeof AppModule !== 'undefined') {
         AppModule.showToast('\uD83D\uDEAB Access Restricted: Only Administrator can delete trips.');
@@ -1317,36 +1328,45 @@ const TableModule = {
 
     if (this._isDeleting) return; // Concurrency lock against rapid duplicate clicks
 
-    const targetTrip = (typeof DataManager !== 'undefined')
-      ? (optSheetName 
-          ? DataManager.getAll().find(t => t.row === rowNum && String(t.sheetName || '').trim() === String(optSheetName).trim())
-          : DataManager.getTrip(rowNum))
-      : null;
-    const targetSheetName = optSheetName || targetTrip?.sheetName || '';
+    const targetTrip = (typeof DataManager !== 'undefined') ? DataManager.getTrip(shipmentId) : null;
+    if (!targetTrip || !targetTrip.id) {
+      if (typeof AppModule !== 'undefined') AppModule.showToast('Cannot identify the selected shipment. Refresh the ledger and retry.');
+      return;
+    }
+    if (optSheetName && String(targetTrip.sheetName || '').trim() !== String(optSheetName).trim()) {
+      if (typeof AppModule !== 'undefined') AppModule.showToast('The shipment moved to another worksheet. Refresh the ledger and retry.');
+      return;
+    }
+    const targetSheetName = physicalSheetNameForStatus(targetTrip.topay);
+    const targetLrNo = targetTrip?.lrNo || '';
 
-    if (!confirm(`Are you sure you want to delete trip LR "${targetTrip?.lrNo || rowNum}"? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete trip LR "${targetTrip.lrNo || shipmentId}"? This action cannot be undone.`)) {
       return;
     }
 
     this._isDeleting = true;
 
-    // Check if cloud backend is connected
     if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
       if (typeof AppModule !== 'undefined') {
         AppModule.showToast('\u23F3 Deleting record from Google Sheets...');
       }
+      let cloudDeleteConfirmed = false;
       try {
-        const res = await ApiService.deleteTrip(rowNum, targetSheetName);
+        const res = await ApiService.deleteTrip(targetTrip.id, targetSheetName, targetLrNo);
         if (res && res.status === 'success') {
-          // Cloud confirmed deletion: now safe to remove from local state
-          DataManager.deleteTrip(rowNum, targetSheetName);
+          cloudDeleteConfirmed = true;
+          const syncResult = await ApiService.fetchAll();
           if (typeof AppModule !== 'undefined') {
-            AppModule.refresh();
-            AppModule.showToast('\uD83D\uDDD1\uFE0F Trip deleted successfully from Google Sheets.');
-            await AppModule.syncNow(true);
+            if (syncResult && syncResult.status === 'success' && syncResult.source === 'cloud') {
+              AppModule.refresh();
+              AppModule.updateCloudSyncBadge(true);
+              AppModule.showToast('\uD83D\uDDD1\uFE0F Trip deleted successfully from Google Sheets.');
+            } else {
+              AppModule.updateCloudSyncBadge(false, true, false);
+              AppModule.showToast('Trip was deleted from Google Sheets, but the local ledger could not refresh. Sync before continuing.');
+            }
           }
         } else {
-          // Backend rejection: retain data and show informative error
           const msg = (res && res.message) ? res.message : 'Cloud deletion rejected by server';
           alert('Delete failed: ' + msg);
           if (typeof AppModule !== 'undefined') {
@@ -1354,42 +1374,62 @@ const TableModule = {
           }
         }
       } catch (err) {
-        alert('Network error during deletion: ' + err.message);
-        if (typeof AppModule !== 'undefined') {
-          AppModule.showToast('\u274C Network error during deletion');
+        if (cloudDeleteConfirmed) {
+          console.error('Cloud deletion succeeded but local refresh failed:', err);
+          if (typeof AppModule !== 'undefined') AppModule.showToast('Trip was deleted from Google Sheets, but the local ledger could not refresh. Sync before continuing.');
+        } else {
+          alert('Network error during deletion: ' + err.message);
+          if (typeof AppModule !== 'undefined') AppModule.showToast('\u274C Network error during deletion');
         }
       } finally {
         this._isDeleting = false;
       }
     } else {
-      // Offline mode deletion
-      DataManager.deleteTrip(rowNum, targetSheetName);
-      if (typeof AppModule !== 'undefined') {
-        AppModule.refresh();
-        AppModule.showToast('\uD83D\uDDD1\uFE0F Trip deleted locally (offline mode).');
-      }
+      if (typeof AppModule !== 'undefined') AppModule.showToast('Connect to the cloud ledger before deleting. No record was removed.');
       this._isDeleting = false;
     }
   },
 
   // ================= EXCEL (.XLSX) EXPORT WITH 28 COLUMNS & PRESERVED CELL COLORS =================
+  async ensureCloudDataForExport() {
+    if (typeof ApiService === 'undefined' || typeof AuthModule === 'undefined' ||
+        !AuthModule.getSessionToken()) {
+      if (typeof AppModule !== 'undefined') AppModule.showToast('Sign in before exporting ledger data.');
+      return false;
+    }
+    if (!window.navigator.onLine) {
+      if (typeof AppModule !== 'undefined') AppModule.showToast('Export cancelled: connect to the cloud to verify the latest ledger data.');
+      return false;
+    }
+
+    try {
+      const result = await ApiService.fetchAll();
+      if (!result || result.status !== 'success' || result.source !== 'cloud') {
+        if (typeof AppModule !== 'undefined') {
+          AppModule.updateCloudSyncBadge(false, true, false);
+          AppModule.showToast('Export cancelled: latest cloud data could not be verified.');
+        }
+        return false;
+      }
+      if (typeof AppModule !== 'undefined') {
+        AppModule.refresh();
+        AppModule.updateCloudSyncBadge(true);
+      }
+      return true;
+    } catch (error) {
+      console.error('Cloud verification failed before export:', error);
+      if (typeof AppModule !== 'undefined') AppModule.showToast('Export cancelled: latest cloud data could not be verified.');
+      return false;
+    }
+  },
+
   async exportToExcel() {
     if (typeof ExcelJS === 'undefined') {
       console.warn('ExcelJS not loaded, falling back to CSV export.');
       return this.exportToCSV();
     }
 
-    // Fetch latest cloud data before export so newly added records are included
-    if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
-      try {
-        if (typeof AppModule !== 'undefined') {
-          AppModule.showToast('\u2601\uFE0F Fetching latest data before export...');
-        }
-        await ApiService.fetchAll();
-      } catch (err) {
-        console.warn('Export pre-fetch note:', err);
-      }
-    }
+    if (!await this.ensureCloudDataForExport()) return;
 
     try {
       const workbook = new ExcelJS.Workbook();
@@ -1641,12 +1681,26 @@ const TableModule = {
       alert('Error exporting Excel: ' + err.message);
     }
   },
-  exportToCSV() {
-    const list = DataManager.getAll();
+  async exportToCSV() {
+    if (!await this.ensureCloudDataForExport()) return;
+    let list;
+    try {
+      list = DataManager.getAll();
+    } catch (error) {
+      console.error('Could not read the verified ledger for CSV export:', error);
+      if (typeof AppModule !== 'undefined') AppModule.showToast('CSV export cancelled: the local cache could not be read.');
+      return;
+    }
     if (!list || list.length === 0) {
       alert('No data to export!');
       return;
     }
+
+    const csvText = value => {
+      let text = String(value === null || value === undefined ? '' : value);
+      if (/^[\t\r\n ]*[=+\-@]/.test(text)) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
+    };
 
     const headers = [
       'SL NO', 'TRSP NAME', 'DATE', 'LR NO', 'TRUCK NO', 'FROM', 'TO',
@@ -1660,45 +1714,46 @@ const TableModule = {
     const rows = list.map(t => {
       const calc = CalculationEngine.calculate(t);
       return [
-        `"${t.slNo || ''}"`,
-        `"${(t.trspName || '').replace(/"/g, '""')}"`,
-        `"${t.date || '\u2014'}"`,
-        `"${t.lrNo || ''}"`,
-        `"${t.truckNo || ''}"`,
-        `"${(t.from || '').replace(/"/g, '""')}"`,
-        `"${(t.to || '').replace(/"/g, '""')}"`,
-        `"${t.accountNo || ''}"`,
-        `"${t.ifsc || ''}"`,
-        `"${(t.paymentMade || '').replace(/"/g, '""')}"`,
+        csvText(t.slNo),
+        csvText(t.trspName),
+        csvText(t.date || '\u2014'),
+        csvText(t.lrNo),
+        csvText(t.truckNo),
+        csvText(t.from),
+        csvText(t.to),
+        csvText(t.accountNo),
+        csvText(t.ifsc),
+        csvText(t.paymentMade),
         calc.fright || 0,
-        `"${t.date1 || ''}"`,
-        `"${(t.topay || '').replace(/"/g, '""')}"`,
+        csvText(t.date1),
+        csvText(t.topay),
         calc.tm || 0,
         calc.adv1 || 0,
-        `"${t.date2 || ''}"`,
+        csvText(t.date2),
         calc.adv2 || 0,
-        `"${t.date3 || ''}"`,
+        csvText(t.date3),
         calc.adv3 || 0,
-        `"${(t.pod || '').replace(/"/g, '""')}"`,
+        csvText(t.pod),
         calc.cod || 0,
         calc.pendingTobilled || 0,
         calc.extraAmount || 0,
-        `"${t.payDate || ''}"`,
+        csvText(t.payDate),
         calc.pm || 0,
         calc.finalBalc || 0,
         calc.podAmountStatus || 0,
-        `"${(t.note || '').replace(/"/g, '""')}"`
+        csvText(t.note)
       ].join(',');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvBlob = new Blob([headers.join(',') + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const csvUrl = URL.createObjectURL(csvBlob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', csvUrl);
     link.setAttribute('download', `SR_Brokerage_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(csvUrl), 1000);
 
     if (typeof AppModule !== 'undefined') {
       AppModule.showToast('\uD83D\uDCCA Ledger exported to CSV/Excel successfully!');

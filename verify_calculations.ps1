@@ -179,8 +179,8 @@ Assert-Calc "Case 18: isDuplicateLr prevents duplicate LR submissions" `
 
 # 19. Delete record functionality in table.js
 $tableJs = Get-Content -Raw "js\table.js"
-Assert-Calc "Case 19: deleteTripRecord preserves other records and re-renders table" `
-    ($tableJs -match 'deleteTripRecord' -and $tableJs -match 'DataManager\.deleteTrip')
+Assert-Calc "Case 19: deleteTripRecord refreshes authoritative cloud data after server confirmation" `
+    ($tableJs -match 'deleteTripRecord' -and $tableJs -match 'ApiService\.deleteTrip\(targetTrip\.id' -and $tableJs -match 'syncResult\.source\s*===\s*''cloud''')
 
 # 20. Multi-worksheet export with 28 columns
 Assert-Calc "Case 20: exportToExcel creates TOBILLED, A_TOPAY, F_TOPAY, Master Ledger" `
@@ -195,4 +195,3 @@ Write-Host " Total:  $($passed + $failed)" -ForegroundColor Cyan
 Write-Host "========================================================`n" -ForegroundColor Cyan
 
 if ($failed -gt 0) { exit 1 }
-

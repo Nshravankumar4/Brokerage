@@ -4,16 +4,14 @@
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * 
- * Strict Credentials Enforced:
- *  - ADMIN: Administrator (Shravan) | Role: Admin (SHA-256 authenticated)
- *  - RUDRA: User / Fleet Employee   | Role: Employee (SHA-256 authenticated)
+ * Credentials are verified by the Apps Script backend; browser account data is presentation-only.
  * 
  * Permissions:
- *  - ADMIN: Full CRUD Control (Add, Edit, Update POD, Delete Records, Restore Data)
+ *  - ADMIN: Add, edit, update POD, delete records, and access settings
  *  - RUDRA (Employee): Fleet Operations (Add, Edit, Update POD \u2014 Delete is Restricted)
  * 
  * Auto-Logout:
- *  - 10-Minute Idle Inactivity Timeout (600,000 ms) automatically logs out to the auth portal.
+ *  - 10-minute idle timeout; server sessions expire after one hour.
  */
 
 const AuthModule = {
@@ -21,28 +19,36 @@ const AuthModule = {
   selectedUser: 'Admin',
   idleTimeoutMs: 10 * 60 * 1000, // 10 minutes
   _idleTimer: null,
+  _isSigningIn: false,
+  _sessionToken: null,
+  _currentUser: null,
 
-  // Pre-configured SHA-256 hashes of authorized credentials (NO PLAIN-TEXT PASSWORDS STORED)
+  // These account details only drive presentation; the backend session is authoritative.
   accounts: {
     admin: {
       username: 'admin',
       displayName: 'Shravan (Admin)',
       role: 'admin',
       badgeColor: '#1e3a8a',
-      permissions: { canAdd: true, canEdit: true, canDelete: true },
-      passHash: 'ded12726612993e58a7f6f1b0428300adcf13f6cabb7515436c5888b3de21c0b' // SHA-256 of authorized Admin credential
+      permissions: { canAdd: true, canEdit: true, canDelete: true }
     },
     rudra: {
       username: 'rudra',
       displayName: 'Rudra (Employee)',
       role: 'employee',
       badgeColor: '#059669',
-      permissions: { canAdd: true, canEdit: true, canDelete: false },
-      passHash: '0a623bcaece42a5740cdfb0b78849ec8717d811c8c2583697ab884513f4d9e3f' // SHA-256 of authorized Employee credential
+      permissions: { canAdd: true, canEdit: true, canDelete: false }
     }
   },
 
   init() {
+    try {
+      localStorage.removeItem(this.storageKey);
+      localStorage.removeItem('broker_pwd_override_admin');
+      localStorage.removeItem('broker_pwd_override_rudra');
+    } catch (error) {
+      console.error('Could not clear legacy browser credentials:', error);
+    }
     this.checkAuthState();
     this.initActivityTracking();
   },
@@ -100,13 +106,17 @@ const AuthModule = {
   },
 
   getCurrentUser() {
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {}
-    return null;
+    return this._currentUser;
+  },
+
+  getSessionToken() {
+    return this._sessionToken;
+  },
+
+  handleSessionExpired() {
+    if (!this._currentUser) return;
+    this.logout();
+    alert('Your secure session expired. Please sign in again.');
   },
 
   selectLoginUser(userType) {
@@ -148,26 +158,16 @@ const AuthModule = {
     }
   },
 
-  async computeSha256(str) {
-    try {
-      if (window.crypto && crypto.subtle) {
-        const enc = new TextEncoder().encode(str);
-        const buf = await crypto.subtle.digest('SHA-256', enc);
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-      }
-    } catch (e) {}
-    return null;
-  },
-
   async handleLogin(event) {
     if (event) event.preventDefault();
+    if (this._isSigningIn) return;
 
     const selectedType = this.selectedUser || 'Admin';
     const pwdInput = document.getElementById('loginPassword');
     const errBox = document.getElementById('loginErrorMsg');
-    const pwd = (pwdInput ? pwdInput.value : '').trim();
+    const pwd = pwdInput ? pwdInput.value : '';
 
-    if (!pwd) {
+    if (!pwd.trim()) {
       if (errBox) {
         errBox.style.display = 'block';
         errBox.innerText = 'Please enter your password.';
@@ -175,84 +175,112 @@ const AuthModule = {
       return;
     }
 
-    const accountKey = (selectedType.toLowerCase() === 'admin') ? 'admin' : 'rudra';
+    const accountKey = selectedType.toLowerCase() === 'admin' ? 'admin' : 'rudra';
     const account = this.accounts[accountKey];
-    if (!account) return;
-
-    // Check custom password override in local storage or primary password
-    let customOverride = null;
-    try {
-      customOverride = localStorage.getItem(`broker_pwd_override_${accountKey}`);
-    } catch (e) {}
-
-    const inputHash = await this.computeSha256(pwd);
-
-    // Exact strict match against SHA-256 hash
-    let isMatch = false;
-    if (customOverride) {
-      isMatch = (pwd === customOverride);
-    } else {
-      isMatch = (inputHash && inputHash === account.passHash);
-    }
-
-    if (isMatch) {
-      const sessionUser = {
-        username: account.username,
-        displayName: account.displayName,
-        role: account.role,
-        badgeColor: account.badgeColor,
-        permissions: account.permissions,
-        authHash: account.passHash,
-        loginTime: Date.now()
-      };
-      localStorage.setItem(this.storageKey, JSON.stringify(sessionUser));
-
-      const authWrapper = document.getElementById('authWrapper');
-      const appWrapper = document.getElementById('appWrapper');
-
-      // Instant transition (<40ms) to ensure ZERO password lag
-      if (authWrapper) authWrapper.style.display = 'none';
-      if (appWrapper) appWrapper.style.display = 'flex';
-
-      this.updateHeaderUI();
-      this.resetInactivityTimer();
-
-      if (typeof AppModule !== 'undefined') {
-        AppModule.switchView('dashboard');
-        AppModule.refresh();
-        AppModule.showToast(`\uD83D\uDE80 Welcome back, ${account.displayName}!`);
-      }
-
-      if (pwdInput) pwdInput.value = '';
-      if (errBox) errBox.style.display = 'none';
-
-      // Asynchronous background cloud sync without blocking user interaction
-      if (typeof ApiService !== 'undefined') {
-        ApiService.fetchAll().then(res => {
-          if (res && res.source === 'cloud' && typeof AppModule !== 'undefined') {
-            AppModule.refresh();
-            AppModule.updateCloudSyncBadge(true);
-          }
-        }).catch(err => {
-          console.warn('Silent cloud sync note on login:', err);
-        });
-      }
-    } else {
-      // Clean, secure error message with ZERO credential leakage
+    if (!account || typeof ApiService === 'undefined') {
       if (errBox) {
         errBox.style.display = 'block';
-        errBox.innerText = `Invalid credentials for ${selectedType}. Access denied.`;
+        errBox.innerText = 'Secure sign-in is unavailable. Check the cloud configuration and try again.';
       }
-      if (pwdInput) {
-        pwdInput.value = '';
-        pwdInput.focus();
+      return;
+    }
+
+    this._isSigningIn = true;
+    const submitButton = document.getElementById('loginSubmitBtn');
+    const originalButtonText = submitButton ? submitButton.innerText : '';
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.innerText = 'Signing in...';
+    }
+
+    const result = await ApiService.login(account.username, pwd).catch(error => {
+      console.error('Sign-in request failed:', error);
+      return { status: 'error', message: 'Cloud sign-in is unavailable. Please retry.' };
+    });
+    try {
+      if (result && result.status === 'success' && result.sessionToken &&
+          result.role === (accountKey === 'admin' ? 'admin' : 'employee')) {
+        this._sessionToken = result.sessionToken;
+        this._currentUser = {
+          username: account.username,
+          displayName: result.displayName || account.displayName,
+          role: result.role,
+          badgeColor: account.badgeColor,
+          permissions: account.permissions,
+          loginTime: Date.now()
+        };
+
+        const authWrapper = document.getElementById('authWrapper');
+        const appWrapper = document.getElementById('appWrapper');
+
+        if (authWrapper) authWrapper.style.display = 'none';
+        if (appWrapper) appWrapper.style.display = 'flex';
+
+        this.updateHeaderUI();
+        this.resetInactivityTimer();
+
+        if (typeof AppModule !== 'undefined') {
+          AppModule.switchView('dashboard');
+          AppModule.showToast(`\uD83D\uDE80 Welcome back, ${account.displayName}!`);
+        }
+
+        if (pwdInput) pwdInput.value = '';
+        if (errBox) errBox.style.display = 'none';
+
+        if (typeof ApiService !== 'undefined') {
+          ApiService.fetchAll().then(res => {
+            if (res && res.source === 'cloud' && typeof AppModule !== 'undefined') {
+              AppModule.refresh();
+              AppModule.updateCloudSyncBadge(true);
+            } else if (typeof AppModule !== 'undefined') {
+              AppModule.updateCloudSyncBadge(false, res && res.source !== 'offline', res && res.source === 'offline');
+              if (res && res.source === 'offline') AppModule.refresh();
+              if (res && res.status === 'error') AppModule.showToast('Cloud data could not be loaded. No cached data was treated as synchronized.');
+            }
+          }).catch(err => {
+            console.error('Cloud sync failed after sign-in:', err);
+          });
+        }
+      } else {
+        if (errBox) {
+          errBox.style.display = 'block';
+          errBox.innerText = result && result.message ? result.message : 'Sign-in failed. Check your credentials and try again.';
+        }
+        if (pwdInput) {
+          pwdInput.value = '';
+          pwdInput.focus();
+        }
+      }
+    } finally {
+      this._isSigningIn = false;
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerText = originalButtonText;
       }
     }
   },
 
   logout() {
+    if (typeof ApiService !== 'undefined' && this._sessionToken) {
+      ApiService.logout().catch(error => console.error('Could not revoke the server session:', error));
+    }
     this.clearInactivityTimer();
-    localStorage.removeItem(this.storageKey);
+    this._sessionToken = null;
+    this._currentUser = null;
+    try {
+      localStorage.removeItem(this.storageKey);
+      localStorage.removeItem('broker_pwd_override_admin');
+      localStorage.removeItem('broker_pwd_override_rudra');
+    } catch (error) {
+      console.error('Could not clear legacy browser credentials:', error);
+    }
+    if (typeof DataManager !== 'undefined') {
+      try {
+        DataManager.saveAll([]);
+      } catch (error) {
+        console.error('Could not clear the local shipment cache on logout:', error);
+      }
+    }
     const authWrapper = document.getElementById('authWrapper');
     const appWrapper = document.getElementById('appWrapper');
 
@@ -310,26 +338,34 @@ const AuthModule = {
       alert('Please enter a new password.');
       return;
     }
-    const newPwd = input.value.trim();
-    if (newPwd.length < 6) {
-      alert('Password must be at least 6 characters long.');
+    const newPwd = input.value;
+    if (newPwd.length < 12 || newPwd.length > 256) {
+      alert('Password must contain 12 to 256 characters.');
       return;
     }
-    const curUser = this.getCurrentUser();
-    if (!curUser) return;
-    
-    const accountKey = curUser.role === 'admin' ? 'admin' : 'rudra';
-    try {
-      localStorage.setItem(`broker_pwd_override_${accountKey}`, newPwd);
-    } catch (e) {}
-
-    input.value = '';
-    if (typeof AppModule !== 'undefined') {
-      AppModule.showToast('\uD83D\uDD11 Password updated successfully!');
-      AppModule.closeSettingsModal();
-    } else {
-      alert('Password updated successfully!');
+    if (typeof ApiService === 'undefined' || !this._sessionToken) {
+      alert('Sign in before changing the account password.');
+      return;
     }
+    const saveButton = input.parentElement.querySelector('button');
+    if (saveButton) saveButton.disabled = true;
+    ApiService.changePassword(newPwd).then(result => {
+      if (result && result.status === 'success' && result.sessionToken) {
+        this._sessionToken = result.sessionToken;
+        input.value = '';
+        if (typeof AppModule !== 'undefined') {
+          AppModule.showToast('Password updated securely.');
+          AppModule.closeSettingsModal();
+        }
+      } else {
+        alert(result && result.message ? result.message : 'Password update failed.');
+      }
+    }).catch(error => {
+      console.error('Password update failed:', error);
+      alert('Password update failed. Please retry when the cloud service is available.');
+    }).finally(() => {
+      if (saveButton) saveButton.disabled = false;
+    });
   }
 };
 
