@@ -67,3 +67,4 @@ Write-Host "========================================================" -Foregroun
 Write-Host "  TEST RESULTS: Passed: $passed, Failed: $failed" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 
+if ($failed -gt 0) { exit 1 } else { exit 0 }

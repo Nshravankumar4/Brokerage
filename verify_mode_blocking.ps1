@@ -66,3 +66,5 @@ Assert-Test ($cssStyles -match 'min-height:\s*44px') "css/styles.css enforces 44
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  TEST RESULTS: Passed: $passed, Failed: $failed" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
+
+if ($failed -gt 0) { exit 1 } else { exit 0 }

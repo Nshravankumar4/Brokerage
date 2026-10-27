@@ -366,7 +366,7 @@ const TableModule = {
 
       // Role-based delete action
       const deleteBtnHtml = canDel
-        ? `<button class="btn-action-del" onclick="TableModule.deleteTripRecord(${t.row})" title="Delete Trip (Admin Only)">\uD83D\uDDD1\uFE0F</button>`
+        ? `<button class="btn-action-del" onclick="TableModule.deleteTripRecord(${t.row}, '${escapeHtml(t.sheetName || '')}')" title="Delete Trip (Admin Only)">\uD83D\uDDD1\uFE0F</button>`
         : `<button class="btn-action-del disabled" title="Delete restricted to Admin" disabled>\uD83D\uDD12</button>`;
 
       const rawPodStatus = String(t.podAmountStatus || calc.podAmountStatus || '').trim().toUpperCase();
@@ -477,7 +477,7 @@ const TableModule = {
         : `<span class="pod-ok-badge">\u2705 Received: ${escapeHtml(t.pod)}</span>`;
 
       const deleteBtn = canDel
-        ? `<button class="btn btn-danger-soft btn-sm" onclick="TableModule.deleteTripRecord(${t.row})">\uD83D\uDDD1\uFE0F Delete</button>`
+        ? `<button class="btn btn-danger-soft btn-sm" onclick="TableModule.deleteTripRecord(${t.row}, '${escapeHtml(t.sheetName || '')}')">\uD83D\uDDD1\uFE0F Delete</button>`
         : `<span class="role-restricted-tag" title="Only Admin can delete">\uD83D\uDD12 Admin Delete</span>`;
 
       card.innerHTML = `
@@ -760,10 +760,11 @@ const TableModule = {
       if (acctInput && (!acctInput.value || isChange)) acctInput.value = match.accountNo || '';
       if (ifscInput && (!ifscInput.value || isChange)) ifscInput.value = match.ifsc || '';
       if (bankInput && (!bankInput.value || bankInput.value === 'SBI BANK' || isChange)) bankInput.value = match.paymentMade || 'SBI BANK';
-      if (fromInput && (!fromInput.value || isChange)) fromInput.value = match.from || '';
-      if (toInput && (!toInput.value || isChange)) toInput.value = match.to || '';
-      if (field === 'truckNo' && trspInput && (!trspInput.value || isChange)) trspInput.value = match.trspName || '';
-      if (field === 'trspName' && truckInput && (!truckInput.value || isChange)) truckInput.value = match.truckNo || '';
+      // Route & vehicle fields: preserve manually typed values; only populate when completely empty
+      if (fromInput && !fromInput.value.trim()) fromInput.value = match.from || '';
+      if (toInput && !toInput.value.trim()) toInput.value = match.to || '';
+      if (field === 'truckNo' && trspInput && !trspInput.value.trim()) trspInput.value = match.trspName || '';
+      if (field === 'trspName' && truckInput && !truckInput.value.trim()) truckInput.value = match.truckNo || '';
     }
   },
 
@@ -1241,7 +1242,12 @@ const TableModule = {
     tripData.balc = calc.pendingTobilled;
     tripData.finalBalc = calc.finalBalc;
     tripData.isAdd = isAdd;
-    tripData.podAmountStatus = (podStatusSelected === 'DONE' || tripData.pod || calc.podAmountStatus === 'DONE') ? 'DONE' : 'PENDING';
+    const hasValidPodDate = Boolean(tripData.pod && !/^(pending|na|empty|if date.*)$/i.test(tripData.pod));
+    if (normalizedTopay === 'TOBILLED') {
+      tripData.podAmountStatus = (hasValidPodDate && (calc.finalBalc <= 0 || podStatusSelected === 'DONE')) ? 'DONE' : 'PENDING';
+    } else {
+      tripData.podAmountStatus = hasValidPodDate ? 'DONE' : 'PENDING';
+    }
 
     // Lock submit button during save
     const submitBtn = document.getElementById('m_submitBtn');
@@ -1301,7 +1307,7 @@ const TableModule = {
     doSave();
   },
 
-  deleteTripRecord(rowNum) {
+  async deleteTripRecord(rowNum, optSheetName = null) {
     if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
       if (typeof AppModule !== 'undefined') {
         AppModule.showToast('\uD83D\uDEAB Access Restricted: Only Administrator can delete trips.');
@@ -1309,26 +1315,60 @@ const TableModule = {
       return;
     }
 
-    if (confirm(`Are you sure you want to delete this trip record? This action cannot be undone.`)) {
-      const targetTrip = (typeof DataManager !== 'undefined') ? DataManager.getTrip(rowNum) : null;
-      const targetSheetName = targetTrip?.sheetName || '';
-      DataManager.deleteTrip(rowNum);
-      if (typeof AppModule !== 'undefined') {
-        AppModule.refresh();
-        AppModule.showToast('\uD83D\uDDD1\uFE0F Trip deleted successfully.');
-      }
+    if (this._isDeleting) return; // Concurrency lock against rapid duplicate clicks
 
-      // Authoritative Cloud Sync to Google Sheets
-      if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
-        ApiService.deleteTrip(rowNum, targetSheetName).then(async (res) => {
-          console.log('\u2705 Cloud delete synced to Google Sheets:', res);
+    const targetTrip = (typeof DataManager !== 'undefined')
+      ? (optSheetName 
+          ? DataManager.getAll().find(t => t.row === rowNum && String(t.sheetName || '').trim() === String(optSheetName).trim())
+          : DataManager.getTrip(rowNum))
+      : null;
+    const targetSheetName = optSheetName || targetTrip?.sheetName || '';
+
+    if (!confirm(`Are you sure you want to delete trip LR "${targetTrip?.lrNo || rowNum}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    this._isDeleting = true;
+
+    // Check if cloud backend is connected
+    if (typeof ApiService !== 'undefined' && ApiService.isCloudConnected() && window.navigator.onLine) {
+      if (typeof AppModule !== 'undefined') {
+        AppModule.showToast('\u23F3 Deleting record from Google Sheets...');
+      }
+      try {
+        const res = await ApiService.deleteTrip(rowNum, targetSheetName);
+        if (res && res.status === 'success') {
+          // Cloud confirmed deletion: now safe to remove from local state
+          DataManager.deleteTrip(rowNum, targetSheetName);
           if (typeof AppModule !== 'undefined') {
+            AppModule.refresh();
+            AppModule.showToast('\uD83D\uDDD1\uFE0F Trip deleted successfully from Google Sheets.');
             await AppModule.syncNow(true);
           }
-        }).catch(err => {
-          console.warn('Cloud sync note for deleteTrip:', err);
-        });
+        } else {
+          // Backend rejection: retain data and show informative error
+          const msg = (res && res.message) ? res.message : 'Cloud deletion rejected by server';
+          alert('Delete failed: ' + msg);
+          if (typeof AppModule !== 'undefined') {
+            AppModule.showToast('\u274C ' + msg);
+          }
+        }
+      } catch (err) {
+        alert('Network error during deletion: ' + err.message);
+        if (typeof AppModule !== 'undefined') {
+          AppModule.showToast('\u274C Network error during deletion');
+        }
+      } finally {
+        this._isDeleting = false;
       }
+    } else {
+      // Offline mode deletion
+      DataManager.deleteTrip(rowNum, targetSheetName);
+      if (typeof AppModule !== 'undefined') {
+        AppModule.refresh();
+        AppModule.showToast('\uD83D\uDDD1\uFE0F Trip deleted locally (offline mode).');
+      }
+      this._isDeleting = false;
     }
   },
 

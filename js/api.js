@@ -115,9 +115,10 @@ const ApiService = {
 
         if (res.ok) {
           const data = await res.json();
-          if (data && data.status === 'success' && Array.isArray(data.trips) && data.trips.length > 0) {
+          // Clear distinction: A valid cloud response returning an empty or populated trips array is authoritative cloud data
+          if (data && data.status === 'success' && Array.isArray(data.trips)) {
             DataManager.saveAll(data.trips);
-            if (data.version) {
+            if (data.version !== undefined && data.version !== null) {
               DataManager.setVersion(String(data.version));
             }
             return {
@@ -125,20 +126,51 @@ const ApiService = {
               source: 'cloud',
               trips: data.trips,
               version: data.version,
-              summary: data.summary
+              summary: data.summary || {
+                totalTrips: data.trips.length,
+                totalFreight: 0,
+                totalAdvances: 0,
+                finalBalance: 0,
+                pendingPod: 0
+              }
+            };
+          } else {
+            console.warn('Unexpected cloud payload structure:', data);
+            return {
+              status: 'error',
+              source: 'local',
+              error: 'Invalid cloud payload structure',
+              trips: DataManager.getAll(),
+              version: DataManager.getVersion()
             };
           }
+        } else {
+          console.warn(`Cloud API HTTP error: ${res.status}`);
+          return {
+            status: 'error',
+            source: 'local',
+            error: `HTTP error ${res.status}`,
+            trips: DataManager.getAll(),
+            version: DataManager.getVersion()
+          };
         }
       } catch (err) {
         console.warn('Cloud API fetch note (fallback to verified local cache):', err.message);
+        return {
+          status: 'error',
+          source: 'local',
+          error: err.message,
+          trips: DataManager.getAll(),
+          version: DataManager.getVersion()
+        };
       }
     }
 
-    // High-performance local store fallback
+    // Explicitly supported offline mode fallback
     const localTrips = DataManager.getAll();
     return {
       status: 'success',
-      source: 'local',
+      source: 'offline',
       trips: localTrips,
       version: DataManager.getVersion()
     };
@@ -184,9 +216,8 @@ const ApiService = {
     }
 
     const session = (typeof AuthModule !== 'undefined') ? AuthModule.getCurrentUser() : null;
-    DataManager.deleteTrip(rowNum);
-
     const url = this.getApiUrl();
+
     if (url && window.navigator.onLine) {
       try {
         const res = await fetch(url, {
@@ -201,21 +232,38 @@ const ApiService = {
             sheetId: this.getSheetId()
           })
         });
+
         if (res.ok) {
           const result = await res.json();
-          if (result && result.version) {
+          if (result && result.version !== undefined) {
             DataManager.setVersion(String(result.version));
           }
-          if (result && result.status === 'error') {
-            console.error('Server rejection on deleteTrip:', result.message);
+          if (result && result.status === 'success') {
+            // Confirm cloud success before deleting local state
+            DataManager.deleteTrip(rowNum, sheetName);
+            return {
+              status: 'success',
+              source: 'cloud',
+              message: result.message || 'Trip deleted from Google Sheets',
+              sheetName: result.sheetName
+            };
+          } else {
+            const msg = (result && result.message) ? result.message : 'Cloud deletion rejected by server';
+            console.error('Server rejection on deleteTrip:', msg);
+            return { status: 'error', code: result?.code || 'SERVER_ERROR', message: msg };
           }
+        } else {
+          return { status: 'error', code: 'HTTP_ERROR', message: `Server returned HTTP ${res.status}` };
         }
       } catch (err) {
-        console.warn('Cloud sync note for deleteTrip:', err.message);
+        console.warn('Cloud sync error for deleteTrip:', err.message);
+        return { status: 'error', code: 'NETWORK_ERROR', message: err.message };
       }
     }
 
-    return { status: 'success', message: 'Trip deleted' };
+    // Explicitly supported offline mode deletion
+    DataManager.deleteTrip(rowNum, sheetName);
+    return { status: 'success', source: 'offline', message: 'Trip deleted locally (offline mode)' };
   },
 
   async triggerRestoreDatabase() {

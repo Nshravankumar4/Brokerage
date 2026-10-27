@@ -40,7 +40,7 @@ const CalculationEngine = {
       // Master Formula: U = K - N - O - Q - S = Freight
       cod = (trip.cod !== undefined && trip.cod !== null && trip.cod !== '' && Number(trip.cod) > 0)
         ? Number(trip.cod)
-        : Math.max(0, fright - tm - totalAdvances);
+        : fright;
       pendingTobilled = 0;
       balc = 0;
       finalBalc = 0;

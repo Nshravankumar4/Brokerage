@@ -338,17 +338,38 @@ The complete automated test suite validates all 134 assertions across 6 verifica
 
 ---
 
-## 15. Final Acceptance Checklist
+## 15. Cloud CRUD Consistency, Delete Safety & Branch Audit
+
+- **Authoritative Empty Dataset Handling (`js/api.js`):**
+  - `fetchAll()` now accepts a valid cloud response with `trips: []` as authoritative, clearing stale local data rather than falling back to old cached rows.
+  - Distinct result types: `source: 'cloud'`, `source: 'offline'`, and `status: 'error'` with clear badge and toast indicators.
+- **Delete Confirmation & Rollback Protection (`js/table.js`, `js/data.js`):**
+  - Concurrency lock `this._isDeleting` prevents double-submission race conditions.
+  - Multi-sheet row isolation: `DataManager.deleteTrip(rowNum, optSheetName)` filters by both `row` and `sheetName`, eliminating cross-sheet row collisions.
+  - Cloud-first confirmation: only deletes local state upon server-confirmed `{ status: 'success' }`. Retains data and alerts user if deletion is rejected.
+- **Transporter Autocomplete Safety (`js/table.js`):**
+  - `handleFieldAutofill()` preserves manually entered route locations (`From`, `To`) and truck plate numbers, only auto-filling bank credentials and empty fields.
+- **Exit Code Verification:**
+  - Corrected `verify_section_clear_and_backspace.ps1`, `verify_backend_and_schema.ps1`, and `verify_mode_blocking.ps1` to strictly return exit code `1` on failure and `0` on pass.
+- **Branch Audit:**
+  - Audited `main`, `Upgrade_1.1`, and `Upgrade_1.2`. `main` contains the latest physical worksheet routing and fixes. Work branch `audit-bugfix-verification` created for verified fixes.
+
+---
+
+## 16. Final Acceptance Checklist
 
 - [x] Application opens directly into Excel-style spreadsheet interface (`viewExcel`).
 - [x] Three independent payment-status tabs: `TOBILLED`, `A/TO-PAY`, `F/TO-PAY` plus `ALL` filter tab.
 - [x] Section clear buttons on Shipment Information, Payment Details, and Bank Details.
 - [x] Backspace and input deletion work naturally with zero forced overwrites.
 - [x] Mode switching clears incompatible amounts and prevents cross-status value leakage.
+- [x] Authoritative empty dataset handling: empty cloud sheet clears stale local records.
+- [x] Delete and CRUD consistency: server confirmation required before local purge, multi-sheet row isolation.
+- [x] Transporter autocomplete reuses accounts without overwriting manually entered cities.
 - [x] Working toolbar with Search, Add Trip, Refresh, Zoom, and XLSX Download.
 - [x] Interactive spreadsheet grid with sticky headers, row numbers, and borders.
 - [x] Backend routes to physical worksheets `TOBILLED`, `A-TO-PAY`, and `F-TO-PAY`.
 - [x] Active Deployment: Version 1 (`AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU`).
 - [x] Active Sheet ID: `1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU`.
-- [x] All 134 automated unit and integration tests passing.
+- [x] All automated unit and integration tests passing with exit code 0.
 - [x] Pure 7-bit ASCII representation throughout (0 non-ASCII bytes).

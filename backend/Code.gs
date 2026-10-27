@@ -586,11 +586,24 @@ function calculateLedgerAmounts(input) {
   }
 
   // POD Amount Status resolution (Col AA)
-  var podAmountStatus = input.podAmountStatus || 0;
   var rawPod = String(input.pod || '').trim();
-  var rawPayDate = String(input.payDate || '').trim();
-  if (String(podAmountStatus).toUpperCase() === 'DONE' || (rawPod && !/pending|na/i.test(rawPod)) || rawPayDate) {
-    podAmountStatus = 'DONE';
+  var hasValidPodDate = Boolean(rawPod && !/^(pending|na|empty|if date.*)$/i.test(rawPod));
+  var podAmountStatus = 'PENDING';
+
+  if (status === 'TOBILLED') {
+    // TOBILLED requires both received POD document and settled balance
+    if (hasValidPodDate && finalPending <= 0) {
+      podAmountStatus = 'DONE';
+    } else {
+      podAmountStatus = 'PENDING';
+    }
+  } else {
+    // A/TO-PAY and F/TO-PAY: Settled upon POD receipt at unloading
+    if (hasValidPodDate) {
+      podAmountStatus = 'DONE';
+    } else {
+      podAmountStatus = 'PENDING';
+    }
   }
 
   return {

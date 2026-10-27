@@ -149,18 +149,32 @@ const AppModule = {
     if (typeof ApiService !== 'undefined') {
       const res = await ApiService.fetchAll();
       this.refresh();
-      this.updateCloudSyncBadge(true);
-      if (!silent) this.showToast("\u2705 Synced with latest Google Sheets ledger!");
+      if (res && res.status === 'success' && res.source === 'cloud') {
+        this.updateCloudSyncBadge(true);
+        if (!silent) this.showToast(`\u2705 Synced ${res.trips.length} trips with latest Google Sheets ledger!`);
+      } else if (res && res.source === 'offline') {
+        this.updateCloudSyncBadge(false, false, true);
+        if (!silent) this.showToast("\uD83D\uDCE6 Offline mode: loaded local trip ledger.");
+      } else {
+        this.updateCloudSyncBadge(false, true, false);
+        if (!silent) this.showToast("\u26A0\uFE0F Cloud sync unavailable. Displaying local data.");
+      }
     }
   },
 
-  updateCloudSyncBadge(isLive) {
+  updateCloudSyncBadge(isLive, isError = false, isOffline = false) {
     const headerPill = document.getElementById('headerCloudSyncBadge');
     const drawerStatus = document.getElementById('drawerStatusText');
     const count = DataManager.getAll().length;
 
     if (headerPill) {
-      if (isLive) {
+      if (isError) {
+        headerPill.innerHTML = `\u26A0\uFE0F Cloud Offline (v${DataManager.getVersion()})`;
+        headerPill.style.color = '#f59e0b';
+      } else if (isOffline) {
+        headerPill.innerHTML = `\uD83D\uDCE6 Offline Mode (v${DataManager.getVersion()})`;
+        headerPill.style.color = '#94a3b8';
+      } else if (isLive) {
         headerPill.innerHTML = `\uD83D\uDFE2 Cloud Synced (v${DataManager.getVersion()})`;
         headerPill.style.color = '#10b981';
       } else {
@@ -170,7 +184,9 @@ const AppModule = {
     }
 
     if (drawerStatus) {
-      drawerStatus.innerText = `Online \u2022 ${count} Active Trips`;
+      drawerStatus.innerText = isError
+        ? `Offline / Cached \u2022 ${count} Trips`
+        : `Online \u2022 ${count} Active Trips`;
     }
   },
 

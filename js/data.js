@@ -275,11 +275,17 @@ const DataManager = {
     return list;
   },
 
-  deleteTrip(rowNum) {
+  deleteTrip(rowNum, optSheetName = null) {
     if (typeof AuthModule !== 'undefined' && !AuthModule.canDelete()) {
       return false;
     }
-    const list = this.getAll().filter(t => t.row !== rowNum);
+    const cleanSheet = optSheetName ? String(optSheetName).trim() : null;
+    const list = this.getAll().filter(t => {
+      if (cleanSheet) {
+        return !(t.row === rowNum && String(t.sheetName || '').trim() === cleanSheet);
+      }
+      return t.row !== rowNum;
+    });
     this.saveAll(list);
     return true;
   },
