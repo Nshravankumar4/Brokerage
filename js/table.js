@@ -899,7 +899,7 @@ const TableModule = {
     const today = new Date().toISOString().split('T')[0];
 
     document.getElementById('modalTitle').innerText = '\u2795 Add New Shipment';
-    document.getElementById('m_editRow').value = 0;
+    document.getElementById('m_editRow').value = nextRowNum;
     document.getElementById('m_isAdd').value = 'true';
     document.getElementById('m_sourceSheet').value = '';
     const podStatusAddEl = document.getElementById('m_podAmountStatus');
@@ -1284,7 +1284,7 @@ const TableModule = {
             if (res.rowNum && res.sheetName) {
               const savedTrips = DataManager.getAll();
               const saved = isAdd
-                ? savedTrips.find(t => Number(t.row) === 0 && String(t.lrNo || '').trim().toUpperCase() === lrNo.toUpperCase())
+                ? savedTrips.find(t => Number(t.row) === rowNum && String(t.lrNo || '').trim().toUpperCase() === lrNo.toUpperCase())
                 : savedTrips.find(t => Number(t.row) === rowNum && String(t.sheetName || '').trim() === sourceSheet);
               if (saved) {
                 if (!isAdd && sourceSheet !== res.sheetName) {
