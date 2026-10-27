@@ -1,4 +1,4 @@
-﻿/**
+/**
  * api.js - Authoritative Cloud API & Synchronization Service
  * SR Brokerage Ledger - Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management
