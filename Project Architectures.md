@@ -1,4 +1,4 @@
-# SR Brokerage Ledger -- Comprehensive End-to-End System Architecture & Technical Specification
+﻿# SR Brokerage Ledger -- Comprehensive End-to-End System Architecture & Technical Specification
 
 > **System Title:** SR Brokerage Ledger -- Enterprise Fleet Logistics & Financial Accounts Management  
 > **Author & Developer:** Shravan Kumar  
@@ -9,9 +9,9 @@
 >   * `E:\TR\New\Final Sheet Broker.xlsx` (Authoritative 3-Sheet Physical Split, Created 26-Oct-2026)  
 >   * `E:\TR\P1\Final Sheet Broker.xlsx`  
 >   * `E:\TR\P1\BROKER DETAILS ADVANCE BALC DETAILS.xlsx`  
-> **Cloud Backend:** Google Apps Script Web App Deployment Version 1 (26 Oct 2026, 22:23)  
-> **Deployment ID:** `AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU`  
-> **Live API URL:** `https://script.google.com/macros/s/AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU/exec`  
+> **Cloud Backend:** Google Apps Script Web App Deployment Version 2 (27 Oct 2026, 07:16)  
+> **Deployment ID:** `AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA`  
+> **Live API URL:** `https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec`  
 > **Target Spreadsheet ID:** `1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU`  
 
 **Primary Requirement:** Maintain one existing web application, one existing main HTML page (`index.html`), the existing Google Apps Script backend (`backend/Code.gs`), and three independent payment-status views. Do not create a separate frontend application or merge the three statuses.
@@ -248,16 +248,16 @@ The canonical application data model consists of 28 fields (A through AB):
 
 ---
 
-## 7. Data Synchronization and API Configuration (`js/api.js`)
+## 7. Data Synchronization and API Configuration (js/api.js)
 
-- **Active Web App URL:**  
-  `https://script.google.com/macros/s/AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8/exec`
-- **Active Deployment ID:**  
-  `AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8` (Version 2)
-- **Auto-Migration Array:**  
-  Automatically migrates legacy deployment endpoints (Versions 1-7) to Version 8.
-- **Failover Handling:**  
-  Returns clear, user-friendly error notifications if cloud sync fails, preserving local edits without loss.
+- **Authoritative Single Endpoint:**
+  https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec
+- **Active Deployment ID:**
+  AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA (Version 2 on 27 Oct 2026, 07:16)
+- **Target Spreadsheet ID:**
+  1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU
+- **Strict Single-API Architecture:**
+  All legacy fallback endpoints, arrays, and migration chains removed. System communicates strictly through the authoritative Version 2 deployment.
 
 ---
 
@@ -369,7 +369,7 @@ The complete automated test suite validates all 134 assertions across 6 verifica
 - [x] Working toolbar with Search, Add Trip, Refresh, Zoom, and XLSX Download.
 - [x] Interactive spreadsheet grid with sticky headers, row numbers, and borders.
 - [x] Backend routes to physical worksheets `TOBILLED`, `A-TO-PAY`, and `F-TO-PAY`.
-- [x] Active Deployment: Version 1 (`AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU`).
+- [x] Active Deployment: Version 2 (AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA).
 - [x] Active Sheet ID: `1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU`.
 - [x] All automated unit and integration tests passing with exit code 0.
 - [x] Pure 7-bit ASCII representation throughout (0 non-ASCII bytes).

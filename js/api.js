@@ -1,70 +1,37 @@
-/**
+﻿/**
  * api.js - Authoritative Cloud API & Synchronization Service
  * SR Brokerage Ledger - Transport Brokerage Ledger Pvt Ltd
  * Fleet Logistics & Financial Accounts Management
  * Developed by Shravan Kumar
  * Interfaces with Google Apps Script backend (backend/Code.gs)
- * Live Production Endpoint: https://script.google.com/macros/s/AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8/exec
+ * Live Production Endpoint: https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec
  */
 
 const ApiService = {
   config: {
-    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU/exec',
+    defaultApiUrl: 'https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec',
     defaultSheetId: '1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU',
-    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbzq4WlQ5UXTk2QcIyiMMPtZcLWroAObqVryd2U0CGeS0I-JRoqQiwi0JmVcUNjPiJLU/exec',
+    apiUrl: localStorage.getItem('broker_api_url') || 'https://script.google.com/macros/s/AKfycbypHu63P8CqfmipBTYGe3GQO6zoYdCxrGZPSPFeR5mah4_knL06pS7KQAyDSEhIjcA/exec',
     sheetId: localStorage.getItem('broker_sheet_id') || '1wCu03TqXMhokFYarECDBCFDd_dMWx5LpLtiZL2iryiU',
     timeoutMs: 12000
   },
 
   getApiUrl() {
-    const stored = localStorage.getItem('broker_api_url');
-    // Auto-migrate legacy deployment endpoints to active production endpoint
-    const legacyIds = [
-      'AKfycbwVgbDsDazKLlwR2Bh',
-      'AKfycbxhwvJi8UDsJd2yFo',
-      'AKfycbzIxZGX9QwNWqZSzDJ2HMV3Ma79GdFYVKod0a7z30cbdXNn_322azdSDVj6wiyru_4yow',
-      'AKfycbzjzIDLeIpl63TC5RPrSPmusBktgCqILD6EemOKVwHUQj41gqYtYdJwQoufJYgHvZSoBQ',
-      'AKfycbwqykkt53iglV7FrceyixlDjUSe5ry4JIG_jlLPwbBukqrRF1lagM49Hem7jYcHm7HK4A',
-      'AKfycbxHwxcs9iEPhSqRbNmtiGpEAxKdGL7A50Bg_hn3DHQuQMu-dPhaLcxc1GXeKX8nrVmuIQ',
-      'AKfycbzFAtw3o_YHqS5BfuXFCzP684AwF4YiSHc83o80C8eo0kxgZUcAufP2LkiWqWKMbUB6NA',
-      'AKfycbzwQS2FSywZ5GlwqjUBbSrzjg_ZwUL2PrN7q-NT0PKZYeJZ3PxpH55KiG30azYslUJE',
-      'AKfycbyyJYnJo3niwEQfmVt02rWyN5XnkrETWzZL6FHqk3ZBQSwY8H0q2sfb4K42c88oQRsc',
-      'AKfycbxLW4Vi4HTRDR_gz-LbDE5gj5XNLyKQU9YjsZYrMgCJOM6ncZ_lV8yCgDpxEDSQZKm8',
-      'AKfycbyeMjLQf5AeVcnqbImSHDUbor7At0QO2DHVIg9SEGEzOi2WD2XDR7HnTgU4foSgmg3-'
-    ];
-    if (!stored || legacyIds.some(id => stored.includes(id))) {
-      return this.config.defaultApiUrl;
-    }
-    return this.config.apiUrl || this.config.defaultApiUrl;
+    return this.config.defaultApiUrl;
   },
 
   setApiUrl(url) {
-    this.config.apiUrl = url ? url.trim() : this.config.defaultApiUrl;
-    localStorage.setItem('broker_api_url', this.config.apiUrl);
+    this.config.apiUrl = this.config.defaultApiUrl;
+    localStorage.setItem('broker_api_url', this.config.defaultApiUrl);
   },
 
   getSheetId() {
-    const stored = localStorage.getItem('broker_sheet_id');
-    // Auto-migrate legacy spreadsheet IDs to the active production sheet
-    const legacySheets = [
-      '1pp9s62Oi41XW6N3cz_qxPTaG1JCjqK4iUqxxcIc3ZPA',
-      '1PLUsbBM2BDbb-WdwScnaZX4C64T7c9gZyxuVqVRtgAg'
-    ];
-    if (!stored || legacySheets.includes(stored)) {
-      return this.config.defaultSheetId;
-    }
-    return this.config.sheetId || this.config.defaultSheetId || '';
+    return this.config.defaultSheetId;
   },
 
   setSheetId(id) {
-    let cleanId = (id || '').trim();
-    // Extract ID if a full Google Sheets URL was pasted
-    const match = cleanId.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    if (match) {
-      cleanId = match[1];
-    }
-    this.config.sheetId = cleanId;
-    localStorage.setItem('broker_sheet_id', cleanId);
+    this.config.sheetId = this.config.defaultSheetId;
+    localStorage.setItem('broker_sheet_id', this.config.defaultSheetId);
   },
 
   isCloudConnected() {
