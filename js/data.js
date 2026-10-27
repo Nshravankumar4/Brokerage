@@ -141,8 +141,7 @@ const CURRENT_WORKBOOK_TRIPS = [
   }
 ];
 
-const CURRENT_WORKBOOK_STORAGE_VERSION = 'current-workbook-v1';
-const LEGACY_WORKBOOK_VALUES = new Set(['65000', '110250', '231000', '135000']);
+const CURRENT_WORKBOOK_SCHEMA_VERSION = 'current-workbook-v1';
 
 function normalizeTrip(trip) {
   const item = trip || {};
@@ -154,67 +153,41 @@ function normalizeTrip(trip) {
   if (s.startsWith('F')) normalized.topay = 'F/TO-PAY';
   else if (s.startsWith('A')) normalized.topay = 'A/TO-PAY';
   else normalized.topay = 'TOBILLED';
+  if (!normalized.sheetName) {
+    normalized.sheetName = normalized.topay === 'F/TO-PAY'
+      ? 'F-TO-PAY'
+      : normalized.topay === 'A/TO-PAY' ? 'A-TO-PAY' : 'TOBILLED';
+  }
   return normalized;
-}
-
-function isLegacyWorkbookData(list) {
-  if (!Array.isArray(list) || list.length === 0) return false;
-
-  if (list.length >= 10) {
-    const hasLegacyValues = list.some(trip => {
-      const freight = Number(trip && trip.fright);
-      return LEGACY_WORKBOOK_VALUES.has(String(freight || '')) || String(trip && trip.lrNo || '').trim() === '';
-    });
-    if (hasLegacyValues) return true;
-  }
-
-  if (list.length === CURRENT_WORKBOOK_TRIPS.length) {
-    const mismatched = list.some(trip => {
-      const item = trip || {};
-      const expected = CURRENT_WORKBOOK_TRIPS.find(sample => Number(sample.row) === Number(item.row));
-      if (!expected) return true;
-      const matches = String(item.trspName || '').trim() === String(expected.trspName || '').trim() &&
-        Number(item.fright || 0) === Number(expected.fright || 0) &&
-        String(item.topay || '').trim().toUpperCase() === String(expected.topay || '').trim().toUpperCase();
-      return !matches;
-    });
-    return mismatched;
-  }
-
-  return list.length === 19;
 }
 
 const INITIAL_TRIPS = CURRENT_WORKBOOK_TRIPS;
 
 const DataManager = {
   storageKey: 'broker_ledger_trips_v8_current_workbook',
-  versionKey: 'broker_ledger_version_v8_current_workbook',
+  versionKey: 'broker_ledger_cloud_version_v1',
+  schemaVersionKey: 'broker_ledger_schema_v1',
 
   getAll() {
     try {
       const data = localStorage.getItem(this.storageKey);
-      if (data) {
+      if (data !== null) {
         const parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          if (isLegacyWorkbookData(parsed)) {
-            this.saveAll(INITIAL_TRIPS);
-            this.setVersion(CURRENT_WORKBOOK_STORAGE_VERSION);
-            return JSON.parse(JSON.stringify(INITIAL_TRIPS));
-          }
-          this.setVersion(CURRENT_WORKBOOK_STORAGE_VERSION);
+        if (Array.isArray(parsed)) {
+          localStorage.setItem(this.schemaVersionKey, CURRENT_WORKBOOK_SCHEMA_VERSION);
           return parsed.map(normalizeTrip);
         }
       }
-    } catch (e) {}
-    this.saveAll(INITIAL_TRIPS);
-    this.setVersion(CURRENT_WORKBOOK_STORAGE_VERSION);
-    return JSON.parse(JSON.stringify(INITIAL_TRIPS));
+    } catch (e) {
+      return [];
+    }
+    return [];
   },
 
   saveAll(list) {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(list.map(normalizeTrip)));
-      this.setVersion(CURRENT_WORKBOOK_STORAGE_VERSION);
+      localStorage.setItem(this.schemaVersionKey, CURRENT_WORKBOOK_SCHEMA_VERSION);
       // Broadcast to other open tabs
       if (window.brokerSyncChannel) {
         window.brokerSyncChannel.postMessage({ type: 'trips_updated', timestamp: Date.now() });
@@ -235,9 +208,10 @@ const DataManager = {
     }
   },
 
-  getTrip(rowNum) {
+  getTrip(rowNum, optSheetName = null) {
     const list = this.getAll();
-    return list.find(t => t.row === rowNum) || null;
+    return list.find(t => Number(t.row) === Number(rowNum) &&
+      (!optSheetName || String(t.sheetName || '').trim() === String(optSheetName).trim())) || null;
   },
 
   isDuplicateLr(lrNo, excludeRow = null, excludeSheet = null) {
@@ -247,7 +221,10 @@ const DataManager = {
     return list.find(t => {
       const existing = String(t.lrNo || '').trim().toUpperCase();
       if (!existing) return false;
-      const isSame = (excludeRow !== null && t.row === excludeRow && (!excludeSheet || t.sheetName === excludeSheet));
+      const sameSheet = excludeSheet
+        ? String(t.sheetName || '').trim() === String(excludeSheet).trim()
+        : !t.sheetName;
+      const isSame = (excludeRow !== null && Number(t.row) === Number(excludeRow) && sameSheet);
       return existing === target && !isSame;
     }) || null;
   },
@@ -265,7 +242,10 @@ const DataManager = {
       }
     }
     const list = this.getAll();
-    const idx = list.findIndex(t => t.row === trip.row);
+    const tripSheet = trip.sourceSheet || trip.sheetName || '';
+    const idx = trip.isAdd || Number(trip.row) < 2 ? -1 : list.findIndex(t =>
+      Number(t.row) === Number(trip.row) &&
+      (!tripSheet || String(t.sheetName || '').trim() === String(tripSheet).trim()));
     if (idx !== -1) {
       list[idx] = { ...list[idx], ...trip };
     } else {
@@ -282,10 +262,17 @@ const DataManager = {
     const cleanSheet = optSheetName ? String(optSheetName).trim() : null;
     const list = this.getAll().filter(t => {
       if (cleanSheet) {
-        return !(t.row === rowNum && String(t.sheetName || '').trim() === cleanSheet);
+        return !(Number(t.row) === Number(rowNum) && String(t.sheetName || '').trim() === cleanSheet);
       }
-      return t.row !== rowNum;
+      return Number(t.row) !== Number(rowNum);
     });
+    if (cleanSheet) {
+      list.forEach(trip => {
+        if (String(trip.sheetName || '').trim() === cleanSheet && Number(trip.row) > Number(rowNum)) {
+          trip.row = Number(trip.row) - 1;
+        }
+      });
+    }
     this.saveAll(list);
     return true;
   },
