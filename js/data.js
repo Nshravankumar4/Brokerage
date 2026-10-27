@@ -240,14 +240,15 @@ const DataManager = {
     return list.find(t => t.row === rowNum) || null;
   },
 
-  isDuplicateLr(lrNo, excludeRow = null) {
+  isDuplicateLr(lrNo, excludeRow = null, excludeSheet = null) {
     if (!lrNo) return null;
     const target = String(lrNo).trim().toUpperCase();
     const list = this.getAll();
     return list.find(t => {
       const existing = String(t.lrNo || '').trim().toUpperCase();
       if (!existing) return false;
-      return existing === target && (excludeRow === null || t.row !== excludeRow);
+      const isSame = (excludeRow !== null && t.row === excludeRow && (!excludeSheet || t.sheetName === excludeSheet));
+      return existing === target && !isSame;
     }) || null;
   },
 

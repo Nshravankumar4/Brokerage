@@ -604,15 +604,15 @@
               </div>
               <div class="shipment-modal-field">
                 <label for="m_truckNo">Truck No (E)</label>
-                <input type="text" id="m_truckNo" class="form-control" list="m_truckNo_list" placeholder="e.g. AP39UD3564" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase(); TableModule.handleFieldAutofill('truckNo', this.value)" onchange="TableModule.handleFieldAutofill('truckNo', this.value, true)">
+                <input type="text" id="m_truckNo" class="form-control" list="m_truckNo_list" placeholder="e.g. AP39UD3564" style="text-transform: uppercase;" oninput="TableModule.handleUppercaseInput(this); TableModule.handleFieldAutofill('truckNo', this.value)" onchange="TableModule.handleFieldAutofill('truckNo', this.value, true)">
               </div>
               <div class="shipment-modal-field">
                 <label for="m_from">From Location (F)</label>
-                <input type="text" id="m_from" class="form-control" list="m_from_list" placeholder="Origin city" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase();">
+                <input type="text" id="m_from" class="form-control" list="m_from_list" placeholder="Origin city" style="text-transform: uppercase;" oninput="TableModule.handleUppercaseInput(this);">
               </div>
               <div class="shipment-modal-field">
                 <label for="m_to">To Location (G)</label>
-                <input type="text" id="m_to" class="form-control" list="m_to_list" placeholder="Destination city" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase();">
+                <input type="text" id="m_to" class="form-control" list="m_to_list" placeholder="Destination city" style="text-transform: uppercase;" oninput="TableModule.handleUppercaseInput(this);">
               </div>
             </div>
           </div>

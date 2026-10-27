@@ -175,6 +175,9 @@ const AppModule = {
   },
 
   bindEvents() {
+    if (this._eventsBound) return;
+    this._eventsBound = true;
+
     // 1. Text Search Filter
     const searchInput = document.getElementById('tableSearch');
     if (searchInput) {
@@ -211,27 +214,14 @@ const AppModule = {
       });
     }
 
-    // 4. Modal Live Recalculation
-    const modalCalcInputs = [
-      'm_fright', 'm_topay', 'm_tm', 'm_advance1', 'm_advance2', 
-      'm_advance3', 'm_cod', 'm_pm', 'm_pmFinal'
-    ];
-
-    modalCalcInputs.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.addEventListener('input', () => TableModule.liveCalcModal());
-        el.addEventListener('change', () => TableModule.liveCalcModal());
-      }
-    });
-
-    // 5. Form Submit
+    // 4. Form Submit
     const editForm = document.getElementById('editTripForm');
-    if (editForm) {
+    if (editForm && !editForm.dataset.bound) {
+      editForm.dataset.bound = 'true';
       editForm.addEventListener('submit', (e) => TableModule.handleSaveModal(e));
     }
 
-    // 6. Escape key
+    // 5. Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         TableModule.closeModal();

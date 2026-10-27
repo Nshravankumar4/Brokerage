@@ -997,7 +997,8 @@ const TableModule = {
       return true;
     }
 
-    const duplicate = (typeof DataManager !== 'undefined') ? DataManager.isDuplicateLr(lrVal, isAdd ? null : rowNum) : null;
+    const sourceSheet = document.getElementById('m_sourceSheet')?.value || null;
+    const duplicate = (typeof DataManager !== 'undefined') ? DataManager.isDuplicateLr(lrVal, isAdd ? null : rowNum, isAdd ? null : sourceSheet) : null;
 
     if (duplicate) {
       lrInput.style.borderColor = '#ef4444';
@@ -1017,6 +1018,16 @@ const TableModule = {
         errSpan.style.display = 'inline';
       }
       return true;
+    }
+  },
+
+  handleUppercaseInput(el) {
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    el.value = el.value.toUpperCase();
+    if (start !== null && end !== null) {
+      el.setSelectionRange(start, end);
     }
   },
 
@@ -1104,6 +1115,8 @@ const TableModule = {
 
   async handleSaveModal(e) {
     if (e) e.preventDefault();
+    if (this._isSaving) return;
+    this._isSaving = true;
 
     const rowNum = parseInt(document.getElementById('m_editRow').value) || 0;
     const isAdd = document.getElementById('m_isAdd').value === 'true';
@@ -1111,6 +1124,7 @@ const TableModule = {
 
     // Inline LR NO required validation (no alert)
     if (!lrNo) {
+      this._isSaving = false;
       const lrInput = document.getElementById('m_lrNo');
       if (lrInput) { lrInput.style.borderColor = '#ef4444'; lrInput.focus(); }
       const errSpan = document.getElementById('m_lrNoError');
@@ -1119,9 +1133,11 @@ const TableModule = {
     }
 
     // Strict Duplicate LR NO Enforcement (inline, no alert)
-    const duplicate = (typeof DataManager !== 'undefined') ? DataManager.isDuplicateLr(lrNo, isAdd ? null : rowNum) : null;
+    const sourceSheet = document.getElementById('m_sourceSheet')?.value || null;
+    const duplicate = (typeof DataManager !== 'undefined') ? DataManager.isDuplicateLr(lrNo, isAdd ? null : rowNum, isAdd ? null : sourceSheet) : null;
 
     if (duplicate) {
+      this._isSaving = false;
       const lrInput = document.getElementById('m_lrNo');
       if (lrInput) {
         lrInput.style.borderColor = '#ef4444';
@@ -1161,8 +1177,9 @@ const TableModule = {
     let pmVal = 0;
 
     if (normalizedTopay === 'F/TO-PAY') {
+      tmVal = Number(document.getElementById('m_tm').value) || 0;
       codVal = frightVal;
-      // All other advances, TM, Extra, PM are strictly 0 and blank dates
+      // All other advances, Extra, PM are strictly 0 and blank dates
     } else if (normalizedTopay === 'A/TO-PAY') {
       tmVal = Number(document.getElementById('m_tm').value) || 0;
       adv1Val = Number(document.getElementById('m_advance1').value) || 0;
@@ -1277,6 +1294,7 @@ const TableModule = {
         }
       }
 
+      this._isSaving = false;
       if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = origBtnText; }
     };
 

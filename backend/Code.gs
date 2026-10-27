@@ -897,7 +897,8 @@ function handleSaveTrip(t, optId) {
           var existLr = String(chVals[j][0] || '').trim().toUpperCase();
           var actualRow = j + 2;
           var isSameRecord = (sourceSheetName === chSheet.getName() && actualRow === rowNum);
-          if (existLr === lr && actualRow !== rowNum) {
+          // Exclude current record when checking duplicate LR across sheets: actualRow !== rowNum on same sheet
+          if (existLr === lr && !isSameRecord) {
             return {
               status: 'error',
               code: 'DUPLICATE_LR',
